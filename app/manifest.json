@@ -1,6 +1,6 @@
 {
-  "name": "Second Brain",
-  "short_name": "Brain",
+  "name": "Canon Vault",
+  "short_name": "Vault",
   "description": "A personal capture and thinking OS over plain markdown files on disk.",
   "start_url": ".",
   "scope": ".",

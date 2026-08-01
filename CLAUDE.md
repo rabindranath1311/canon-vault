@@ -1,4 +1,4 @@
-# Second Brain — agent contract
+# Canon Vault — agent contract
 
 A personal capture + thinking OS. **Plain markdown files on disk, read and
 written directly by a static web app. No server, no database, no cloud.**

@@ -1,6 +1,6 @@
-# Second Brain
+# Canon Vault
 
-A personal capture and thinking OS for designers. **Plain markdown files on your
+A second brain for designers. **Plain markdown files on your
 disk, read and written directly by a web app. No server, no database, no
 account.**
 

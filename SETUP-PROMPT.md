@@ -1,4 +1,4 @@
-# Set up a Second Brain vault with your agent
+# Set up a Canon Vault with your agent
 
 Copy everything below the line into a fresh agent session, in an empty
 directory. It is the power-user path — the app scaffolds the same structure
@@ -6,7 +6,7 @@ from a folder picker with no terminal at all.
 
 ---
 
-You are setting up a **Second Brain vault**: a folder of plain markdown files
+You are setting up a **Canon Vault**: a folder of plain markdown files
 that a web app, Obsidian, and you all read and write as equals. There is no
 server, no database and no API. The filesystem is the interface.
 

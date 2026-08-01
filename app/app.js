@@ -1,4 +1,4 @@
-/* Second Brain — terminal/brutalist research-lab UI, wired to the real vault.
+/* Canon Vault — terminal/brutalist research-lab UI, wired to the real vault.
    Served by the FastAPI backend (server/secondbrain). All data is live:
    /api/overview, /api/activity, /api/category, /api/page, /api/graph,
    POST /api/capture, plus /chat (Ask) and /search (⌘K). No mock content —

@@ -44,7 +44,7 @@ window.SB_VERSION = "v3";
     var root = document.getElementById("root") || document.body;
     root.innerHTML = [
       '<main class="sb-explainer">',
-      '  <h1>Second Brain needs a Chromium browser</h1>',
+      '  <h1>Canon Vault needs a Chromium browser</h1>',
       '  <p>This app reads and writes plain markdown files directly on your disk',
       '     using the File System Access API, which only Chromium browsers',
       '     implement &mdash; so there is nothing it can open here.</p>',
