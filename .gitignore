@@ -14,3 +14,7 @@ bin/launchd/*.plist
 # They are copies of real source and must never be committed.
 app/_*.js
 app/**/_*.js
+
+# Vercel CLI link metadata and env files (machine-local)
+.vercel
+.env*
