@@ -1,0 +1,90 @@
+// Task 8.2 / 8.6. Offline is mandatory: the data is local, so the app must work
+// with no network at all.
+//
+// Two things update, and they are not the same thing:
+//
+//   * `?v=NN` in index.html versions the *assets*. The fetch handler matches
+//     exactly, so a bump genuinely re-fetches. This is the one CLAUDE.md tells
+//     you to bump when shipping JS or CSS.
+//   * CACHE_VERSION versions the *cache itself*. `activate` deletes every cache
+//     that is not the current one, so caches.keys() is always exactly 1 and no
+//     deploy leaves orphans. Bump it when this file changes.
+const CACHE_VERSION = "v22";
+const CACHE = `second-brain-${CACHE_VERSION}`;
+
+const SHELL = [
+  ".", "index.html", "styles.css", "boot.js", "app.js",
+  "manifest.json",
+  "vendor/fonts.css",
+  "vendor/fonts/inter-normal-latin.woff2",
+  "vendor/fonts/inter-normal-latin-ext.woff2",
+  "vendor/fonts/inter-italic-latin.woff2",
+  "vendor/fonts/inter-italic-latin-ext.woff2",
+  "vendor/fonts/jetbrains-mono-normal-latin.woff2",
+  "vendor/fonts/jetbrains-mono-normal-latin-ext.woff2",
+  "vault/mdfile.js", "vault/vault.js", "vault/dashboard.js",
+  "vault/data.js", "vault/bridge.js", "vault/links.js",
+  "vault/dhash.js", "vault/images.js", "vault/scaffold.js",
+  "vendor/markdown-it.min.js",
+  "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png",
+];
+
+self.addEventListener("install", (e) => {
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    // Individually, so one 404 cannot fail the whole install.
+    await Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {})));
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil((async () => {
+    for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", (e) => {
+  const url = new URL(e.request.url);
+  if (e.request.method !== "GET" || url.origin !== location.origin) return;
+  // The document is special: it is the file that carries every `?v=`, so a
+  // cached copy pins the app to the build that shipped with it. Serving it
+  // cache-first meant a returning user could never receive an update at all,
+  // no matter how many versions were bumped.
+  const isDoc = e.request.mode === "navigate"
+    || url.pathname === "/" || url.pathname.endsWith("/")
+    || url.pathname.endsWith(".html");
+
+  e.respondWith((async () => {
+    const save = async (res) => {
+      if (res.ok) (await caches.open(CACHE)).put(e.request, res.clone());
+      return res;
+    };
+
+    if (isDoc) {
+      try { return await save(await fetch(e.request)); }         // network-first
+      catch {
+        return (await caches.match(e.request, { ignoreSearch: true }))
+            || (await caches.match("index.html"))
+            || Response.error();
+      }
+    }
+
+    // Assets are versioned, so an exact match is the correct hit. Matching with
+    // ignoreSearch up front made the cache-bust a no-op: `boot.js?v=73` hit the
+    // precached `boot.js` from the previous deploy.
+    const exact = await caches.match(e.request);
+    if (exact) return exact;
+    try { return await save(await fetch(e.request)); }
+    catch {
+      // Offline. Now ignoring the query is right, not wrong: the precached
+      // shell is stored unversioned, and stale beats a broken page.
+      return (await caches.match(e.request, { ignoreSearch: true })) || Response.error();
+    }
+  })());
+});
+
+self.addEventListener("message", (e) => {
+  if (e.data === "version") e.source.postMessage({ version: CACHE_VERSION, cache: CACHE });
+});

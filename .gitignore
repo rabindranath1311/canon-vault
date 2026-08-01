@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Agent session data (do not commit)
+.claude/
+
+# Logs
+*.log
+
+# Generated from bin/launchd/*.plist.template (contains machine-specific paths)
+bin/launchd/*.plist
+
+# Scratch copies used to defeat the browser pane's cache while verifying.
+# They are copies of real source and must never be committed.
+app/_*.js
+app/**/_*.js

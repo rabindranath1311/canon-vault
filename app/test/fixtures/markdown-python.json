@@ -1,0 +1,62 @@
+{
+  "headings": {
+    "md": "# H1\n\n## H2\n\n### H3\n",
+    "html": "<h1>H1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n"
+  },
+  "emphasis": {
+    "md": "*em* **strong** `code` ~~strike~~\n",
+    "html": "<p><em>em</em> <strong>strong</strong> <code>code</code> <s>strike</s></p>\n"
+  },
+  "table": {
+    "md": "| A | B |\n| --- | --: |\n| 1 | 2 |\n| longer cell | 4 |\n",
+    "html": "<table>\n<thead>\n<tr>\n<th>A</th>\n<th style=\"text-align:right\">B</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td style=\"text-align:right\">2</td>\n</tr>\n<tr>\n<td>longer cell</td>\n<td style=\"text-align:right\">4</td>\n</tr>\n</tbody>\n</table>\n"
+  },
+  "fence": {
+    "md": "```python\ndef f(x):\n    return x < 3 & x > 1\n```\n",
+    "html": "<pre><code class=\"language-python\">def f(x):\n    return x &lt; 3 &amp; x &gt; 1\n</code></pre>\n"
+  },
+  "fence_plain": {
+    "md": "```\nno language\n```\n",
+    "html": "<pre><code>no language\n</code></pre>\n"
+  },
+  "blockquote": {
+    "md": "> quoted line\n> second line\n>\n> new para\n",
+    "html": "<blockquote>\n<p>quoted line\nsecond line</p>\n<p>new para</p>\n</blockquote>\n"
+  },
+  "nested_list": {
+    "md": "- a\n  - b\n    - c\n- d\n\n1. one\n2. two\n",
+    "html": "<ul>\n<li>a\n<ul>\n<li>b\n<ul>\n<li>c</li>\n</ul>\n</li>\n</ul>\n</li>\n<li>d</li>\n</ul>\n<ol>\n<li>one</li>\n<li>two</li>\n</ol>\n"
+  },
+  "links": {
+    "md": "[text](https://example.com) and ![img](x.png)\n",
+    "html": "<p><a href=\"https://example.com\">text</a> and <img src=\"x.png\" alt=\"img\"></p>\n"
+  },
+  "typographer": {
+    "md": "\"quotes\" -- dashes ... ellipsis (c) (tm)\n",
+    "html": "<p>\u201cquotes\u201d \u2013 dashes \u2026 ellipsis \u00a9 \u2122</p>\n"
+  },
+  "hr_and_ref": {
+    "md": "text\n\n---\n\nafter rule\n",
+    "html": "<p>text</p>\n<hr>\n<p>after rule</p>\n"
+  },
+  "html_inert": {
+    "md": "<script>alert(1)</script>\n\n<b>bold?</b>\n",
+    "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n<p>&lt;b&gt;bold?&lt;/b&gt;</p>\n"
+  },
+  "entities": {
+    "md": "5 < 6 & 7 > 4, a\\*b\\*c\n",
+    "html": "<p>5 &lt; 6 &amp; 7 &gt; 4, a*b*c</p>\n"
+  },
+  "wikilink": {
+    "md": "A [[Fictional Hub]] and an ![[image.png]] embed\n",
+    "html": "<p>A [[Fictional Hub]] and an ![[image.png]] embed</p>\n"
+  },
+  "task_list": {
+    "md": "- [ ] todo\n- [x] done\n",
+    "html": "<ul>\n<li>[ ] todo</li>\n<li>[x] done</li>\n</ul>\n"
+  },
+  "long_para": {
+    "md": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word \n",
+    "html": "<p>word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word</p>\n"
+  }
+}

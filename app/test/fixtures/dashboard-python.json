@@ -1,0 +1,338 @@
+{
+  "buckets": [
+    {
+      "cap": 60,
+      "caption": "updated in the last 7 days",
+      "count": 9,
+      "footer_l": "15% of soft cap",
+      "footer_r": "active thinking",
+      "id": "fresh",
+      "label": "Fresh",
+      "letter": "F"
+    },
+    {
+      "cap": 200,
+      "caption": "updated 8-30 days ago",
+      "count": 4,
+      "footer_l": "2% of soft cap",
+      "footer_r": "consolidating",
+      "id": "working",
+      "label": "Working",
+      "letter": "W"
+    },
+    {
+      "cap": 0,
+      "caption": "older than 30 days",
+      "count": 3,
+      "footer_l": "",
+      "footer_r": "long-term recall",
+      "id": "reference",
+      "label": "Reference",
+      "letter": "R"
+    }
+  ],
+  "name": "vault",
+  "obsessions": [
+    {
+      "captures": 6,
+      "confidence": 100,
+      "days": 364,
+      "id": "obs-0",
+      "members": [
+        {
+          "id": "01FIX0000000000000000000A1",
+          "kind": "note",
+          "title": "Lantern Cartography Notes"
+        },
+        {
+          "id": "01FIX0000000000000000000A2",
+          "kind": "note",
+          "title": "Folio Gathering Notes"
+        },
+        {
+          "id": "01FIX0000000000000000000A3",
+          "kind": "topic",
+          "title": "Quire Structures"
+        },
+        {
+          "id": "01FIX0000000000000000000A4",
+          "kind": "note",
+          "title": "Marbling Discipline"
+        },
+        {
+          "id": "01FIX0000000000000000000A5",
+          "kind": "note",
+          "title": "Orrery Restraint"
+        }
+      ],
+      "related_tags": [
+        "bookbinding",
+        "lanterns",
+        "orreries"
+      ],
+      "sparkline": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1
+      ],
+      "title": "cartography",
+      "weight": 1.0
+    },
+    {
+      "captures": 3,
+      "confidence": 50,
+      "days": 5,
+      "id": "obs-1",
+      "members": [
+        {
+          "id": "01FIX0000000000000000000B1",
+          "kind": "note",
+          "title": "Headbands"
+        },
+        {
+          "id": "01FIX0000000000000000000A2",
+          "kind": "note",
+          "title": "Folio Gathering Notes"
+        },
+        {
+          "id": "01FIX0000000000000000000A3",
+          "kind": "topic",
+          "title": "Quire Structures"
+        }
+      ],
+      "related_tags": [
+        "cartography"
+      ],
+      "sparkline": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "title": "bookbinding",
+      "weight": 0.5
+    },
+    {
+      "captures": 2,
+      "confidence": 33,
+      "days": 6,
+      "id": "obs-2",
+      "members": [
+        {
+          "id": "01FIX0000000000000000000C1",
+          "kind": "topic",
+          "title": "Tessellation Economy"
+        },
+        {
+          "id": "01FIX0000000000000000000C2",
+          "kind": "note",
+          "title": "Deep Tiling"
+        }
+      ],
+      "related_tags": [],
+      "sparkline": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "title": "tessellation",
+      "weight": 0.33
+    },
+    {
+      "captures": 2,
+      "confidence": 33,
+      "days": 6,
+      "id": "obs-3",
+      "members": [
+        {
+          "id": "01FIX0000000000000000000F1",
+          "kind": "topic",
+          "title": "Philately Thinking"
+        },
+        {
+          "id": "01FIX0000000000000000000F2",
+          "kind": "note",
+          "title": "Perforation Loops"
+        }
+      ],
+      "related_tags": [],
+      "sparkline": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "title": "philately",
+      "weight": 0.33
+    }
+  ],
+  "recent": [
+    {
+      "id": "01FIX0000000000000000000A1",
+      "kind": "note",
+      "short_id": "01FIX0",
+      "tags": [
+        "cartography",
+        "lanterns"
+      ],
+      "title": "Lantern Cartography Notes",
+      "updated": "2026-07-30T07:12:00+00:00",
+      "via": "self"
+    },
+    {
+      "id": "01FIX0000000000000000000E1",
+      "kind": "canvas",
+      "short_id": "01FIX0",
+      "tags": [],
+      "title": "Pressed Leaf Board",
+      "updated": "2026-07-30T00:00:00+00:00",
+      "via": "self"
+    },
+    {
+      "id": "01FIX0000000000000000000B1",
+      "kind": "note",
+      "short_id": "01FIX0",
+      "tags": [
+        "bookbinding"
+      ],
+      "title": "Headbands",
+      "updated": "2026-07-29T12:00:00+00:00",
+      "via": "self"
+    },
+    {
+      "id": "01FIX0000000000000000000A2",
+      "kind": "note",
+      "short_id": "01FIX0",
+      "tags": [
+        "cartography",
+        "bookbinding"
+      ],
+      "title": "Folio Gathering Notes",
+      "updated": "2026-07-28T12:00:00+00:00",
+      "via": "self"
+    },
+    {
+      "id": "01FIX0000000000000000000C1",
+      "kind": "topic",
+      "short_id": "01FIX0",
+      "tags": [
+        "tessellation"
+      ],
+      "title": "Tessellation Economy",
+      "updated": "2026-07-27T12:00:00+00:00",
+      "via": "self"
+    }
+  ],
+  "stats": {
+    "fresh_this_week": 9,
+    "last_synced": "2026-07-30T07:12:00+00:00",
+    "mentions_total": 1,
+    "pages_total": 16
+  }
+}

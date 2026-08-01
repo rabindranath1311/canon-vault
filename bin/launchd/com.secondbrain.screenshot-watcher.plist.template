@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template: launchd needs literal absolute paths, so generate the real plist
+     with the one-liner in bin/SETUP.md. It substitutes:
+       __SCRIPTS__     where this repo is checked out
+       __BRAIN_DIR__   your vault - a different directory
+       __SCREENSHOTS__ the folder macOS saves screenshots to
+       __LOGS__        ~/Library/Logs/second-brain - never inside the vault -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.secondbrain.screenshot-watcher</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__SCRIPTS__/bin/screenshot-sync.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>BRAIN_DIR</key>
+        <string>__BRAIN_DIR__</string>
+        <key>SCREENSHOT_DIR</key>
+        <string>__SCREENSHOTS__</string>
+        <key>BRAIN_LOG_DIR</key>
+        <string>__LOGS__</string>
+    </dict>
+
+    <key>WatchPaths</key>
+    <array>
+        <string>__SCREENSHOTS__</string>
+    </array>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOGS__/screenshot-watcher.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__LOGS__/screenshot-watcher.err.log</string>
+</dict>
+</plist>

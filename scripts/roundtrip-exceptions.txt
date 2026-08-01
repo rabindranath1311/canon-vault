@@ -1,0 +1,8 @@
+# Task 2.1. Files allowed to fail the byte-identical round-trip.
+#
+# Format:  <vault-relative path>  # reason
+#
+# Budget: 3. The harness refuses to run with more, and refuses an entry with
+# no reason — an unexplained exception is how a harness quietly stops testing.
+#
+# Currently EMPTY: all 51 generated files round-trip byte for byte.

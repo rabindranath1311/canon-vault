@@ -1,0 +1,217 @@
+{
+  "now": "2026-07-30T12:00:00+00:00",
+  "pages": [
+    {
+      "id": "01FIX0000000000000000000A1",
+      "slug": "quiet-dashboards",
+      "kind": "note",
+      "title": "Lantern Cartography Notes",
+      "created": "2026-06-20T12:00:00+00:00",
+      "updated": "2026-07-30T07:12:00+00:00",
+      "tags": [
+        "cartography",
+        "lanterns"
+      ],
+      "mentions": [
+        "01FIX0000000000000000000A2"
+      ],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000A2",
+      "slug": "type-scale",
+      "kind": "note",
+      "title": "Folio Gathering Notes",
+      "created": "2026-06-22T12:00:00+00:00",
+      "updated": "2026-07-28T12:00:00+00:00",
+      "tags": [
+        "cartography",
+        "bookbinding"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000A3",
+      "slug": "grid-systems",
+      "kind": "topic",
+      "title": "Quire Structures",
+      "created": "2026-06-25T12:00:00+00:00",
+      "updated": "2026-07-24T12:00:00+00:00",
+      "tags": [
+        "cartography",
+        "bookbinding"
+      ],
+      "mentions": [],
+      "meta": {
+        "imported_from": "obsidian"
+      }
+    },
+    {
+      "id": "01FIX0000000000000000000A4",
+      "slug": "colour",
+      "kind": "note",
+      "title": "Marbling Discipline",
+      "created": "2026-06-30T12:00:00+00:00",
+      "updated": "2026-07-10T12:00:00+00:00",
+      "tags": [
+        "cartography"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000A5",
+      "slug": "orreries",
+      "kind": "note",
+      "title": "Orrery Restraint",
+      "created": "2026-07-02T12:00:00+00:00",
+      "updated": "2026-06-15T12:00:00+00:00",
+      "tags": [
+        "cartography",
+        "orreries"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000B1",
+      "slug": "ligatures",
+      "kind": "note",
+      "title": "Headbands",
+      "created": "2026-07-05T12:00:00+00:00",
+      "updated": "2026-07-29T12:00:00+00:00",
+      "tags": [
+        "bookbinding"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000C1",
+      "slug": "attention-1",
+      "kind": "topic",
+      "title": "Tessellation Economy",
+      "created": "2026-07-10T12:00:00+00:00",
+      "updated": "2026-07-27T12:00:00+00:00",
+      "tags": [
+        "tessellation"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000C2",
+      "slug": "attention-2",
+      "kind": "note",
+      "title": "Deep Tiling",
+      "created": "2026-07-12T12:00:00+00:00",
+      "updated": "2026-07-21T12:00:00+00:00",
+      "tags": [
+        "tessellation"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000F1",
+      "slug": "systems-1",
+      "kind": "topic",
+      "title": "Philately Thinking",
+      "created": "2026-07-08T12:00:00+00:00",
+      "updated": "2026-07-25T12:00:00+00:00",
+      "tags": [
+        "philately"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000F2",
+      "slug": "systems-2",
+      "kind": "note",
+      "title": "Perforation Loops",
+      "created": "2026-07-09T12:00:00+00:00",
+      "updated": "2026-07-19T12:00:00+00:00",
+      "tags": [
+        "philately"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000G1",
+      "slug": "process-1",
+      "kind": "note",
+      "title": "Campanology Debt",
+      "created": "2026-07-11T12:00:00+00:00",
+      "updated": "2026-07-23T12:00:00+00:00",
+      "tags": [
+        "campanology"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000G2",
+      "slug": "process-2",
+      "kind": "topic",
+      "title": "Peal Rituals",
+      "created": "2026-07-13T12:00:00+00:00",
+      "updated": "2026-07-17T12:00:00+00:00",
+      "tags": [
+        "campanology"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000D1",
+      "slug": "lonely",
+      "kind": "note",
+      "title": "Lonely Moth",
+      "created": "2026-07-15T12:00:00+00:00",
+      "updated": "2026-05-31T12:00:00+00:00",
+      "tags": [
+        "lepidoptery"
+      ],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000E1",
+      "slug": "mood-board",
+      "kind": "canvas",
+      "title": "Pressed Leaf Board",
+      "created": "2026-07-18T12:00:00+00:00",
+      "updated": "2026-07-30T00:00:00+00:00",
+      "tags": [],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000E2",
+      "slug": "inspo-wall",
+      "kind": "inspo",
+      "title": "",
+      "created": "2026-07-20T12:00:00+00:00",
+      "updated": "2026-07-26T12:00:00+00:00",
+      "tags": [],
+      "mentions": [],
+      "meta": {}
+    },
+    {
+      "id": "01FIX0000000000000000000E3",
+      "slug": "ancient",
+      "kind": "note",
+      "title": "Antique Reference",
+      "created": "2025-06-25T12:00:00+00:00",
+      "updated": "2025-07-30T12:00:00+00:00",
+      "tags": [
+        "cartography"
+      ],
+      "mentions": [],
+      "meta": {}
+    }
+  ]
+}

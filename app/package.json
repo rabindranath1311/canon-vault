@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "comment": "Not a build step and not an npm project: zero dependencies, nothing to install. This exists only so Node treats app/**/*.js as ES modules, which is what the browser already does via <script type=module>. Task 10.5 must keep the Vercel project set to a static/no-framework build so this file does not trigger one."
+}
