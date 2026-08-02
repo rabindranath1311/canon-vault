@@ -1831,6 +1831,24 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   pointer-events: none;
   overflow: visible;
 }
+/* Edges SVG — the connections from the `.canvas` file. Below the cards and
+   the strokes, and equally transparent to pointer events. */
+.canvas-edges {
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.canvas-edge-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--muted);
+  /* Draw the halo under the glyphs so a label stays readable where it
+     crosses its own edge. */
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
 /* Cursor + interaction modes */
 .canvas-viewport.mode-draw  { cursor: crosshair; }
 .canvas-viewport.mode-erase { cursor: cell; }

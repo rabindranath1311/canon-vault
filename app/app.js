@@ -2095,6 +2095,9 @@ function V2PageView(pageId, onChange, onDeleted) {
     // Page-level strokes (the whole canvas is a sketch board). Points are
     // stored in *world* coords so they pan + zoom with the rest of the canvas.
     if (!Array.isArray(page.meta.strokes)) page.meta.strokes = [];
+    // Edges come from the `.canvas` file alongside the nodes. Same rule as
+    // geometry: Obsidian owns them, we only draw them.
+    if (!Array.isArray(page.meta.edges)) page.meta.edges = [];
 
     // Board-level drawing tool state. Mental model:
     //   - boardTool.mode ∈ 'move' | 'pen' | 'erase'.
@@ -2177,6 +2180,87 @@ function V2PageView(pageId, onChange, onDeleted) {
     const strokesG = document.createElementNS(STROKES_NS, 'g');
     strokesSvg.appendChild(strokesG);
     surface.appendChild(strokesSvg);
+
+    // ── Edges layer ──────────────────────────────────────────────────────
+    // Sits *below* the cards and the strokes (inserted before both), inside
+    // `surface` so it inherits pan + zoom for free. No viewBox and
+    // overflow:visible, because JSON Canvas coordinates are routinely
+    // negative — a 0-origin viewBox like the strokes layer's would clip
+    // every board whose nodes sit left of or above the origin.
+    const edgesSvg = document.createElementNS(STROKES_NS, 'svg');
+    edgesSvg.setAttribute('class', 'canvas-edges');
+    edgesSvg.setAttribute('width', '0');
+    edgesSvg.setAttribute('height', '0');
+    const edgesG = document.createElementNS(STROKES_NS, 'g');
+    edgesSvg.appendChild(edgesG);
+    surface.insertBefore(edgesSvg, strokesSvg);
+
+    // JSON Canvas colors are either a hex string or a preset "1".."6".
+    const EDGE_PRESET = {
+      '1': '#e5484d', '2': '#f76b15', '3': '#ffb224',
+      '4': '#30a46c', '5': '#00a2c7', '6': '#8e4ec6',
+    };
+    function edgeColor(c) {
+      if (!c) return 'var(--muted)';
+      return EDGE_PRESET[String(c)] || String(c);
+    }
+
+    // The curve math lives in data.js as a pure function so it is testable in
+    // Node; everything here is just turning it into SVG.
+    function renderAllEdges() {
+      while (edgesG.firstChild) edgesG.removeChild(edgesG.firstChild);
+      const geom = window.SB_EDGE_GEOM;
+      if (typeof geom !== 'function') return;
+      const boxes = new Map();
+      for (const it of page.meta.layout) {
+        boxes.set(it.id, {
+          x: it.x || 0, y: it.y || 0, w: it.w || 240, h: it.h || 220,
+        });
+      }
+      for (const e of page.meta.edges) {
+        const g = geom(e, boxes.get(e.fromNode), boxes.get(e.toNode));
+        if (!g) continue;               // an endpoint that isn't on the board
+        const color = edgeColor(e.color);
+
+        const path = document.createElementNS(STROKES_NS, 'path');
+        path.setAttribute('d', g.d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linecap', 'round');
+        // Set via style, not the attribute: a CSS custom property is only
+        // guaranteed to resolve as a style declaration.
+        path.style.stroke = color;
+        edgesG.appendChild(path);
+
+        // Arrowheads. The tip sits on the anchor and the base steps back
+        // along the outward normal, so it lines up with the curve's tangent.
+        const HEAD = 9;
+        for (const p of g.arrows) {
+          const bx = p.x + p.nx * HEAD, by = p.y + p.ny * HEAD;
+          // Perpendicular to the normal, for the two base corners.
+          const px = -p.ny, py = p.nx;
+          const tri = document.createElementNS(STROKES_NS, 'polygon');
+          tri.setAttribute('points', [
+            `${p.x},${p.y}`,
+            `${bx + px * HEAD * 0.45},${by + py * HEAD * 0.45}`,
+            `${bx - px * HEAD * 0.45},${by - py * HEAD * 0.45}`,
+          ].join(' '));
+          tri.style.fill = color;
+          edgesG.appendChild(tri);
+        }
+
+        if (g.label) {
+          const text = document.createElementNS(STROKES_NS, 'text');
+          text.setAttribute('x', g.label.x);
+          text.setAttribute('y', g.label.y);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('class', 'canvas-edge-label');
+          text.textContent = g.label.text;
+          edgesG.appendChild(text);
+        }
+      }
+    }
 
     function strokeToPathStr(points, baseW) {
       if (!points || points.length === 0) return '';
@@ -3026,10 +3110,12 @@ function V2PageView(pageId, onChange, onDeleted) {
         onClick: () => fitView() }, 'fit')));
     toolbarKids.push(h('div', { className: 'canvas-toolbar-hint' },
       page.meta.layout.length, ' items · ',
+      page.meta.edges.length ? page.meta.edges.length + ' connections · ' : '',
       'drag empty area to pan · ⌘+scroll to zoom'));
     const toolbar = h('div', { className: 'canvas-toolbar' }, ...toolbarKids);
 
     page.meta.layout.forEach((it) => surface.appendChild(buildItem(it)));
+    renderAllEdges();     // connections from the .canvas file (read-only)
     renderAllStrokes();   // page-level strokes (whole canvas sketch board)
     viewport.appendChild(toolbar);
     viewport.appendChild(surface);

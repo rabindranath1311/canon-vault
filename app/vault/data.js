@@ -60,6 +60,98 @@ export function layoutFromCanvas(canvasText) {
   });
 }
 
+/**
+ * JSON Canvas edges → the shape the board view reads (`meta.edges`).
+ *
+ * Nodes alone are a pile of cards; the edges are what make a board a board.
+ * Geometry stays read-only here too — this only lets the app *draw* the
+ * connections Obsidian owns.
+ *
+ * Defaults follow the JSON Canvas spec: an edge points at its target unless
+ * told otherwise, so `toEnd` is "arrow" and `fromEnd` is "none". `fromSide`
+ * and `toSide` are optional; null means "pick the facing side", which the
+ * renderer decides from the two boxes.
+ */
+export function edgesFromCanvas(canvasText) {
+  let doc;
+  try { doc = JSON.parse(canvasText); } catch { return []; }
+  const SIDES = new Set(["top", "right", "bottom", "left"]);
+  const side = (s) => (SIDES.has(s) ? s : null);
+  return (doc.edges || [])
+    // An edge with no endpoints has nothing to draw between.
+    .filter((e) => e && e.fromNode && e.toNode)
+    .map((e) => ({
+      id: e.id,
+      fromNode: e.fromNode,
+      toNode: e.toNode,
+      fromSide: side(e.fromSide),
+      toSide: side(e.toSide),
+      fromEnd: e.fromEnd === "arrow" ? "arrow" : "none",
+      toEnd: e.toEnd === "none" ? "none" : "arrow",
+      color: e.color || null,
+      label: e.label || "",
+    }));
+}
+
+// Outward normal per side — the direction a curve leaves the box, and
+// (negated) the direction an arrowhead points as it comes back in.
+const SIDE_NORMAL = {
+  top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0],
+};
+const OPPOSITE_SIDE = { top: "bottom", bottom: "top", left: "right", right: "left" };
+
+/** The side of `from` that faces `to` — used when the `.canvas` omits one. */
+export function facingSide(from, to) {
+  const dx = (to.x + to.w / 2) - (from.x + from.w / 2);
+  const dy = (to.y + to.h / 2) - (from.y + from.h / 2);
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "right" : "left";
+  return dy >= 0 ? "bottom" : "top";
+}
+
+/**
+ * One edge + its two boxes → everything needed to draw it, and nothing that
+ * needs a DOM. Kept here, beside the parser, so the curve math is testable in
+ * Node instead of only observable by eye in a browser.
+ *
+ * Boxes are `{x, y, w, h}` in world coords. Returns `null` when either end is
+ * missing — a connection to a node that isn't on the board draws nothing,
+ * which is better than a line anchored at the origin.
+ */
+export function edgeGeometry(edge, from, to) {
+  if (!from || !to) return null;
+  const fSide = edge.fromSide || facingSide(from, to);
+  const tSide = edge.toSide || OPPOSITE_SIDE[fSide];
+  const anchor = (box, side) => {
+    const [nx, ny] = SIDE_NORMAL[side];
+    return {
+      x: box.x + box.w / 2 + nx * (box.w / 2),
+      y: box.y + box.h / 2 + ny * (box.h / 2),
+      nx, ny,
+    };
+  };
+  const a = anchor(from, fSide), b = anchor(to, tSide);
+  // Control points push straight out along each side's normal, which is what
+  // gives Obsidian's edges their shape. Clamped so short hops don't loop and
+  // long ones don't balloon.
+  const dist = Math.hypot(b.x - a.x, b.y - a.y);
+  const k = Math.max(30, Math.min(160, dist * 0.4));
+  const c1 = { x: a.x + a.nx * k, y: a.y + a.ny * k };
+  const c2 = { x: b.x + b.nx * k, y: b.y + b.ny * k };
+  const arrows = [];
+  if (edge.toEnd === "arrow") arrows.push(b);
+  if (edge.fromEnd === "arrow") arrows.push(a);
+  return {
+    d: `M ${a.x} ${a.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${b.x} ${b.y}`,
+    from: a, to: b, fromSide: fSide, toSide: tSide, arrows,
+    // Cubic Bézier at t=0.5 — (P0 + 3C1 + 3C2 + P3) / 8.
+    label: edge.label ? {
+      x: (a.x + 3 * c1.x + 3 * c2.x + b.x) / 8,
+      y: (a.y + 3 * c1.y + 3 * c2.y + b.y) / 8,
+      text: edge.label,
+    } : null,
+  };
+}
+
 function pageOut(entry, body) {
   return {
     id: entry.id,
@@ -138,7 +230,11 @@ export class Data {
     const p = await this.v.get(id);
     if (!p) return null;
     const out = pageOut(p, p.body ?? "");
-    if (p.canvas != null) out.meta = { ...out.meta, layout: layoutFromCanvas(p.canvas) };
+    if (p.canvas != null) out.meta = {
+      ...out.meta,
+      layout: layoutFromCanvas(p.canvas),
+      edges: edgesFromCanvas(p.canvas),
+    };
     return out;
   }
 

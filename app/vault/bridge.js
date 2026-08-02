@@ -9,7 +9,7 @@
 // A cold open never shows an empty shell, because an empty shell reads as broken.
 
 import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, WriterElection, PERSIST_KEY } from "./vault.js";
-import { Data, noteChrome } from "./data.js";
+import { Data, noteChrome, edgeGeometry } from "./data.js";
 import * as links from "./links.js";
 import { scaffold } from "./scaffold.js";
 
@@ -138,6 +138,7 @@ async function build(handleVault) {
   await handleVault.buildIndex();
   window.SB_LINKS = links;
   window.SB_CHROME = noteChrome;   // 2.7      // 6.10: wikilink resolution for app.js
+  window.SB_EDGE_GEOM = edgeGeometry;          // canvas edge curves, drawn by app.js
   window.SB_VAULT = handleVault;
   // 6.6: the Obsidian vault name is the folder the user picked. Never a
   // constant — SPEC §14 forbids a hardcoded vault name anywhere.
