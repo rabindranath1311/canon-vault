@@ -7,6 +7,7 @@
 // under `node --test` with no browser and no npm install (task 5.11).
 
 import { serialize, parse, escapeUser, unescapeUser, REQUIRED } from "./mdfile.js";
+import { isExcalidrawPath, stripExcalidrawData } from "./excalidraw.js";
 
 export const IGNORED_DIRS = [".git", ".obsidian", ".trash", ".history"];
 export const KIND_BY_FOLDER = {
@@ -34,8 +35,18 @@ export function extractInlineTags(body) {
 }
 
 export function inferKind(path) {
+  // The file format identifies itself, so the extension wins over the folder.
+  // Same reasoning as a bare `.canvas` below: a drawing written by Obsidian's
+  // Excalidraw plugin carries no `kind:` — its frontmatter is
+  // `excalidraw-plugin: parsed` — so there is nothing else to read it from.
+  if (isExcalidrawPath(path)) return "excalidraw";
   const top = path.split("/")[0];
   return KIND_BY_FOLDER[top] || "note";
+}
+
+/** `canvas/Board.excalidraw.md` → `Board`. Both extensions, not just `.md`. */
+export function titleFromPath(path) {
+  return String(path).split("/").pop().replace(/\.excalidraw\.md$/i, "").replace(/\.md$/, "");
 }
 
 function excerptOf(body) {
@@ -437,15 +448,19 @@ export class Vault {
       const stamped = REQUIRED.every((k) => fm[k]);
       const id = fm.id || `path:${f.path}`;
       const fmTags = Array.isArray(fm.tags) ? fm.tags : fm.tags ? [fm.tags] : [];
+      const isExcalidraw = isExcalidrawPath(f.path);
       entry = {
         id,
+        // For a drawing the extension is authoritative: a stray `kind:` in the
+        // frontmatter must not turn one into a note we would then render as
+        // 300 characters of base64.
+        kind: isExcalidraw ? "excalidraw" : (fm.kind || inferKind(f.path)),
         path: f.path,
-        kind: fm.kind || inferKind(f.path),
-        title: fm.title || f.path.split("/").pop().replace(/\.md$/, ""),
+        title: fm.title || titleFromPath(f.path),
         tags: [...new Set([...fmTags, ...extractInlineTags(body)])],
         aliases: Array.isArray(fm.aliases) ? fm.aliases : fm.aliases ? [fm.aliases] : [],
         mentions: [...new Set([...String(body).matchAll(/!?\[\[([^\]|#]+)/g)].map((m) => m[1].trim()))],
-        excerpt: excerptOf(unescapeUser(body)),
+        excerpt: excerptOf(unescapeUser(isExcalidraw ? stripExcalidrawData(body) : body)),
         updated: fm.updated || null,
         mtime: f.mtime,
         stamped,

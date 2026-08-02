@@ -1,0 +1,5 @@
+@excalidraw/excalidraw 0.18.1
+react 19.0.0 / react-dom 19.0.0 (bundled in)
+built by scripts/vendor-excalidraw.mjs from scripts/excalidraw-entry.jsx
+fonts included: Excalifont, Nunito, ComicShanns, Virgil, Cascadia, Liberation, Assistant
+fonts skipped: Xiaolai (CJK, ~12MB)

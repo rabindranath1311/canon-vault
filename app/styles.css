@@ -1831,6 +1831,34 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   pointer-events: none;
   overflow: visible;
 }
+/* ─── Excalidraw ──────────────────────────────────────────────────────── */
+/* The editor brings its own stylesheet (loaded on demand); these rules only
+   give it a box to live in and match the app's chrome around it. */
+.excalidraw-body { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.excalidraw-host {
+  position: relative;
+  height: calc(100vh - 190px);
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.excalidraw-status {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 16px;
+  text-align: right;
+}
+.excalidraw-broken {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.excalidraw-broken strong { color: var(--fg); display: block; margin-bottom: 6px; }
+.excalidraw-broken p { margin: 4px 0; }
+
 /* Edges SVG — the connections from the `.canvas` file. Below the cards and
    the strokes, and equally transparent to pointer events. */
 .canvas-edges {

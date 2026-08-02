@@ -512,6 +512,7 @@ const KIND_META = {
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
   'snippet':  { label: 'Snippet',  icon: 'sticky-note', glyph: '∙', color: 'var(--k-snip)',   hint: 'A quick thought. Mature it into anything later.' },
   'inspo':    { label: 'Inspo',    icon: 'image', glyph: '◫', color: 'var(--k-desg)',    hint: 'A page of inspiration items — local images or pasted links, each with caption and tags.' },
+  'excalidraw': { label: 'Drawing', icon: 'pen-line', glyph: '✎', color: 'var(--k-canvas)', hint: 'A freehand Excalidraw drawing, in the same `.excalidraw.md` the Obsidian plugin reads and writes.' },
   'project':  { label: 'Project',  icon: 'folder', glyph: '⚐', color: 'var(--k-proj)',   hint: 'A personal container — group topics and canvases under a project via mentions.' },
   'wproject': { label: 'Project',  glyph: '⚑', color: 'var(--k-proj)',   hint: 'A work / design project — holds its IA, flows, components and tokens. Separate from personal projects.' },
 };
@@ -523,7 +524,7 @@ function kindIcon(kind, cls) {
 // SPEC §5: 13 kinds collapsed to 4. The old markdown/bookmark/snippet entries
 // stay in KIND_META only as a fallback for a stranger's vault; they are not
 // offered anywhere, because `note` chrome is decided by frontmatter (§5).
-const KIND_ORDER = ['note', 'topic', 'canvas', 'inspo'];
+const KIND_ORDER = ['note', 'topic', 'canvas', 'inspo', 'excalidraw'];
 // Work-mode (design architecture) kinds. Same store + same mention/tag graph
 // as the personal kinds above; only the surface (nav, home, create) differs.
 
@@ -2079,6 +2080,107 @@ function V2PageView(pageId, onChange, onDeleted) {
     } catch (e) { md.textContent = page.body; }
     wrap.appendChild(md);
     return wrap;
+  }
+
+  // ── Excalidraw ────────────────────────────────────────────────────────
+  // The editor is ~8MB of vendored bundle, so it is imported the first time a
+  // drawing is opened and never on the critical path. A vault with no drawings
+  // pays nothing.
+  let excalidrawModule = null;
+  async function loadExcalidraw() {
+    if (excalidrawModule) return excalidrawModule;
+    // Fonts resolve relative to this, and the CSS is only needed once here.
+    window.EXCALIDRAW_ASSET_PATH = 'vendor/excalidraw/';
+    if (!document.querySelector('link[data-excalidraw]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'vendor/excalidraw/excalidraw.css';
+      link.setAttribute('data-excalidraw', '1');
+      document.head.appendChild(link);
+    }
+    excalidrawModule = await import('./vendor/excalidraw/excalidraw.js');
+    return excalidrawModule;
+  }
+
+  function renderExcalidrawBody() {
+    const ex = (page.meta && page.meta.excalidraw) || null;
+    const wrap = h('div', { className: 'page-body excalidraw-body' });
+
+    if (ex && ex.error && !ex.scene) {
+      // A drawing we cannot decode must not look like an empty one — offering a
+      // blank canvas here would invite the user to draw over data still on disk.
+      wrap.appendChild(h('div', { className: 'excalidraw-broken' },
+        h('strong', null, 'This drawing could not be read.'),
+        h('p', null, ex.error),
+        h('p', null, 'The file has been left exactly as it is. Open it in Obsidian to recover it.')));
+      return wrap;
+    }
+
+    const host = h('div', { className: 'excalidraw-host' });
+    wrap.appendChild(host);
+    wrap.appendChild(h('div', { className: 'excalidraw-status' }, 'loading the editor…'));
+    const status = wrap.querySelector('.excalidraw-status');
+
+    let handle = null;
+    let savedVersion = null;
+    let timer = null;
+
+    // onChange fires on every pointer move. Writing per event would fill
+    // `.history` with hundreds of near-identical snapshots and hammer the disk,
+    // so a save is debounced and skipped entirely when the scene version is
+    // unchanged (a pan or a selection is not an edit).
+    const SAVE_AFTER_MS = 1200;
+    async function persist() {
+      if (!handle) return;
+      const version = handle.version();
+      if (version === savedVersion) return;
+      const scene = handle.getScene();
+      if (!scene) return;
+      status.textContent = 'saving…';
+      const md = window.SB_EXCALIDRAW.serialize(scene, {
+        compressed: true,
+        backOfNote: (ex && ex.backOfNote) || '',
+        frontmatter: (ex && ex.frontmatter) || null,
+        elementLinks: (ex && ex.elementLinks) || [],
+        embeddedFiles: (ex && ex.embeddedFiles) || [],
+      });
+      // `body` is the whole plugin block; savePage routes it through the same
+      // conflict + `.history` machinery every other page uses.
+      const r = await savePage({ body: bodyOfExcalidrawFile(md) });
+      if (r === null) { status.textContent = 'not saved'; return; }
+      savedVersion = version;
+      status.textContent = 'saved';
+    }
+    function queue() {
+      clearTimeout(timer);
+      status.textContent = 'unsaved changes…';
+      timer = setTimeout(persist, SAVE_AFTER_MS);
+    }
+
+    loadExcalidraw().then((mod) => {
+      status.textContent = '';
+      handle = mod.mountExcalidraw(host, {
+        theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
+        initialData: (ex && ex.scene) || null,
+        onReady: (hd) => { savedVersion = hd.version(); },
+        onChange: queue,
+      });
+      // A drawing left with pending edits must not vanish on navigation.
+      window.addEventListener('beforeunload', persist);
+    }).catch((e) => {
+      status.textContent = '';
+      wrap.appendChild(h('div', { className: 'excalidraw-broken' },
+        h('strong', null, 'The drawing editor failed to load.'),
+        h('p', null, String(e && e.message || e))));
+    });
+
+    return wrap;
+  }
+
+  // serialize() returns a whole file; the vault writes frontmatter separately,
+  // so hand back only what belongs in the body.
+  function bodyOfExcalidrawFile(md) {
+    return String(md).replace(/^---\n[\s\S]*?\n---\n/, '');
   }
 
   function renderBoardBody(opts = {}) {
@@ -4068,6 +4170,10 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (page.kind === 'canvas') {
       body = withBoardBody(renderCanvasBody());
       side = null;                   // 6.13: no chat composer (SPEC §16)
+      extraClass = ' canvas-grid';
+    } else if (page.kind === 'excalidraw') {
+      body = renderExcalidrawBody();
+      side = null;
       extraClass = ' canvas-grid';
     } else if (page.kind === 'inspo') {
       body = withBoardBody(renderInspoBody());

@@ -18,6 +18,7 @@
 
 import { computeDashboard } from "./dashboard.js";
 import { listImages, filterImages } from "./images.js";
+import { isExcalidrawPath, parseExcalidraw } from "./excalidraw.js";
 
 const DEFAULT_LIMIT = 200;
 
@@ -39,7 +40,10 @@ export function noteChrome(page = {}) {
   if (lines.length > 0 && lines.every((l) => l.trimStart().startsWith(">"))) return "pull-quote";
   return "article";
 }
-const FOLDER_FOR = { note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo" };
+const FOLDER_FOR = {
+  note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo",
+  excalidraw: "canvas",   // drawings sit beside boards; both are canvas work
+};
 
 /**
  * JSON Canvas → the shape the board view reads (`meta.layout`).
@@ -235,6 +239,15 @@ export class Data {
       layout: layoutFromCanvas(p.canvas),
       edges: edgesFromCanvas(p.canvas),
     };
+    if (isExcalidrawPath(p.path)) {
+      // Parse from `raw`, not `body`: the plugin block lives after the
+      // frontmatter and the view needs both halves — the scene to draw, and the
+      // user's prose to show underneath it.
+      const ex = parseExcalidraw(p.raw ?? "");
+      out.meta = { ...out.meta, excalidraw: ex };
+      out.body = ex.backOfNote;
+      out.bodyIsFull = true;
+    }
     return out;
   }
 
