@@ -512,7 +512,6 @@ const KIND_META = {
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
   'snippet':  { label: 'Snippet',  icon: 'sticky-note', glyph: '∙', color: 'var(--k-snip)',   hint: 'A quick thought. Mature it into anything later.' },
   'inspo':    { label: 'Inspo',    icon: 'image', glyph: '◫', color: 'var(--k-desg)',    hint: 'A page of inspiration items — local images or pasted links, each with caption and tags.' },
-  'excalidraw': { label: 'Drawing', icon: 'pen-line', glyph: '✎', color: 'var(--k-canvas)', hint: 'A freehand Excalidraw drawing, in the same `.excalidraw.md` the Obsidian plugin reads and writes.' },
   'project':  { label: 'Project',  icon: 'folder', glyph: '⚐', color: 'var(--k-proj)',   hint: 'A personal container — group topics and canvases under a project via mentions.' },
   'wproject': { label: 'Project',  glyph: '⚑', color: 'var(--k-proj)',   hint: 'A work / design project — holds its IA, flows, components and tokens. Separate from personal projects.' },
 };
@@ -524,7 +523,7 @@ function kindIcon(kind, cls) {
 // SPEC §5: 13 kinds collapsed to 4. The old markdown/bookmark/snippet entries
 // stay in KIND_META only as a fallback for a stranger's vault; they are not
 // offered anywhere, because `note` chrome is decided by frontmatter (§5).
-const KIND_ORDER = ['note', 'topic', 'canvas', 'inspo', 'excalidraw'];
+const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'inspo'];
 // Work-mode (design architecture) kinds. Same store + same mention/tag graph
 // as the personal kinds above; only the surface (nav, home, create) differs.
 
@@ -1289,6 +1288,10 @@ function inspoThumb(p) {
     if (it.assetUrl) return { url: it.assetUrl };
     if (it.asset) return { asset: it.asset };
   }
+  // Bento-model pages keep items in the body; the excerpt keeps the first
+  // ~300 chars of it, which is enough to find the first image embed.
+  const m = String(p.excerpt || p.body || '').match(/!\[\[([^\]|]+\.(?:png|jpe?g|gif|webp|avif|svg))(?:\|[^\]]*)?\]\]/i);
+  if (m) return { asset: m[1] };
   return null;
 }
 function itemCount(p) {
@@ -1307,7 +1310,8 @@ function ListView_Board(pages, onOpen) {
           h('span', { className: 'board-card-when' }, fmtDate(p.updated))),
         h('div', { className: 'board-card-preview' },
           previewItems.length === 0
-            ? h('div', { className: 'board-card-empty' }, 'empty canvas')
+            ? h('div', { className: 'board-card-empty' },
+                /\.excalidraw\.md$/i.test(p.path || '') ? '✎ drawing' : 'empty canvas')
             : previewItems.map((it) => h('div', { className: 'board-card-mini board-card-mini-' + it.type },
                 it.type === 'image' && (it.assetUrl || it.asset)
                   ? (it.assetUrl
@@ -3335,7 +3339,169 @@ function V2PageView(pageId, onChange, onDeleted) {
   // Both boards support images now — canvas + inspo only differ visually (canvas
   // = neutral grid, inspo = warmer pink-tinted grid). Functionally identical.
   function renderCanvasBody() { return renderBoardBody({ withImages: true, kindLabel: 'canvas' }); }
-  function renderInspoBody()  { return renderBoardBody({ withImages: true, kindLabel: 'inspo'  }); }
+  // Inspo is a bento wall now, not a board: items live in the markdown body
+  // (image, caption, #tags, source url; `##` headings group them), so Obsidian
+  // renders the same page as images with captions. Geometry is gone entirely —
+  // a reference wall is about the pictures, not their coordinates.
+  function renderInspoBody() {
+    const I = window.SB_INSPO;
+    if (!I) return renderDefaultBody();          // bridge too old — degrade, don't break
+    const model = I.parse(page.body || '');
+    let activeTag = null;
+
+    const wrap = h('div', { className: 'page-body inspo-bento' });
+    const toolbar = h('div', { className: 'bento-toolbar' });
+    const gridWrap = h('div', { className: 'bento-groups' });
+    wrap.append(toolbar, gridWrap);
+
+    function save() {
+      page.body = I.serialize(model);
+      queueSave();
+    }
+
+    function allGroupNames() {
+      return model.groups.map((g) => g.name);
+    }
+
+    function renderToolbar() {
+      clear(toolbar);
+      // Tag filter strip — every tag on the page; click to filter, click again
+      // to clear.
+      const tags = I.tags(model);
+      if (tags.length) {
+        toolbar.appendChild(h('div', { className: 'bento-tagstrip' },
+          tags.map((t) => h('button', {
+            className: 'bento-tag' + (activeTag === t ? ' on' : ''),
+            onClick: () => { activeTag = activeTag === t ? null : t; paint(); },
+          }, '#' + t))));
+      }
+      const actions = h('div', { className: 'bento-actions' });
+      // Add an image: file picker → attachments/, then a fresh card.
+      const fileIn = h('input', { type: 'file', accept: 'image/*', style: { display: 'none' } });
+      fileIn.addEventListener('change', async () => {
+        const f = fileIn.files && fileIn.files[0];
+        if (!f) return;
+        try {
+          const { path } = await uploadAsset(f);
+          model.groups[0].items.unshift({ image: path, caption: '', tags: [], url: null });
+          save(); paint();
+        } catch (e) { alert('upload failed: ' + e.message); }
+      });
+      actions.appendChild(fileIn);
+      actions.appendChild(h('button', { className: 'btn-secondary', onClick: () => fileIn.click() }, '+ image'));
+      actions.appendChild(h('button', {
+        className: 'btn-secondary',
+        onClick: () => {
+          model.groups[0].items.unshift({ image: null, caption: '', tags: [], url: 'https://' });
+          save(); paint();
+        } }, '+ link'));
+      actions.appendChild(h('button', {
+        className: 'btn-secondary',
+        onClick: () => {
+          const name = prompt('group name');
+          if (!name || !name.trim()) return;
+          model.groups.push({ name: name.trim(), items: [] });
+          save(); paint();
+        } }, '+ group'));
+
+      // One-click migration for boards made under the old canvas model. An
+      // explicit button, not an adoption-write: nothing touches the file until
+      // the user asks.
+      const canvasItems = (page.meta && Array.isArray(page.meta.layout)) ? page.meta.layout : [];
+      const already = model.groups.some((g) => g.items.length);
+      if (canvasItems.length && !already) {
+        actions.appendChild(h('button', {
+          className: 'btn-primary',
+          onClick: () => {
+            model.groups[0].items.push(...I.fromCanvas(canvasItems));
+            save(); paint();
+          } }, `import ${canvasItems.length} items from the old board`));
+      }
+      toolbar.appendChild(actions);
+    }
+
+    function card(item, group) {
+      const el = h('div', { className: 'bento-card' });
+      if (item.image) {
+        el.appendChild(h('div', { className: 'bento-imgbox' }, vaultImage(item.image)));
+      } else if (item.url) {
+        const domain = (item.url.replace(/^https?:\/\//, '').split('/')[0] || '').slice(0, 40);
+        el.appendChild(h('a', {
+          className: 'bento-linkface', href: item.url, target: '_blank', rel: 'noopener',
+        }, '↗ ', domain || 'link'));
+      }
+      const capIn = h('input', {
+        className: 'bento-cap', placeholder: 'caption…', value: item.caption || '',
+        onInput: (e) => { item.caption = e.target.value; save(); },
+      });
+      const tagIn = h('input', {
+        className: 'bento-tags-in', placeholder: '#tags',
+        value: (item.tags || []).map((t) => '#' + t).join(' '),
+        onChange: (e) => {
+          item.tags = [...new Set(e.target.value.split(/\s+/)
+            .map((t) => t.replace(/^#/, '').trim()).filter(Boolean))];
+          save(); renderToolbar();
+        },
+      });
+      const urlIn = h('input', {
+        className: 'bento-url-in', placeholder: 'source url…', value: item.url || '',
+        onChange: (e) => { item.url = e.target.value.trim() || null; save(); },
+      });
+      // Group mover — a select of existing groups.
+      const sel = h('select', { className: 'bento-group-sel' },
+        allGroupNames().map((n) => h('option', {
+          value: n, selected: n === group.name ? 'selected' : undefined,
+        }, n || '(ungrouped)')));
+      sel.addEventListener('change', () => {
+        const to = model.groups.find((g) => g.name === sel.value);
+        if (!to || to === group) return;
+        group.items.splice(group.items.indexOf(item), 1);
+        to.items.unshift(item);
+        save(); paint();
+      });
+      const del = h('button', {
+        className: 'bento-del', title: 'remove',
+        onClick: () => {
+          group.items.splice(group.items.indexOf(item), 1);
+          save(); paint();
+        } }, '×');
+      el.appendChild(h('div', { className: 'bento-fields' }, capIn, tagIn, urlIn,
+        h('div', { className: 'bento-row' }, sel, del)));
+      if (item.url && item.image) {
+        el.appendChild(h('a', {
+          className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
+        }, '↗ source'));
+      }
+      return el;
+    }
+
+    function paint() {
+      renderToolbar();
+      clear(gridWrap);
+      for (const g of model.groups) {
+        const visible = g.items.filter((it) => !activeTag || (it.tags || []).includes(activeTag));
+        if (!g.items.length && !g.name) continue;         // hide an empty unnamed group
+        const sec = h('section', { className: 'bento-group' });
+        if (g.name) sec.appendChild(h('h3', { className: 'bento-group-h' }, g.name,
+          h('span', { className: 'bento-group-n' }, ' ' + visible.length)));
+        if (visible.length) {
+          sec.appendChild(h('div', { className: 'bento-grid' },
+            visible.map((it) => card(it, g))));
+        } else {
+          sec.appendChild(h('div', { className: 'bento-empty' },
+            activeTag ? 'nothing tagged #' + activeTag : 'empty — add an image or a link'));
+        }
+        gridWrap.appendChild(sec);
+      }
+      if (!model.groups.some((g) => g.items.length)) {
+        gridWrap.appendChild(h('div', { className: 'bento-empty bento-empty-page' },
+          'A reference wall. Add an image, paste a link, group what belongs together.'));
+      }
+    }
+
+    paint();
+    return wrap;
+  }
 
   function renderSnippetBody() {
     return h('div', { className: 'page-body snippet-body' },
@@ -4168,15 +4334,20 @@ function V2PageView(pageId, onChange, onDeleted) {
     let body, side, chat;
     let extraClass = '';
     if (page.kind === 'canvas') {
-      body = withBoardBody(renderCanvasBody());
+      // One kind, two file formats — same pattern as `note` chrome. A
+      // `.excalidraw.md` mounts the drawing editor; a `.canvas` board keeps
+      // the read-only board view.
+      if (page.meta && page.meta.excalidraw) {
+        body = renderExcalidrawBody();
+      } else {
+        body = withBoardBody(renderCanvasBody());
+      }
       side = null;                   // 6.13: no chat composer (SPEC §16)
       extraClass = ' canvas-grid';
-    } else if (page.kind === 'excalidraw') {
-      body = renderExcalidrawBody();
-      side = null;
-      extraClass = ' canvas-grid';
     } else if (page.kind === 'inspo') {
-      body = withBoardBody(renderInspoBody());
+      // No withBoardBody wrapper: the body IS the wall now, not a caption
+      // under a board.
+      body = renderInspoBody();
       side = null;                   // 6.13
       extraClass = ' canvas-grid inspo-grid';
     } else if (page.kind === 'note') {

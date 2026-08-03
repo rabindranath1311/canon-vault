@@ -36,10 +36,11 @@ export function extractInlineTags(body) {
 
 export function inferKind(path) {
   // The file format identifies itself, so the extension wins over the folder.
-  // Same reasoning as a bare `.canvas` below: a drawing written by Obsidian's
-  // Excalidraw plugin carries no `kind:` — its frontmatter is
-  // `excalidraw-plugin: parsed` — so there is nothing else to read it from.
-  if (isExcalidrawPath(path)) return "excalidraw";
+  // A drawing IS a canvas — one kind covers boards and drawings, the same way
+  // `note` covers bookmarks and articles; the renderer picks by file format.
+  // (An `.excalidraw.md` carries no `kind:` — its frontmatter is
+  // `excalidraw-plugin: parsed` — so there is nothing else to read it from.)
+  if (isExcalidrawPath(path)) return "canvas";
   const top = path.split("/")[0];
   return KIND_BY_FOLDER[top] || "note";
 }
@@ -454,13 +455,16 @@ export class Vault {
         // For a drawing the extension is authoritative: a stray `kind:` in the
         // frontmatter must not turn one into a note we would then render as
         // 300 characters of base64.
-        kind: isExcalidraw ? "excalidraw" : (fm.kind || inferKind(f.path)),
+        kind: isExcalidraw ? "canvas" : (fm.kind || inferKind(f.path)),
         path: f.path,
         title: fm.title || titleFromPath(f.path),
         tags: [...new Set([...fmTags, ...extractInlineTags(body)])],
         aliases: Array.isArray(fm.aliases) ? fm.aliases : fm.aliases ? [fm.aliases] : [],
         mentions: [...new Set([...String(body).matchAll(/!?\[\[([^\]|#]+)/g)].map((m) => m[1].trim()))],
         excerpt: excerptOf(unescapeUser(isExcalidraw ? stripExcalidrawData(body) : body)),
+        // Indexed so "bookmarks" can be a list without opening every note:
+        // a bookmark IS a note with a url, and the list must know which ones.
+        url: fm.url || null,
         updated: fm.updated || null,
         mtime: f.mtime,
         stamped,

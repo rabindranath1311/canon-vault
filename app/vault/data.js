@@ -31,19 +31,18 @@ const DEFAULT_LIMIT = 200;
  */
 export function noteChrome(page = {}) {
   const fm = page.frontmatter || page;
-  const url = fm.url || page.url;
+  const url = fm.url ?? page.url;
   const ogImage = fm.og_image || page.og_image;
   const body = String(page.body ?? fm.body ?? "").trim();
+  // A present-but-empty url is still a bookmark: it is how a new one is born,
+  // and it must open with a url field, not an article editor.
   if (url && ogImage) return "bookmark card";
-  if (url) return "link with source line";
+  if (url != null && url !== undefined) return "link with source line";
   const lines = body.split("\n").filter((l) => l.trim() !== "");
   if (lines.length > 0 && lines.every((l) => l.trimStart().startsWith(">"))) return "pull-quote";
   return "article";
 }
-const FOLDER_FOR = {
-  note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo",
-  excalidraw: "canvas",   // drawings sit beside boards; both are canvas work
-};
+const FOLDER_FOR = { note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo" };
 
 /**
  * JSON Canvas → the shape the board view reads (`meta.layout`).
@@ -162,6 +161,11 @@ function pageOut(entry, body) {
     slug: entry.path.split("/").pop().replace(/\.md$/, ""),
     kind: entry.kind,
     title: entry.title,
+    // noteChrome reads `page.url` when there is no frontmatter attached, so a
+    // page object that drops it can never render as a bookmark — which is
+    // exactly the bug that made bookmarks look unimplemented.
+    url: entry.url ?? (entry.frontmatter && entry.frontmatter.url) ?? null,
+    ...(entry.frontmatter && { frontmatter: entry.frontmatter }),
     created: entry.created || entry.updated || null,
     updated: entry.updated,
     tags: entry.tags || [],
@@ -192,7 +196,10 @@ export class Data {
 
   pages({ q = "", kind = "", tag = "", mention = "", limit = DEFAULT_LIMIT } = {}) {
     let items = this.v.list();
-    if (kind) items = items.filter((e) => e.kind === kind);
+    // `bookmark` is a view, not a storage kind: a note with a url. The file
+    // still says `kind: note`, so Obsidian and the convention see nothing new.
+    if (kind === "bookmark") items = items.filter((e) => e.kind === "note" && e.url != null);
+    else if (kind) items = items.filter((e) => e.kind === kind);
     if (tag) items = items.filter((e) => (e.tags || []).includes(tag));
     if (mention) {
       const needle = String(mention).toLowerCase();
@@ -248,6 +255,21 @@ export class Data {
       out.body = ex.backOfNote;
       out.bodyIsFull = true;
     }
+    // Bookmark chrome reads meta.url / meta.links / meta.og; they live in the
+    // frontmatter (the clipper writes og_* keys) and must be surfaced or the
+    // editor opens empty however much the file carries.
+    const fm = p.frontmatter || {};
+    if (fm.url != null) {
+      const og = fm.og_image ? {
+        url: fm.url, image: fm.og_image,
+        title: fm.og_title || null, description: fm.og_description || null,
+        site_name: fm.og_site_name || null,
+      } : null;
+      const links = Array.isArray(fm.links) && fm.links.length
+        ? fm.links.map((u, i) => ({ url: u, og: i === 0 ? og : null }))
+        : [{ url: fm.url, og }];
+      out.meta = { ...out.meta, url: fm.url, og, links };
+    }
     return out;
   }
 
@@ -260,7 +282,12 @@ export class Data {
 
   counts() {
     const counts = {};
-    for (const e of this.v.list()) counts[e.kind] = (counts[e.kind] || 0) + 1;
+    for (const e of this.v.list()) {
+      counts[e.kind] = (counts[e.kind] || 0) + 1;
+      // The bookmark view tallies separately; the note count keeps including
+      // them, since on disk that is what they are.
+      if (e.kind === "note" && e.url != null) counts.bookmark = (counts.bookmark || 0) + 1;
+    }
     return { counts };
   }
 
@@ -356,7 +383,15 @@ export class Data {
   }
 
   async createPage(body = {}) {
-    const kind = body.kind || "note";
+    let kind = body.kind || "note";
+    let extraFm = {};
+    if (kind === "bookmark") {
+      // Stored as the convention says: a note whose frontmatter carries `url`.
+      // The key is written even when empty so the page opens with bookmark
+      // chrome (a url field to fill in) instead of an article editor.
+      kind = "note";
+      extraFm = { url: body.url || "" };
+    }
     // An unknown kind used to fall through to `notes/` while still writing the
     // bogus `kind:` into the file — the Projects screen did exactly that and
     // produced `notes/Test Project.md` with `kind: project`, which CONVENTION's
@@ -376,7 +411,7 @@ export class Data {
     const r = await this.v.put({
       path: `${folder}/${stem}.md`,
       kind, title,
-      frontmatter: { kind, title, tags: body.tags || [], ...(aliases.length && { aliases }) },
+      frontmatter: { kind, title, tags: body.tags || [], ...(aliases.length && { aliases }), ...extraFm },
       body: body.body || "",
     });
     if (!r.ok) return r;
@@ -390,6 +425,20 @@ export class Data {
     const fm = { ...(cur.frontmatter || {}) };
     for (const k of ["title", "tags", "aliases", "url", "status"]) {
       if (k in patch) fm[k] = patch[k];
+    }
+    // The editor sends the whole page.meta on every save; the url and the link
+    // list are the parts that persist, into frontmatter Obsidian can read.
+    // (og_* keys are the clipper's — the app surfaces them but never writes
+    // them.) Dropping patch.meta silently was why a bookmark edited in the app
+    // reverted on reload.
+    if (patch.meta && typeof patch.meta === "object") {
+      if ("url" in patch.meta && !("url" in patch)) fm.url = patch.meta.url ?? "";
+      if (Array.isArray(patch.meta.links)) {
+        const urls = patch.meta.links.map((l) => l && l.url).filter(Boolean);
+        if (urls.length > 1) fm.links = urls;
+        else delete fm.links;
+        if (!("url" in patch)) fm.url = urls[0] ?? fm.url ?? "";
+      }
     }
     const r = await this.v.put({
       id, path: cur.path, frontmatter: fm,

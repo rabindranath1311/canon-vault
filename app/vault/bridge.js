@@ -11,6 +11,7 @@
 import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, WriterElection, PERSIST_KEY } from "./vault.js";
 import { Data, noteChrome, edgeGeometry } from "./data.js";
 import { parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
+import { parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout } from "./inspo.js";
 import * as links from "./links.js";
 import { scaffold } from "./scaffold.js";
 
@@ -141,6 +142,10 @@ async function build(handleVault) {
   window.SB_CHROME = noteChrome;   // 2.7      // 6.10: wikilink resolution for app.js
   window.SB_EDGE_GEOM = edgeGeometry;          // canvas edge curves, drawn by app.js
   window.SB_EXCALIDRAW = { parse: parseExcalidraw, serialize: serializeExcalidraw };
+  window.SB_INSPO = {
+    parse: parseInspoBody, serialize: serializeInspoBody,
+    tags: inspoTags, fromCanvas: itemsFromCanvasLayout,
+  };
   window.SB_VAULT = handleVault;
   // 6.6: the Obsidian vault name is the folder the user picked. Never a
   // constant — SPEC §14 forbids a hardcoded vault name anywhere.

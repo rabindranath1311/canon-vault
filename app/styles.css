@@ -1831,6 +1831,67 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   pointer-events: none;
   overflow: visible;
 }
+/* ─── Inspo bento wall ────────────────────────────────────────────────── */
+/* Masonry via CSS columns: cards keep their aspect, columns pack tight, and
+   no geometry is stored anywhere — order in the markdown is the layout. */
+.inspo-bento { display: flex; flex-direction: column; gap: 14px; }
+.bento-toolbar { display: flex; flex-direction: column; gap: 10px; }
+.bento-tagstrip { display: flex; flex-wrap: wrap; gap: 6px; }
+.bento-tag {
+  font-size: 12px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--muted); cursor: pointer;
+}
+.bento-tag.on { color: var(--fg); border-color: var(--fg); }
+.bento-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bento-groups { display: flex; flex-direction: column; gap: 22px; }
+.bento-group-h {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin: 0 0 10px;
+}
+.bento-group-n { color: var(--muted); opacity: .6; font-weight: 400; }
+.bento-grid { columns: 4 220px; column-gap: 12px; }
+.bento-card {
+  break-inside: avoid; margin: 0 0 12px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--paper); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.bento-imgbox img { display: block; width: 100%; height: auto; }
+.bento-linkface {
+  display: block; padding: 26px 14px; font-size: 14px;
+  color: var(--fg); text-decoration: none; word-break: break-all;
+  background: var(--paper-2);
+}
+.bento-fields { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+.bento-fields input, .bento-group-sel {
+  font-size: 12px; padding: 4px 6px; border-radius: 6px;
+  border: 1px solid transparent; background: transparent; color: var(--fg);
+  width: 100%;
+}
+.bento-fields input:focus, .bento-group-sel:focus {
+  border-color: var(--line); outline: none; background: var(--paper-2);
+}
+.bento-tags-in { color: var(--muted); }
+.bento-url-in { color: var(--muted); }
+.bento-row { display: flex; gap: 6px; align-items: center; }
+.bento-group-sel { flex: 1; }
+.bento-del {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 15px; cursor: pointer; padding: 2px 8px; border-radius: 6px;
+}
+.bento-del:hover { color: var(--fg); background: var(--paper-2); }
+.bento-src {
+  font-size: 11px; color: var(--muted); text-decoration: none;
+  padding: 0 8px 8px;
+}
+.bento-src:hover { color: var(--fg); }
+.bento-empty {
+  border: 1px dashed var(--line); border-radius: 10px;
+  padding: 26px; text-align: center; color: var(--muted); font-size: 13px;
+}
+.bento-empty-page { padding: 60px 26px; }
+
 /* ─── Excalidraw ──────────────────────────────────────────────────────── */
 /* The editor brings its own stylesheet (loaded on demand); these rules only
    give it a box to live in and match the app's chrome around it. */

@@ -14,7 +14,7 @@
 export const FIELD_ORDER = [
   "id", "kind", "title", "created", "updated",
   "tags", "aliases",
-  "url", "og_title", "og_description", "og_image", "og_site_name",
+  "url", "links", "og_title", "og_description", "og_image", "og_site_name",
   "author", "captured", "source", "status", "start_date",
   "parent", "children",
 ];
@@ -118,6 +118,10 @@ export function serialize(fm, body) {
   for (const key of FIELD_ORDER) {
     if (!(key in fm)) continue;
     const val = fm[key];
+    // `url` is the one key whose PRESENCE carries meaning: an empty url is
+    // what makes a page a bookmark-in-progress rather than an article. Every
+    // other empty value is noise and stays dropped.
+    if (val === "" && key === "url") { lines.push('url: ""'); continue; }
     if (val === null || val === undefined || val === "") continue;
     if (Array.isArray(val)) {
       if (!val.length) continue;

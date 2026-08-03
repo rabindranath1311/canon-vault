@@ -9,7 +9,7 @@
 //   * CACHE_VERSION versions the *cache itself*. `activate` deletes every cache
 //     that is not the current one, so caches.keys() is always exactly 1 and no
 //     deploy leaves orphans. Bump it when this file changes.
-const CACHE_VERSION = "v23";
+const CACHE_VERSION = "v24";
 const CACHE = `second-brain-${CACHE_VERSION}`;
 
 const SHELL = [
@@ -26,7 +26,7 @@ const SHELL = [
   "vault/data.js", "vault/bridge.js", "vault/links.js",
   "vault/dhash.js", "vault/images.js", "vault/scaffold.js",
   // bridge.js imports these on every boot, so they belong in the shell.
-  "vault/excalidraw.js", "vendor/lz-string.js",
+  "vault/excalidraw.js", "vault/inspo.js", "vendor/lz-string.js",
   "vendor/markdown-it.min.js",
   // vendor/excalidraw/* is deliberately NOT precached: it is ~8MB, and a vault
   // with no drawings must not pay for it. The fetch handler caches it on first

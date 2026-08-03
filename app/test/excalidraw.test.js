@@ -208,11 +208,11 @@ test("an empty scene serializes to something the plugin can open", () => {
 // go through the real Vault and Data.
 const drawing = serializeExcalidraw(SCENE, { backOfNote: "Notes on the board." });
 
-test("a .excalidraw.md is its own kind, from the extension", async () => {
+test("a .excalidraw.md is a canvas — a drawing is not a separate kind", async () => {
   const v = new Vault(new MemoryBackend({ "canvas/Board.excalidraw.md": drawing }));
   await v.buildIndex();
   const [e] = v.list();
-  assert.equal(e.kind, "excalidraw");
+  assert.equal(e.kind, "canvas");
   assert.equal(e.title, "Board", "the .excalidraw half must come off the title too");
 });
 
@@ -220,7 +220,13 @@ test("a stray kind: in the frontmatter cannot demote a drawing to a note", async
   const withKind = drawing.replace("excalidraw-plugin: parsed", "kind: note\nexcalidraw-plugin: parsed");
   const v = new Vault(new MemoryBackend({ "canvas/Mislabelled.excalidraw.md": withKind }));
   await v.buildIndex();
-  assert.equal(v.list()[0].kind, "excalidraw");
+  assert.equal(v.list()[0].kind, "canvas");
+});
+
+test("a drawing lives anywhere, not only in canvas/", async () => {
+  const v = new Vault(new MemoryBackend({ "notes/Sketch.excalidraw.md": drawing }));
+  await v.buildIndex();
+  assert.equal(v.list()[0].kind, "canvas");
 });
 
 test("the excerpt is the prose, never the base64 blob", async () => {
