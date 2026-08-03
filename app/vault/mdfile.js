@@ -17,6 +17,9 @@ export const FIELD_ORDER = [
   "url", "links", "og_title", "og_description", "og_image", "og_site_name",
   "author", "captured", "source", "status", "start_date",
   "parent", "children",
+  // The Obsidian Excalidraw plugin's marker. Written on drawings the app
+  // creates so the plugin recognises them as its own files.
+  "excalidraw-plugin",
 ];
 
 export const REQUIRED = ["id", "kind", "title", "created", "updated"];

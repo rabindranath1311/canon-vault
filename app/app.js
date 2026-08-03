@@ -3718,7 +3718,7 @@ function V2PageView(pageId, onChange, onDeleted) {
   // ── Project renderer (kind=project) ───────────────────────────────────
   // A project is a container. Its own body is the README. Everything else
   // that mentions this project shows up grouped by kind below.
-  function renderProjectBody() {
+  function renderProjectBody(projectName) {
     if (!page.meta) page.meta = {};
     const wrap = h('div', { className: 'page-body project-body' });
 
@@ -3790,8 +3790,15 @@ function V2PageView(pageId, onChange, onDeleted) {
       insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'INSIDE THIS PROJECT'));
       insideCard.appendChild(h('div', { className: 'sb-meta' }, 'loading…'));
       try {
+        // Folder membership is the primary truth — a project holds its files.
+        // Pages that merely *mention* the project are appended after, so the
+        // old mention-based members stay reachable rather than vanishing.
+        const inFolder = projectName ? SB.data().projectMembers(projectName).items : [];
+        const seen = new Set(inFolder.map((p) => p.id));
         const data = await SB.data().pages({ mention: projectId, limit: 500 });
-        insidePages = (data.items || []).filter((p) => p.id !== projectId);
+        const mentioned = (data.items || [])
+          .filter((p) => p.id !== projectId && !seen.has(p.id));
+        insidePages = [...inFolder, ...mentioned];
         renderInside();
       } catch (e) {
         clear(insideCard);
@@ -3813,8 +3820,9 @@ function V2PageView(pageId, onChange, onDeleted) {
         },
       },
         h('div', { className: 'pj-inside-card-hd' },
-          h('span', { className: 'pj-inside-glyph' }, kindIcon(m.kind)),
-          h('span', { className: 'pj-inside-kind' }, m.label || p.kind)),
+          h('span', { className: 'pj-inside-glyph' }, kindIcon(p.kind)),
+          h('span', { className: 'pj-inside-kind' },
+            /\.excalidraw\.md$/i.test(p.path || '') ? 'Drawing' : (m.label || p.kind))),
         h('div', { className: 'pj-inside-title' }, p.title || p.slug || '(untitled)'),
         p.body
           ? h('div', { className: 'pj-inside-snip' }, firstLineOf(p.body, 100))
@@ -3823,10 +3831,16 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     function renderInside() {
       clear(insideCard);
+      // Every kind the vault knows, plus a drawing — the whole point of a
+      // project is holding them all in one folder.
+      const CREATABLE = [...KIND_ORDER, 'drawing'];
       const addBar = h('div', { className: 'pj-add-bar' },
         h('span', { className: 'pj-add-label' }, '+ create inside this project:'),
-        ...KIND_ORDER.map((k) => {
-          const meta = KIND_META[k] || {};
+        ...CREATABLE.map((k) => {
+          const meta = k === 'drawing'
+            ? { label: 'Drawing', glyph: '✎', color: 'var(--k-canvas)',
+                hint: 'A freehand Excalidraw drawing inside this project.' }
+            : (KIND_META[k] || {});
           return h('button', {
             className: 'pj-add-btn',
             title: meta.hint || ('Add a new ' + k),
@@ -3835,7 +3849,7 @@ function V2PageView(pageId, onChange, onDeleted) {
               try {
                 const p = await SB.data().createPage({
                   kind: k, title: '', body: '',
-                  mentions: [projectId],
+                  project: projectName,
                 });
                 if (!p || !p.id) throw new Error('server returned no page id — ' + JSON.stringify(p).slice(0, 180));
                 invalidatePageIndex();
@@ -4333,7 +4347,17 @@ function V2PageView(pageId, onChange, onDeleted) {
     // Dispatch body + side per kind
     let body, side, chat;
     let extraClass = '';
-    if (page.kind === 'canvas') {
+    // A project's folder note IS the project screen. Detected by path — the
+    // file says `kind: note` (SPEC: project is a folder, not a kind), so
+    // dispatching on kind alone sent every project to the plain text editor,
+    // which made a container look like a note.
+    const _pj = /^projects\/([^/]+)\/([^/]+)\.md$/.exec(page.path || '');
+    const isProjectNote = !!(_pj && _pj[1] === _pj[2]);
+    if (isProjectNote) {
+      body = renderProjectBody(_pj[1]);
+      side = null;
+      extraClass = ' project-grid';
+    } else if (page.kind === 'canvas') {
       // One kind, two file formats — same pattern as `note` chrome. A
       // `.excalidraw.md` mounts the drawing editor; a `.canvas` board keeps
       // the read-only board view.

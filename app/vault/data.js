@@ -18,7 +18,7 @@
 
 import { computeDashboard } from "./dashboard.js";
 import { listImages, filterImages } from "./images.js";
-import { isExcalidrawPath, parseExcalidraw } from "./excalidraw.js";
+import { isExcalidrawPath, parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
 
 const DEFAULT_LIMIT = 200;
 
@@ -392,11 +392,24 @@ export class Data {
       kind = "note";
       extraFm = { url: body.url || "" };
     }
+    const isDrawing = kind === "drawing";
+    if (isDrawing) {
+      // A drawing is a canvas in the plugin's own file format. The marker key
+      // is what makes Obsidian's Excalidraw plugin open it as a drawing.
+      kind = "canvas";
+      extraFm = { "excalidraw-plugin": "parsed" };
+    }
+    // A project is a folder: pass `project` and the page files into it instead
+    // of the kind's home folder — this is what lets one project hold notes,
+    // bookmarks, boards, drawings and walls together.
+    const projectStem = body.project
+      ? String(body.project).replace(/[/\\:*?"<>|]/g, " ").replace(/\s+/g, " ").trim()
+      : null;
     // An unknown kind used to fall through to `notes/` while still writing the
     // bogus `kind:` into the file — the Projects screen did exactly that and
     // produced `notes/Test Project.md` with `kind: project`, which CONVENTION's
     // four-kind vocabulary does not admit. Refuse instead of mis-filing.
-    const folder = FOLDER_FOR[kind];
+    const folder = projectStem ? `projects/${projectStem}` : FOLDER_FOR[kind];
     if (!folder) {
       return { ok: false, reason: "unknown-kind",
                message: `no such kind: ${kind} (expected ${Object.keys(FOLDER_FOR).join(", ")})` };
@@ -408,15 +421,41 @@ export class Data {
     // matches basename then aliases and never reads `title:`, so without this
     // `[[Slash/Colon: "Quote"]]` — the obvious way to link the page — is dead.
     const aliases = [...new Set([...(body.aliases || []), ...(stem === title ? [] : [title])])];
+    const ext = isDrawing ? ".excalidraw.md" : ".md";
+    // Two quick "Untitled" creates must not share a path — put() would treat
+    // the second as an edit of the first and overwrite it.
+    let finalStem = stem;
+    for (let n = 2; this.v.byPath.has(`${folder}/${finalStem}${ext}`); n++) {
+      finalStem = `${stem} ${n}`;
+    }
+    // A new drawing's body is the plugin block with a blank scene — the
+    // frontmatter half is the vault's to write, so it is stripped off here.
+    const pageBody = isDrawing
+      ? serializeExcalidraw(null).replace(/^---\n[\s\S]*?\n---\n/, "")
+      : (body.body || "");
     const r = await this.v.put({
-      path: `${folder}/${stem}.md`,
+      path: `${folder}/${finalStem}${ext}`,
       kind, title,
       frontmatter: { kind, title, tags: body.tags || [], ...(aliases.length && { aliases }), ...extraFm },
-      body: body.body || "",
+      body: pageBody,
     });
     if (!r.ok) return r;
     await this.v.buildIndex();
     return this.page(r.id);
+  }
+
+  /**
+   * The pages inside `projects/<name>/`, minus the folder note itself.
+   * Folder membership IS project membership — that is what a project is.
+   */
+  projectMembers(name) {
+    const prefix = `projects/${name}/`;
+    const notePath = `${prefix}${name}.md`;
+    const items = this.v.list()
+      .filter((e) => e.path.startsWith(prefix) && e.path !== notePath)
+      .map((e) => pageOut(e))
+      .sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || "")));
+    return { items, count: items.length };
   }
 
   async updatePage(id, patch = {}) {
