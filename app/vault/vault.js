@@ -8,6 +8,7 @@
 
 import { serialize, parse, escapeUser, unescapeUser, REQUIRED } from "./mdfile.js";
 import { isExcalidrawPath, stripExcalidrawData } from "./excalidraw.js";
+import { basenameOf } from "./links.js";
 
 export const IGNORED_DIRS = [".git", ".obsidian", ".trash", ".history"];
 export const KIND_BY_FOLDER = {
@@ -489,12 +490,28 @@ export class Vault {
       this._mtimes.set(f.path, f.mtime);
     }
 
-    // duplicate titles (SPEC §7)
+    // Duplicate filenames. This is the collision that actually costs something:
+    // Obsidian resolves `[[Name]]` by basename, so two files sharing one — in
+    // any two folders, in either app — make every link to that name ambiguous.
+    const byBase = new Map();
+    for (const e of nextIndex.values()) {
+      const base = basenameOf(e.path);
+      const k = base.toLowerCase();
+      if (byBase.has(k)) {
+        this.warnings.push(
+          `duplicate filename "${base}": ${byBase.get(k)} and ${e.path} — [[${base}]] is ambiguous`);
+      } else byBase.set(k, e.path);
+    }
+
+    // duplicate titles (SPEC §7) — cosmetic by comparison, and reported only
+    // when the filenames differ, so one collision is never two warnings.
     const byTitle = new Map();
     for (const e of nextIndex.values()) {
       const k = (e.title || "").toLowerCase();
-      if (byTitle.has(k)) this.warnings.push(`duplicate title "${e.title}": ${byTitle.get(k)} and ${e.path}`);
-      else byTitle.set(k, e.path);
+      const first = byTitle.get(k);
+      if (first === undefined) { byTitle.set(k, e.path); continue; }
+      if (basenameOf(first).toLowerCase() === basenameOf(e.path).toLowerCase()) continue;
+      this.warnings.push(`duplicate title "${e.title}": ${first} and ${e.path}`);
     }
 
     for (const p of this.byPath.keys()) if (!nextByPath.has(p)) this._mtimes.delete(p);
@@ -543,13 +560,24 @@ export class Vault {
     // can hand back a different file than the one being written — and then the
     // conflict check compares against the wrong `updated` and silently passes.
     const entry = (page.path && this.byPath.get(page.path)) || this.index.get(page.id);
-    const path = page.path || entry?.path;
-    if (!path) return { ok: false, reason: "no-path" };
+    const resolved = page.path || entry?.path;
+    if (!resolved) return { ok: false, reason: "no-path" };
 
     if (entry?.unparseable) {
       return { ok: false, reason: "unparseable",
                message: `refusing to write over a file we could not parse: ${entry.unparseable}` };
     }
+
+    // 5.15 — a bare `.canvas` gains its `.md` on the first write, exactly as the
+    // index promises. Everything below serializes frontmatter + body, which is
+    // not what a JSON Canvas holds: writing it *to* the `.canvas` replaced the
+    // user's nodes and edges with a YAML header, and the geometry that prompted
+    // the save was discarded in the same breath. Obsidian owns that file; we add
+    // the sibling beside it and leave the JSON untouched. `get()` already reads
+    // the pair, and rename() / trash() already move them together, so this is
+    // the shape the rest of the vault was written for.
+    const bare = resolved.endsWith(".canvas");
+    const path = bare ? resolved.replace(/\.canvas$/, ".md") : resolved;
 
     // 5.19 — conflict check FIRST, so a refused write leaves no history.
     const onDisk = await this.be.stat(path);
@@ -595,7 +623,10 @@ export class Vault {
 
     // 5.14 — lazy stamping: exactly id, kind, created on first write, nothing else.
     const fm = { ...(page.frontmatter || {}) };
-    if (!fm.id) fm.id = page.id && !String(page.id).startsWith("path:") ? page.id : this.newId();
+    // `path:` and `canvas:` are both synthetic ids the index minted for a file
+    // that carried none. Neither is a ULID, so neither may reach disk.
+    const synthetic = (v) => /^(path|canvas):/.test(String(v));
+    if (!fm.id) fm.id = page.id && !synthetic(page.id) ? page.id : this.newId();
     if (!fm.kind) fm.kind = page.kind || inferKind(path);
     if (!fm.created) fm.created = this.now();
     if (!fm.title) fm.title = page.title || path.split("/").pop().replace(/\.md$/, "");
@@ -620,12 +651,56 @@ export class Vault {
     // refuse. Deliberately NOT `_mtimes`: that map is what buildIndex uses to
     // decide an entry can be reused unparsed, so seeding it here would make the
     // rebuild skip the file and serve back the values we just replaced.
+    // Not for the bare case: `entry` still describes the `.canvas`, and stamping
+    // the sibling's mtime onto it would make the next rebuild misjudge the JSON.
+    // The caller rebuilds the index straight after, which is what picks up the
+    // new `.md` and retires the synthetic `canvas:` entry.
     const after = await this.be.stat(path);
-    if (after && entry) {
+    if (after && entry && !bare) {
       entry.mtime = after.mtime;
       entry.updated = fm.updated;
     }
-    return { ok: true, path, id: fm.id, bytes: text.length };
+    return { ok: true, path, id: fm.id, bytes: text.length, ...(bare && { adopted: resolved }) };
+  }
+
+  /**
+   * Move a page to a new path, taking its `.canvas` sibling along.
+   *
+   * The index is updated in place because the caller usually writes again right
+   * after: FSA has no rename, so `move` is a copy-and-delete and the file at the
+   * new path carries a *new* mtime that the 5.19 conflict gate would otherwise
+   * read as somebody else's edit and refuse. `_mtimes` is deliberately dropped
+   * rather than reseeded, so the next `buildIndex` rereads the file instead of
+   * trusting a cached entry whose title we may just have changed.
+   *
+   * Refuses rather than overwrites: a name already on disk belongs to somebody.
+   */
+  async rename(id, toPath) {
+    if (!this.election.isWriter) {
+      return { ok: false, reason: "not-writer", message: "another tab holds the write lock" };
+    }
+    const e = this.index.get(id);
+    if (!e) return { ok: false, reason: "unknown-id" };
+    const from = e.path;
+    if (toPath === from) return { ok: true, path: from, from };
+    if (await this.be.exists(toPath)) return { ok: false, reason: "exists", path: toPath };
+
+    const sib = from.endsWith(".md") ? from.replace(/\.md$/, ".canvas") : null;
+    const toSib = sib && toPath.endsWith(".md") ? toPath.replace(/\.md$/, ".canvas") : null;
+    const hasSib = sib ? await this.be.exists(sib) : false;
+    if (hasSib && !toSib) return { ok: false, reason: "would-orphan-canvas", path: sib };
+    if (hasSib && await this.be.exists(toSib)) return { ok: false, reason: "exists", path: toSib };
+
+    await this.be.move(from, toPath);
+    if (hasSib) await this.be.move(sib, toSib);
+
+    this.byPath.delete(from);
+    this._mtimes.delete(from);
+    e.path = toPath;
+    this.byPath.set(toPath, e);
+    const after = await this.be.stat(toPath);
+    if (after) e.mtime = after.mtime;
+    return { ok: true, path: toPath, from, ...(hasSib && { canvas: toSib }) };
   }
 
   // 5.7 / 5.18

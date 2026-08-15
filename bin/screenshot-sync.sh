@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Second Brain — screenshot watcher.
+# Canon Vault — screenshot watcher.
 # launchd runs this whenever the screenshot folder changes; new images are
 # copied into the vault's attachments/, where the app's inspo grid picks up
 # every image in the vault without needing a page for each one.

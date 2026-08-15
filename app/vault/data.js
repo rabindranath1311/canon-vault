@@ -22,6 +22,118 @@ import { isExcalidrawPath, parseExcalidraw, serializeExcalidraw } from "./excali
 
 const DEFAULT_LIMIT = 200;
 
+// ── filenames ───────────────────────────────────────────────────────────────
+// CONVENTION rule 3: the filename carries the title, because Obsidian resolves
+// `[[Link]]` by filename and never reads `title:`. Everything here exists to
+// keep that mapping honest — a name that is unique across the vault, and a file
+// that follows its title instead of answering to whatever it was called at
+// birth.
+
+/** The page extensions, longest first so `.excalidraw.md` wins over `.md`. */
+const PAGE_EXT = /(\.excalidraw\.md|\.md|\.canvas)$/i;
+
+/** The title-derived part of a filename: `canvas/A.excalidraw.md` → `A`. */
+export function pageStem(path) {
+  return String(path).split("/").pop().replace(PAGE_EXT, "");
+}
+
+/**
+ * A title as a filename. Leading dots go too: the index ignores dotfiles, so a
+ * page named `.env notes` would be written and then never seen again.
+ */
+export function stemFor(title) {
+  return String(title || "")
+    .replace(/[/\\:*?"<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^\.+/, "")
+    .trim();
+}
+
+/**
+ * Every page stem in the vault, lowercased, optionally excluding one path.
+ *
+ * Wikilinks resolve by filename across the **whole** vault, so a name is taken
+ * by a file in any folder. Checking one folder was why an app-made
+ * `topics/Untitled.md` could land beside an Obsidian-made `Untitled.canvas`
+ * and make `[[Untitled]]` ambiguous the moment both existed.
+ */
+function takenStems(v, except = null) {
+  const out = new Set();
+  for (const p of v.byPath.keys()) {
+    if (p === except) continue;
+    out.add(pageStem(p).toLowerCase());
+  }
+  return out;
+}
+
+/** `stem`, or the first `stem 2`, `stem 3`, … that no other page holds. */
+function freeStem(v, stem, except = null) {
+  const taken = takenStems(v, except);
+  let out = stem;
+  for (let n = 2; taken.has(out.toLowerCase()); n++) out = `${stem} ${n}`;
+  return out;
+}
+
+/**
+ * A filename nobody chose: this app's defaults, past and present, and the
+ * `Untitled` Obsidian still makes. Always eligible to be renamed, however far
+ * the title has drifted from it — the title is saved on a timer, so a half-typed
+ * one can collide, be refused, and leave the file with a name that no longer
+ * matches anything. Without this the next save would read that file as
+ * deliberately named and it would keep the default forever, which is the whole
+ * complaint.
+ */
+const DEFAULT_STEM =
+  /^(?:Untitled|(?:Note|Topic|Board|Drawing|Wall|Bookmark|Project) \d{4}-\d{2}-\d{2})(?: \d+)?$/i;
+
+/**
+ * Where a page belongs once its title changes, or null to leave it where it is.
+ *
+ * A file whose name still matches its *old* title was named by that title, so
+ * it should follow it — without this, a page created before it had a name
+ * answers to `[[Note 2026-08-15]]` for the rest of its life, and the pool of
+ * default-named files only ever grows. A file the user named deliberately (one
+ * whose name and title already differ) is never moved.
+ *
+ * Inbound links survive as an alias instead of by rewriting other people's
+ * files: Obsidian matches basename, then aliases, so `[[Old Name]]` still lands
+ * here. That is the same trick CONVENTION rule 3 already uses when a title
+ * cannot be spelled as a filename.
+ */
+export function renamePlan(v, cur, newTitle) {
+  const low = (s) => String(s).toLowerCase();
+  const oldTitle = String(cur.title || "").trim();
+  const next = String(newTitle || "").trim();
+  if (!next || next === oldTitle) return null;
+
+  const name = String(cur.path).split("/").pop();
+  const oldStem = pageStem(cur.path);
+  const derived = low(oldStem) === low(stemFor(oldTitle)) || DEFAULT_STEM.test(oldStem);
+  if (!derived) return null;                                     // named deliberately
+
+  const newStem = stemFor(next);
+  if (!newStem || low(newStem) === low(oldStem)) return null;
+  // Taken elsewhere: stay put rather than pick `Title 2`, which would be a
+  // filename the user never asked for. Rule 3's alias already carries the title.
+  if (takenStems(v, cur.path).has(low(newStem))) return null;
+
+  const dir = cur.path.slice(0, cur.path.length - name.length);
+  const linked = v.list().some((e) => e.path !== cur.path && (e.mentions || [])
+    .some((m) => low(String(m).replace(PAGE_EXT, "").trim()) === low(oldStem)));
+  return { to: `${dir}${newStem}${name.slice(oldStem.length)}`, alias: linked ? oldStem : null };
+}
+
+/**
+ * What a blank page is called. `Untitled` was the same word in every folder and
+ * in Obsidian too, so the second one was always a collision; naming a page for
+ * its kind and the day makes the default distinct on its own — and the file is
+ * renamed the moment a real title is typed.
+ */
+const DEFAULT_LABEL = {
+  note: "Note", topic: "Topic", canvas: "Board",
+  drawing: "Drawing", inspo: "Wall", bookmark: "Bookmark",
+};
+
 /**
  * Task 2.7 / SPEC §5: how a `note` renders is decided by its FRONTMATTER, not
  * by a subtype. This is the whole reason bookmark, snippet and markdown could
@@ -384,6 +496,9 @@ export class Data {
 
   async createPage(body = {}) {
     let kind = body.kind || "note";
+    // Held before the remapping below, because the *asked-for* kind is what
+    // names a blank page — a bookmark stored as a note is still "Bookmark".
+    const requested = kind;
     let extraFm = {};
     if (kind === "bookmark") {
       // Stored as the convention says: a note whose frontmatter carries `url`.
@@ -414,20 +529,20 @@ export class Data {
       return { ok: false, reason: "unknown-kind",
                message: `no such kind: ${kind} (expected ${Object.keys(FOLDER_FOR).join(", ")})` };
     }
-    const title = (body.title || "Untitled").trim();
-    const stem = title.replace(/[/\\:*?"<>|]/g, " ").replace(/\s+/g, " ").trim() || "Untitled";
+    const fallback = `${DEFAULT_LABEL[requested] || "Note"} ${this.v.now().slice(0, 10)}`;
+    const title = String(body.title || "").trim() || fallback;
+    const stem = stemFor(title) || fallback;
     // CONVENTION rule 3: when the filename cannot equal the title, the true
     // title must go in `aliases` or inbound links stop resolving. Obsidian
     // matches basename then aliases and never reads `title:`, so without this
     // `[[Slash/Colon: "Quote"]]` — the obvious way to link the page — is dead.
     const aliases = [...new Set([...(body.aliases || []), ...(stem === title ? [] : [title])])];
     const ext = isDrawing ? ".excalidraw.md" : ".md";
-    // Two quick "Untitled" creates must not share a path — put() would treat
-    // the second as an edit of the first and overwrite it.
-    let finalStem = stem;
-    for (let n = 2; this.v.byPath.has(`${folder}/${finalStem}${ext}`); n++) {
-      finalStem = `${stem} ${n}`;
-    }
+    // Two quick blank creates must not share a name — put() would treat the
+    // second as an edit of the first and overwrite it — and a name taken in
+    // *another* folder is taken all the same, because that is how `[[Link]]`
+    // resolves.
+    const finalStem = freeStem(this.v, stem);
     // A new drawing's body is the plugin block with a blank scene — the
     // frontmatter half is the vault's to write, so it is stripped off here.
     const pageBody = isDrawing
@@ -479,14 +594,26 @@ export class Data {
         if (!("url" in patch)) fm.url = urls[0] ?? fm.url ?? "";
       }
     }
+    // Decided before the write, so the alias that keeps inbound links alive
+    // goes to disk in the same save as the new title.
+    const plan = "title" in patch ? renamePlan(this.v, cur, fm.title) : null;
+    if (plan?.alias) {
+      const had = Array.isArray(fm.aliases) ? fm.aliases : fm.aliases ? [fm.aliases] : [];
+      fm.aliases = [...new Set([...had, plan.alias])];
+    }
     const r = await this.v.put({
       id, path: cur.path, frontmatter: fm,
       body: "body" in patch ? patch.body : cur.body,
       force: patch.force,
     });
     if (!r.ok) return r;
+    // Move only after the write is safely on disk — the conflict gate has to
+    // judge the file where it found it. Keyed by the id the index holds now,
+    // not `r.id`: put() stamps a fresh one onto a file adopted without it, and
+    // the index does not learn it until the rebuild below.
+    if (plan) await this.v.rename(id, plan.to);
     await this.v.buildIndex();
-    return this.page(id);
+    return this.page(r.id ?? id);
   }
 
   /**
@@ -525,8 +652,9 @@ export class Data {
 
   /** Create `projects/<Title>/<Title>.md` — the folder note that makes it a project. */
   async createProject(title) {
-    const t = String(title || "Untitled").trim() || "Untitled";
-    const stem = t.replace(/[/\\:*?"<>|]/g, " ").replace(/\s+/g, " ").trim() || "Untitled";
+    const fallback = `Project ${this.v.now().slice(0, 10)}`;
+    const t = String(title || "").trim() || fallback;
+    const stem = stemFor(t) || fallback;
     const aliases = stem === t ? [] : [t];
     const r = await this.v.put({
       path: `projects/${stem}/${stem}.md`,

@@ -1,8 +1,12 @@
 /* Canon Vault — terminal/brutalist research-lab UI, wired to the real vault.
-   Served by the FastAPI backend (server/secondbrain). All data is live:
-   /api/overview, /api/activity, /api/category, /api/page, /api/graph,
-   POST /api/capture, plus /chat (Ask) and /search (⌘K). No mock content —
-   sparse vault → honest empty states. Zero deps, no build step. */
+
+   Screens and rendering only. There is no backend: every value on screen comes
+   from app/vault/, which reads the folder the user picked through the File
+   System Access API. `fetch()` to an origin appears zero times in this file and
+   must stay that way — see CONTRIBUTING.md.
+
+   No mock content — a sparse vault renders honest empty states.
+   Zero deps, no build step. */
 
 'use strict';
 
@@ -471,6 +475,11 @@ async function fetchLinkPreview(url) {
    wrapper via innerHTML because h() has no SVG namespace support. Icons
    inherit `currentColor` and size via font-size (1em). */
 const LUCIDE = {
+  'panel-left-close': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>',
+  'panel-left-open':  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
+  'download':    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  'braces':      '<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>',
+  'trash-2':     '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
   'home':        '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
   'files':       '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v9a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
   'message-circle': '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -506,7 +515,7 @@ function icon(name, cls) {
 
 const KIND_META = {
   'note':     { label: 'Note',     icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'Anything read as prose. A bookmark, a quote, an article — the chrome follows the frontmatter.' },
-  'canvas':   { label: 'Canvas',   icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A board for pasted links, text, images. Talk to the AI about everything on it.' },
+  'canvas':   { label: 'Canvas',   icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A board of pasted links, text and images. Arranged in Obsidian; rendered read-only here.' },
   'topic':    { label: 'Topic',    icon: 'pilcrow', glyph: '¶', color: 'var(--k-topic)',   hint: 'A text page for a subject you want to think through.' },
   'markdown': { label: 'Markdown', icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'A rendered markdown article — section headers, pulled quotes, related, contradicts. Beautiful long-form.' },
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
@@ -653,13 +662,27 @@ function decorateMentions(rootEl) {
    request just 404s and every image node renders blank. Resolve it the same
    way `renderVaultEmbed` does — read the bytes, mint an object URL, and hand
    it to the same revocation bookkeeping. */
+/* An object URL minted from a typeless Blob works for PNG and JPEG because the
+   browser sniffs the magic bytes — and fails silently for SVG, which has none
+   worth sniffing and is refused as an <img> source without an explicit type.
+   So the type comes from the extension. */
+const MIME_FOR = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+  webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml',
+};
+function imageBlob(bytes, path) {
+  const ext = String(path).split('.').pop().toLowerCase();
+  const type = MIME_FOR[ext];
+  return type ? new Blob([bytes], { type }) : new Blob([bytes]);
+}
+
 function vaultImage(assetPath, props = {}) {
   const img = h('img', { loading: 'lazy', alt: '', ...props });
   const vault = window.SB_VAULT;
   if (!vault || !assetPath) return img;
   vault.readBlob(assetPath)
     .then((bytes) => {
-      const url = URL.createObjectURL(new Blob([bytes]));
+      const url = URL.createObjectURL(imageBlob(bytes, assetPath));
       img.src = url;
       img.dataset.objectUrl = url;
       registerObjectUrl(img, url);
@@ -679,7 +702,7 @@ function renderVaultEmbed(target) {
   if (vault) {
     vault.readBlob('attachments/' + target)
       .then((bytes) => {
-        const url = URL.createObjectURL(new Blob([bytes]));
+        const url = URL.createObjectURL(imageBlob(bytes, target));
         img.src = url;
         img.dataset.objectUrl = url;
         registerObjectUrl(img, url);
@@ -770,10 +793,8 @@ function TabBarSearch() {
       const askHint = (input.value || '').trim();
       results.appendChild(h('div', { className: 'tab-search-empty' },
         askHint
-          ? h('div', null, 'No page matches "',
-              h('b', null, askHint),
-              '". ', h('span', { className: 'kbd' }, 'Enter'), ' to ask the AI.')
-          : 'Type to search pages, or ask a question.'));
+          ? h('div', null, 'No page matches "', h('b', null, askHint), '".')
+          : 'Type to search pages by title, body or tag.'));
       return;
     }
     items.forEach((p, i) => {
@@ -857,7 +878,7 @@ function TabBar(tabs, activeTabId, onSwitch, onClose, onNew) {
   return h('div', { className: 'tabbar' },
     h('div', { className: 'tab-brand' },
       h('span', { className: 'glyph' }, '◐'),
-      h('span', null, 'SECOND BRAIN'),
+      h('span', null, 'Canon Vault'),
       h('small', null, 'v0.6')),
     TabBarSearch(),
     h('div', { className: 'tabs', role: 'tablist' },
@@ -911,7 +932,7 @@ function SearchPanel(onClose) {
     clear(resultsBox);
     if (!items.length) {
       resultsBox.appendChild(h('div', { className: 'search-empty' },
-        'No page matches. Press Enter to ask the AI instead.'));
+        'No page matches.'));
       return;
     }
     items.forEach((p) => {
@@ -971,7 +992,15 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
   const groupLabel = (g) => g.group === 'kinds'
     ? `by kind — ${total} pages`
     : g.label;
+  // Drag handle on the sidebar's right edge, and a collapse toggle. Same
+  // shape as the activity log's resizer so both rails behave identically.
+  const resize = h('div', { className: 'nav-resize', title: 'Drag to resize' });
+  resize.addEventListener('pointerdown', (e) => startNavResize(e, resize));
+  resize.addEventListener('dblclick', () => { app.navW = 244; applyNavW();
+    try { localStorage.setItem('sb.navW', '244'); } catch (_) {} });
+
   return h('div', { className: 'nav' },
+    resize,
     // ── top: Create button (search lives in the top tab bar now) ────────
     // Work mode is project-first: this makes a new project (the container),
     // not a lone design page.
@@ -982,7 +1011,13 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
         title: 'Create new page (n)',
       },
         h('span', { className: 'btn-create-plus' }, icon('plus')),
-        h('span', null, 'Create new'))),
+        h('span', { className: 'nav-lbl' }, 'Create new')),
+      h('button', {
+        className: 'nav-collapse',
+        title: app.navCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+        'aria-label': app.navCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+        onClick: () => { setNavCollapsed(!app.navCollapsed); render(); },
+      }, icon(app.navCollapsed ? 'panel-left-open' : 'panel-left-close'))),
 
     // ── nav groups (scrollable) ─────────────────────────────────────────
     h('div', { className: 'nav-scroll' },
@@ -1004,7 +1039,7 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
           },
             h('span', { className: 'nav-icon' + (meta ? ' kind-glyph' : '') },
               icon(it.icon || (meta && meta.icon) || 'file-text')),
-            h('span', null, it.label),
+            h('span', { className: 'nav-lbl' }, it.label),
             it.href ? h('span', { className: 'ct' }, '↗') : h('span', { className: 'ct' }, c != null ? String(c) : ''));
         })))),
 
@@ -1020,8 +1055,8 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
         className: 'nav-gear', onClick: onSettingsToggle, title: 'Settings / tweak',
         'aria-expanded': String(!!app.settingsOpen),
       },
-        h('span', null, icon('settings')),
-        h('span', null, 'Settings'))));
+        h('span', { className: 'nav-icon' }, icon('settings')),
+        h('span', { className: 'nav-lbl' }, 'Settings'))));
 }
 
 function startLogResize(e, handle) {
@@ -1034,6 +1069,7 @@ function startLogResize(e, handle) {
     const w = Math.max(min, Math.min(max, window.innerWidth - ev.clientX));
     app.logW = w;
     applyLogW();
+  applyNavW();
   };
   const onUp = () => {
     handle.classList.remove('dragging');
@@ -1089,7 +1125,7 @@ function CreateModal(open, onPick, onClose) {
   return h('div', { className: 'modal-bg', onClick: (e) => { if (e.target.classList.contains('modal-bg')) onClose(); } },
     h('div', { className: 'modal' },
       h('div', { className: 'modal-hd' },
-        h('b', null, false ? 'CREATE DESIGN PAGE' : 'CREATE NEW'),
+        h('b', null, false ? 'Create design page' : 'Create new'),
         h('button', { className: 'sb-twk-x', onClick: onClose }, '✕')),
       h('div', { className: 'modal-body' },
         h('div', { className: 'kind-grid' },
@@ -1142,7 +1178,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
 
       // ── Current obsessions ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'CURRENT OBSESSIONS'),
+        h('span', null, 'Current obsessions'),
         h('span', { className: 'sect-hd-c' }, '// detected by tag clustering')),
       obs.length === 0
         ? EmptyState('No themes detected yet.',
@@ -1152,18 +1188,18 @@ function V2Home(state, onOpen, onCreate, onKind) {
 
       // ── Recent captures ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'RECENT PAGES'),
+        h('span', null, 'Recent pages'),
         h('span', { className: 'sect-hd-c' }, '// last 72h')),
       recent.length === 0
         ? EmptyState('No recent pages.', 'Create one above.')
         : h('div', { className: 'pages-table recent-table' },
             h('div', { className: 'pages-th recent-th' },
               h('span', null, 'ID'),
-              h('span', null, 'KIND'),
-              h('span', null, 'TITLE'),
-              h('span', null, 'VIA'),
-              h('span', null, 'TAGS'),
-              h('span', null, 'WHEN')),
+              h('span', null, 'Kind'),
+              h('span', null, 'Title'),
+              h('span', null, 'Via'),
+              h('span', null, 'Tags'),
+              h('span', null, 'When')),
             recent.map((r) => h('div', {
               className: 'pages-row recent-row', onClick: () => onOpen(r.id),
             },
@@ -1177,7 +1213,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
 
       // ── Activity buckets (replaces v1's "memory tiers") ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'ACTIVITY BUCKETS'),
+        h('span', null, 'Activity buckets'),
         h('span', { className: 'sect-hd-c' }, '// auto-cohorted by recency')),
       h('div', { className: 'tier-grid' },
         buckets.map((b) => bucketCard(b))),
@@ -1395,10 +1431,10 @@ function ListView_Bento(pages, onOpen) {
 function ListView_Table(pages, onOpen) {
   return h('div', { className: 'pages-table' },
     h('div', { className: 'pages-th' },
-      h('span', null, 'KIND'),
-      h('span', null, 'TITLE'),
-      h('span', null, 'TAGS'),
-      h('span', null, 'UPDATED')),
+      h('span', null, 'Kind'),
+      h('span', null, 'Title'),
+      h('span', null, 'Tags'),
+      h('span', null, 'Updated')),
     pages.map((p) => h('div', { className: 'pages-row', onClick: () => onOpen(p.id) },
       h('span', null, KindChip(p.kind)),
       h('span', { className: 'pages-title' }, p.title || '(untitled)'),
@@ -1503,6 +1539,16 @@ function V2PageView(pageId, onChange, onDeleted) {
       });
       if (!patched) return;                 // refused; the user has been told
       page.updated = patched.updated;
+      if (patched.path && patched.path !== page.path) {
+        // The file follows the title, so a save can move it. The deep link is
+        // patched in place rather than re-laid out: the rename lands while the
+        // user is still typing in the title field, and a re-render would take
+        // the caret with it.
+        page.path = patched.path;
+        const obs = wrap.querySelector('.page-meta-obs');
+        const href = obsidianUrl(page.path);
+        if (obs && href) obs.href = href;
+      }
       cacheSetPage(patched);  // keep page cache fresh so revisits are instant
       invalidatePageIndex();  // title may have changed → refresh mention labels
       onChange && onChange(patched);
@@ -1831,7 +1877,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       chatBtn.textContent = '+ chat ▾';
       chatBtn.addEventListener('click', () => openChatPicker(chatBtn));
       attSec.appendChild(h('div', { className: 'topic-att-hd' },
-        h('span', null, 'ATTACHED MATERIALS · ', String(page.meta.attachments.length)),
+        h('span', null, 'Attached materials · ', String(page.meta.attachments.length)),
         h('div', { className: 'topic-att-actions' },
           h('button', { onClick: () => pasteAttachmentModal('text') }, '+ text'),
           h('button', { onClick: () => pasteAttachmentModal('markdown') }, '+ markdown'),
@@ -2048,7 +2094,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     // its own grid column (centre of the 3-col topic layout).
     const chatSec = h('div', { className: 'topic-chat-sec' },
       h('div', { className: 'topic-chat-hd' },
-        h('span', null, 'CHAT'),
+        h('span', null, 'Chat'),
         h('span', { className: 'topic-chat-clear', onClick: async () => {
           if (!page.meta.thread.length) return;
           if (!confirm('Clear all messages in this thread?')) return;
@@ -3698,11 +3744,11 @@ function V2PageView(pageId, onChange, onDeleted) {
     renderLinks();
 
     const linkSection = h('div', { className: 'bm-section bm-section-link' },
-      h('div', { className: 'bm-section-l' }, 'LINKS · ', String(page.meta.links.length)),
+      h('div', { className: 'bm-section-l' }, 'Links · ', String(page.meta.links.length)),
       linksWrap);
 
     const contextSection = h('div', { className: 'bm-section bm-section-context' },
-      h('div', { className: 'bm-section-l' }, 'CONTEXT'),
+      h('div', { className: 'bm-section-l' }, 'Context'),
       h('textarea', {
         className: 'page-body-ta bm-context-ta',
         placeholder: 'why this matters · what to remember · who else cares…',
@@ -3742,7 +3788,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     // ── Metadata editor (status, dates, links) ─────────────────────────
     const metaCard = h('div', { className: 'pj-card' },
-      h('div', { className: 'pj-card-hd' }, 'PROJECT META'),
+      h('div', { className: 'pj-card-hd' }, 'Project meta'),
       h('div', { className: 'pj-meta-grid' },
         h('label', null,
           h('span', { className: 'cb-field-label' }, 'Status'),
@@ -3772,7 +3818,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     // ── README / description ────────────────────────────────────────────
     const readme = h('div', { className: 'pj-card pj-readme' },
-      h('div', { className: 'pj-card-hd' }, 'DESCRIPTION / README'),
+      h('div', { className: 'pj-card-hd' }, 'Description'),
       h('textarea', {
         className: 'page-body-ta',
         placeholder: 'what this project is, why it matters, what success looks like…',
@@ -3787,7 +3833,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     async function loadInside() {
       clear(insideCard);
-      insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'INSIDE THIS PROJECT'));
+      insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'Inside this project'));
       insideCard.appendChild(h('div', { className: 'sb-meta' }, 'loading…'));
       try {
         // Folder membership is the primary truth — a project holds its files.
@@ -3802,7 +3848,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         renderInside();
       } catch (e) {
         clear(insideCard);
-        insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'INSIDE THIS PROJECT'));
+        insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'Inside this project'));
         insideCard.appendChild(h('div', { className: 'sb-meta' }, '✗ ', String(e.message || e)));
       }
     }
@@ -3864,7 +3910,7 @@ function V2PageView(pageId, onChange, onDeleted) {
           }, meta.glyph || '·', ' ', meta.label || k);
         }));
       insideCard.appendChild(h('div', { className: 'pj-card-hd' },
-        'INSIDE THIS PROJECT · ', String(insidePages.length), ' pages'));
+        'Inside this project · ', String(insidePages.length), ' pages'));
       insideCard.appendChild(addBar);
 
       if (insidePages.length === 0) {
@@ -4085,22 +4131,22 @@ function V2PageView(pageId, onChange, onDeleted) {
       h('span', { className: 'side-row-l' }, l),
       h('span', { className: 'side-row-v' }, v));
     aside.appendChild(h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'METADATA'),
+      h('div', { className: 'side-card-hd' }, 'Metadata'),
       h('div', { className: 'side-card-body' },
         sRow('ID',       page.id.slice(0, 8) + '…'),
-        sRow('SLUG',     page.slug),
-        sRow('KIND',     KIND_META[page.kind].label),
-        sRow('CREATED',  fmtDate(page.created)),
-        sRow('UPDATED',  fmtDate(page.updated)),
-        sRow('TAGS',     String(page.tags.length)),
-        sRow('MENTIONS', String(page.mentions.length)))));
+        sRow('Slug',     page.slug),
+        sRow('Kind',     KIND_META[page.kind].label),
+        sRow('Created',  fmtDate(page.created)),
+        sRow('Updated',  fmtDate(page.updated)),
+        sRow('Tags',     String(page.tags.length)),
+        sRow('Mentions', String(page.mentions.length)))));
 
     // BACKLINKS — fetched live (pages that mention this one)
-    const backHd = h('div', { className: 'side-card-hd' }, 'BACKLINKS · …');
+    const backHd = h('div', { className: 'side-card-hd' }, 'Backlinks');
     const backBody = h('div', { className: 'side-card-body side-card-empty' }, 'loading…');
     aside.appendChild(h('div', { className: 'side-card' }, backHd, backBody));
     Promise.resolve(SB.data().backlinks(page.id)).then(({ items }) => {
-      backHd.textContent = 'BACKLINKS · ' + (items ? items.length : 0);
+      backHd.textContent = 'Backlinks · ' + (items ? items.length : 0);
       clear(backBody);
       if (!items || !items.length) {
         backBody.className = 'side-card-body side-card-empty';
@@ -4117,7 +4163,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         h('span', { className: 'side-link-meta' }, (KIND_META[b.kind] || {}).label || b.kind))));
       backBody.appendChild(list);
     }).catch(() => {
-      backHd.textContent = 'BACKLINKS · 0';
+      backHd.textContent = 'Backlinks · 0';
       clear(backBody); backBody.appendChild(document.createTextNode('—'));
     });
 
@@ -4125,11 +4171,11 @@ function V2PageView(pageId, onChange, onDeleted) {
     const children = (page.meta && Array.isArray(page.meta.children)) ? page.meta.children : [];
     const childList = h('div', { className: 'side-children' });
     const subCard = h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'SUB-PAGES · ' + children.length),
+      h('div', { className: 'side-card-hd' }, 'Sub-pages · ' + children.length),
       h('div', { className: 'side-card-body' },
         childList,
         h('button', { className: 'side-action',
-          onClick: createSubpage }, '+ add sub-page')));
+          onClick: createSubpage }, 'Add sub-page')));
     aside.appendChild(subCard);
 
     if (children.length) {
@@ -4149,7 +4195,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     // ACTIONS
     aside.appendChild(h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'ACTIONS'),
+      h('div', { className: 'side-card-hd' }, 'Actions'),
       h('div', { className: 'side-card-body' },
         h('button', { className: 'side-action',
           onClick: async () => {
@@ -4162,15 +4208,15 @@ function V2PageView(pageId, onChange, onDeleted) {
               a.click();
               URL.revokeObjectURL(a.href);
             } catch (e) { alert('Export failed: ' + e.message); }
-          } }, '↓ export .md'),
+          } }, 'Export .md'),
         h('a', { className: 'side-action', href: '/api/v2/pages/' + page.id, target: '_blank' },
-          '≡ open raw json'),
+          'Open raw json'),
         h('button', { className: 'side-action side-action-warn',
           onClick: async () => {
             if (!await confirmDialog({
               title: 'Delete this page?',
               body: 'This removes "' + (page.title || 'this page') + '" from your vault. Any backlinks to it will become dead.',
-              confirmLabel: '× delete',
+              confirmLabel: 'Delete',
               danger: true,
             })) return;
             await SB.data().deletePage(page.id);
@@ -4276,7 +4322,7 @@ function V2PageView(pageId, onChange, onDeleted) {
               if (!await confirmDialog({
                 title: 'Delete this page?',
                 body: 'This removes "' + (page.title || 'this page') + '" from your vault. Any backlinks to it will become dead.',
-                confirmLabel: '× delete',
+                confirmLabel: 'Delete',
                 danger: true,
               })) return;
               await SB.data().deletePage(page.id);
@@ -4696,7 +4742,7 @@ function AboutMeScreen() {
           h('div', { className: 'page-hd-row' },
             h('span', { className: 'page-kind-pill', style: { '--k-c': 'var(--k-self)' } },
               h('span', { className: 'kind-chip-g' }, '☉'),
-              h('span', null, 'ABOUT ME')),
+              h('span', null, 'About me')),
             h('span', { className: 'page-title-static' }, 'who I am'),
             h('div', { className: 'page-meta-side' },
               h('span', { className: 'page-meta-when' }, me.updated ? 'updated ' + fmtDate(me.updated) : '')))),
@@ -4721,7 +4767,7 @@ function AboutMeScreen() {
           ])),
 
         // ── Resume sections (stored in about_me.extras) ──────────────────
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'EXPERIENCE'),
+        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Experience'),
         entryList('experience', [
           ['role',     'Role',     {}],
           ['org',      'Organization', {}],
@@ -4731,14 +4777,14 @@ function AboutMeScreen() {
           ['summary',  'Summary — what you shipped / impact', { long: true }],
         ], 'experience'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'SKILLS'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Skills'),
         entryList('skills', [
           ['name',  'Skill name', {}],
           ['area',  'Area (Code / Design / Product / …)', {}],
           ['level', 'Level (expert / proficient / learning)', {}],
         ], 'skill'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'EDUCATION'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Education'),
         entryList('education', [
           ['school', 'School / institution', {}],
           ['degree', 'Degree', {}],
@@ -4747,7 +4793,7 @@ function AboutMeScreen() {
           ['end',    'End', {}],
         ], 'education'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'HIGHLIGHTS'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Highlights'),
         highlightList(),
 
         h('div', { className: 'sb-row', style: { marginTop: '16px' } },
@@ -4755,7 +4801,7 @@ function AboutMeScreen() {
           h('button', { className: 'sb-secondary', onClick: critiqueResume }, '⚡ critique with AI')),
         critiqueBox,
 
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'NOTES'),
+        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Notes'),
         h('textarea', {
           className: 'page-body-ta', placeholder: 'freeform reflective writing…',
           value: me.body,
@@ -5007,10 +5053,13 @@ function SettingsPanel(t, setTweak, route, setRoute, onClose) {
   }
   return h('div', { className: 'sb-tweaks' },
     h('div', { className: 'sb-twk-hd' },
-      h('b', null, 'SETTINGS'),
+      h('b', null, 'Settings'),
       h('button', { className: 'sb-twk-x', onClick: onClose }, '✕')),
     h('div', { className: 'sb-twk-body' },
       h('div', { className: 'sb-twk-sect' }, 'Look'),
+      seg('Theme', t.theme, [
+        { value: 'light', label: 'light' }, { value: 'dark', label: 'dark' },
+      ], (v) => setTweak('theme', v)),
       seg('Density', t.density, [
         { value: 'compact', label: 'compact' }, { value: 'cozy', label: 'cozy' },
         { value: 'comfortable', label: 'comfy' },
@@ -5034,7 +5083,7 @@ function SettingsPanel(t, setTweak, route, setRoute, onClose) {
 }
 
 /* ── app root (v2) ────────────────────────────────────────────────────── */
-const TWEAK_DEFAULTS = { theme: 'dark', density: 'compact', showLog: false };
+const TWEAK_DEFAULTS = { theme: 'light', density: 'cozy', showLog: false };
 function _newTabId() {
   return 'tab-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -5060,12 +5109,49 @@ const app = {
   createOpen: false,
   lastSynced: '',               // surfaced in sidebar footer
   logW: (() => { try { return Number(localStorage.getItem('sb.logW')) || 340; } catch (_) { return 340; } })(),
+  navW: (() => { try { return Number(localStorage.getItem('sb.navW')) || 244; } catch (_) { return 244; } })(),
+  navCollapsed: (() => { try { return localStorage.getItem('sb.navCollapsed') === '1'; } catch (_) { return false; } })(),
 };
 let currentMain = null;
 const root = document.getElementById('root');
 
 function applyLogW() {
   document.documentElement.style.setProperty('--log-w', (app.logW || 340) + 'px');
+}
+// The sidebar width is a live CSS variable rather than a constant baked into
+// the grid templates, so dragging it costs one custom-property write and no
+// re-render. Collapsing is a separate attribute: it swaps to an icon rail
+// rather than animating the width to zero, because a 0px column would take
+// the nav's borders and focus targets with it.
+function applyNavW() {
+  document.documentElement.style.setProperty('--nav-w', (app.navW || 244) + 'px');
+}
+function setNavCollapsed(v) {
+  app.navCollapsed = !!v;
+  try { localStorage.setItem('sb.navCollapsed', app.navCollapsed ? '1' : '0'); } catch (_) {}
+  const el = document.querySelector('.app');
+  if (el) el.setAttribute('data-nav', app.navCollapsed ? 'collapsed' : 'open');
+}
+function startNavResize(e, handle) {
+  e.preventDefault();
+  if (app.navCollapsed) return;
+  const min = 190;
+  const max = Math.min(420, Math.round(window.innerWidth * 0.4));
+  handle.classList.add('dragging');
+  document.body.classList.add('col-resizing');
+  const onMove = (ev) => {
+    app.navW = Math.max(min, Math.min(max, ev.clientX));
+    applyNavW();
+  };
+  const onUp = () => {
+    handle.classList.remove('dragging');
+    document.body.classList.remove('col-resizing');
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    try { localStorage.setItem('sb.navW', String(app.navW)); } catch (_) {}
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }
 function setTweak(key, val) {
   app.t = { ...app.t, [key]: val };
@@ -5074,8 +5160,8 @@ function setTweak(key, val) {
 }
 // Switch workspace mode and jump to that mode's home. One click apart.
 function applyHtmlAttrs() {
-  document.documentElement.setAttribute('data-theme', app.t.theme || 'dark');
-  document.documentElement.setAttribute('data-density', app.t.density || 'compact');
+  document.documentElement.setAttribute('data-theme', app.t.theme || 'light');
+  document.documentElement.setAttribute('data-density', app.t.density || 'cozy');
 }
 /* ── Hash-based routing ─────────────────────────────────────────────
    URL format:
@@ -5418,8 +5504,8 @@ function crumbsFor(route) {
    should have to read this app's UI state. */
 const SB_PREFS_KEY = 'sb.prefs';
 const SB_PREF_DEFAULTS = {
-  theme: 'dark',
-  density: 'compact',
+  theme: 'light',
+  density: 'cozy',
   historyKeep: 10,
   obsidianVault: '',       // blank = derive from the picked folder
   thumbCacheOn: true,
@@ -5489,8 +5575,8 @@ function SettingsScreen() {
       }))));
 
   wrap.appendChild(section('Appearance', null,
-    row('Theme', null, select('theme', ['dark', 'light'])),
-    row('Density', null, select('density', ['compact', 'comfortable']))));
+    row('Theme', null, select('theme', ['light', 'dark'])),
+    row('Density', null, select('density', ['compact', 'cozy', 'comfortable']))));
 
   wrap.appendChild(section('Write safety', 'how much undo the app keeps for you',
     row('History snapshots per page',
@@ -5576,8 +5662,11 @@ function buildMain() {
 function render() {
   if (currentMain && currentMain.__teardown) currentMain.__teardown();
   applyLogW();
+  applyNavW();
   clear(root);
-  const appEl = h('div', { className: 'app app-tabs', 'data-log': app.t.showLog ? 'visible' : 'hidden' });
+  const appEl = h('div', { className: 'app app-tabs',
+    'data-log': app.t.showLog ? 'visible' : 'hidden',
+    'data-nav': app.navCollapsed ? 'collapsed' : 'open' });
   const toggleSettings = () => { app.settingsOpen = !app.settingsOpen; render(); };
   const openSearch = () => { app.searchOpen = true; render(); };
   const closeSearch = () => { app.searchOpen = false; render(); };
@@ -5658,6 +5747,7 @@ window.addEventListener('keydown', (e) => {
 async function boot() {
   applyHtmlAttrs();
   applyLogW();
+  applyNavW();
   // 1) Restore persisted tabs (best-effort).
   const hadTabs = loadTabs();
   // 2) Hash takes precedence — direct links / refresh on a deep URL should

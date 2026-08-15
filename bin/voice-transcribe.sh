@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Second Brain — voice memo transcription.
+# Canon Vault — voice memo transcription.
 # Transcribes audio with whisper.cpp and writes a note straight into the vault,
 # in the exact frontmatter shape CONVENTION.md specifies (task 7.7) — so the
 # result passes the vault validator unmodified.

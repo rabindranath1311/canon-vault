@@ -98,11 +98,15 @@ test("create, update and delete round-trip through the vault", async () => {
   assert.equal(made.path, "notes/Zeta.md");
   const edited = await d.updatePage(made.id, { body: "changed", title: "Zeta II" });
   assert.equal(edited.title, "Zeta II");
+  // The file follows the title, so `[[Zeta II]]` resolves and the old name is
+  // freed rather than kept forever.
+  assert.equal(edited.path, "notes/Zeta II.md");
+  assert.equal(await d.v.be.exists("notes/Zeta.md"), false);
   assert.equal((await d.page(made.id)).body, "changed");
   const gone = await d.deletePage(made.id);
   assert.ok(gone.ok);
   assert.equal(await d.page(made.id), null);
-  assert.ok(await d.v.be.exists(".trash/notes/Zeta.md"));
+  assert.ok(await d.v.be.exists(".trash/notes/Zeta II.md"));
 });
 
 test("about-me reads context/about-me.md", async () => {

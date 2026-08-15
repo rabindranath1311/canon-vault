@@ -8,13 +8,17 @@
 //                                 behind a persistent reconnect banner.
 // A cold open never shows an empty shell, because an empty shell reads as broken.
 
-import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, WriterElection, PERSIST_KEY } from "./vault.js";
+import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, MemoryBackend, WriterElection, PERSIST_KEY } from "./vault.js";
 import { Data, noteChrome, edgeGeometry } from "./data.js";
 import { parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
 import { parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout } from "./inspo.js";
 import * as links from "./links.js";
 import { scaffold } from "./scaffold.js";
 
+// Deliberately not renamed to "canon-vault": this database holds the saved
+// directory handle, so changing the name would make every existing install
+// forget its vault and re-prompt for the folder picker. The name is private to
+// IndexedDB and never shown.
 const DB = "second-brain";
 const STORE = "handles";
 
@@ -100,7 +104,7 @@ function clearBanner() {
   if (el) el.remove();
 }
 
-function firstRun(onPick) {
+function firstRun(onPick, onDemo) {
   const root = document.getElementById("root") || document.body;
   root.innerHTML = "";
   const wrap = document.createElement("main");
@@ -116,7 +120,52 @@ function firstRun(onPick) {
   b.textContent = "Choose folder";
   b.addEventListener("click", onPick);
   wrap.append(h, p, b);
+
+  // Handing over a folder is a real decision, and nobody makes it for software
+  // they have not seen work. The demo runs the whole app against an in-memory
+  // vault of invented pages — no picker, no permission prompt, nothing written.
+  if (onDemo) {
+    const alt = document.createElement("p");
+    alt.className = "sb-connect-alt";
+    const link = document.createElement("button");
+    link.type = "button";
+    link.className = "sb-connect-demo";
+    link.textContent = "Try a demo vault";
+    link.addEventListener("click", onDemo);
+    alt.append(document.createTextNode("Not ready? "), link,
+               document.createTextNode(" — invented pages, nothing touches your disk."));
+    wrap.appendChild(alt);
+  }
   root.appendChild(wrap);
+}
+
+/**
+ * Stand the app up against an in-memory vault of invented pages.
+ *
+ * Dynamically imported so its bytes are not on the critical path for someone
+ * opening their own vault. Writes work and are simply lost on reload, which is
+ * the honest behaviour for a demo — the banner says so.
+ */
+async function openDemo() {
+  let DEMO_FILES;
+  try {
+    ({ DEMO_FILES } = await import(`./demo-vault.js?v=${ASSET_V}`));
+  } catch {
+    banner("Could not load the demo — you may be offline. Choosing a folder still works.");
+    return;
+  }
+  const be = new MemoryBackend(DEMO_FILES);
+  // build() reads this for the Obsidian vault name. Not a hardcoded vault name
+  // in the SPEC §14 sense: there is no folder here to derive one from.
+  be.root = { name: "demo-vault" };
+  const vault = new Vault(be);
+  clearBanner();
+  await build(vault);
+  loadApp();
+  window.SB_DEMO = true;
+  banner("Demo vault — invented pages, held in memory. Edits are lost on reload.",
+         "Open my own vault", () => location.reload());
+  window.dispatchEvent(new CustomEvent("sb:vault-connected"));
 }
 
 async function build(handleVault) {
@@ -214,7 +263,7 @@ async function boot() {
 
   const stored = await store.get(PERSIST_KEY).catch(() => null);
   if (!stored) {
-    firstRun(reconnect);          // never seen a vault: onboarding, not an error
+    firstRun(reconnect, openDemo);  // never seen a vault: onboarding, not an error
   } else {
     // We had a vault and lost the grant. Show content, disable writing.
     banner("Vault disconnected — showing the last known state, read-only.",

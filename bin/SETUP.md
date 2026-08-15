@@ -13,8 +13,17 @@ The scripts refuse to run without it, and refuse a `BRAIN_DIR` inside this
 repo. That is deliberate: a misconfigured launchd job should fail loudly, not
 quietly fill a publishable repo with private notes.
 
-Logs go to `~/Library/Logs/second-brain/`, never into the vault — they churn on
+Logs go to `~/Library/Logs/canon-vault/`, never into the vault — they churn on
 every run and would show up in Obsidian and in every commit.
+
+> **Upgrading from an older checkout?** The launchd label and the log directory
+> were renamed from `second-brain` to `canon-vault`. Unload the old agent before
+> loading the new one, or you will have two watchers running:
+>
+> ```sh
+> launchctl unload ~/Library/LaunchAgents/com.secondbrain.screenshot-watcher.plist 2>/dev/null
+> rm -f ~/Library/LaunchAgents/com.secondbrain.screenshot-watcher.plist
+> ```
 
 ---
 
@@ -32,23 +41,23 @@ To run it automatically, generate the launchd plist from the template — it nee
 literal absolute paths, so substitute them in:
 
 ```sh
-mkdir -p ~/Library/LaunchAgents ~/Library/Logs/second-brain
+mkdir -p ~/Library/LaunchAgents ~/Library/Logs/canon-vault
 sed -e "s|__SCRIPTS__|$(pwd)|g" \
     -e "s|__BRAIN_DIR__|$HOME/Brain|g" \
     -e "s|__SCREENSHOTS__|$HOME/Desktop/Screenshots|g" \
-    -e "s|__LOGS__|$HOME/Library/Logs/second-brain|g" \
-    bin/launchd/com.secondbrain.screenshot-watcher.plist.template \
-    > ~/Library/LaunchAgents/com.secondbrain.screenshot-watcher.plist
+    -e "s|__LOGS__|$HOME/Library/Logs/canon-vault|g" \
+    bin/launchd/com.canonvault.screenshot-watcher.plist.template \
+    > ~/Library/LaunchAgents/com.canonvault.screenshot-watcher.plist
 
-launchctl unload ~/Library/LaunchAgents/com.secondbrain.screenshot-watcher.plist 2>/dev/null
-launchctl load  ~/Library/LaunchAgents/com.secondbrain.screenshot-watcher.plist
+launchctl unload ~/Library/LaunchAgents/com.canonvault.screenshot-watcher.plist 2>/dev/null
+launchctl load  ~/Library/LaunchAgents/com.canonvault.screenshot-watcher.plist
 ```
 
 Check it: take a screenshot, then
 
 ```sh
 ls -t "$HOME/Brain/attachments/screenshots"/*/ | head
-tail ~/Library/Logs/second-brain/screenshot-sync.log
+tail ~/Library/Logs/canon-vault/screenshot-sync.log
 ```
 
 ## 2. Voice memos

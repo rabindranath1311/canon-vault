@@ -5,11 +5,11 @@
        __SCRIPTS__     where this repo is checked out
        __BRAIN_DIR__   your vault - a different directory
        __SCREENSHOTS__ the folder macOS saves screenshots to
-       __LOGS__        ~/Library/Logs/second-brain - never inside the vault -->
+       __LOGS__        ~/Library/Logs/canon-vault - never inside the vault -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.secondbrain.screenshot-watcher</string>
+    <string>com.canonvault.screenshot-watcher</string>
 
     <key>ProgramArguments</key>
     <array>

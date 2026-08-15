@@ -30,7 +30,7 @@ require_brain_dir() {
 # Logs never live in the vault: they churn constantly and would show up in
 # Obsidian and in every git diff.
 log_dir() {
-    local d="${BRAIN_LOG_DIR:-$HOME/Library/Logs/second-brain}"
+    local d="${BRAIN_LOG_DIR:-$HOME/Library/Logs/canon-vault}"
     mkdir -p "$d"
     printf '%s' "$d"
 }

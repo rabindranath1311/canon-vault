@@ -62,14 +62,48 @@ export function isEmbeddableFile(target) {
 }
 
 /**
+ * Blank out fenced code blocks and inline code spans, preserving length and
+ * line structure so every offset into the result still indexes the original.
+ *
+ * Obsidian does not linkify inside code, and neither may we: `CONVENTION.md`
+ * ships seven `[[example]]`s inside code blocks, and without this every new
+ * vault would open showing them as dead links and pull them into the graph.
+ */
+export function maskCode(text) {
+  const src = String(text);
+  const lines = src.split("\n");
+  let fence = null;                                   // the open fence's marker
+  const masked = lines.map((line) => {
+    const m = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (fence) {
+      // A closing fence is the same character, at least as long, alone on the line.
+      const closes = m && m[1][0] === fence[0] && m[1].length >= fence.length
+        && line.slice(line.indexOf(m[1]) + m[1].length).trim() === "";
+      if (closes) fence = null;
+      return " ".repeat(line.length);                 // fence lines are code too
+    }
+    if (m) { fence = m[1]; return " ".repeat(line.length); }
+    // Inline code: matched backtick runs of equal length, within one line.
+    return line.replace(/(`+)(?!`)([^\n]*?)\1(?!`)/g, (whole) => " ".repeat(whole.length));
+  });
+  return masked.join("\n");
+}
+
+/**
  * Find every wikilink in a string. Returns
  * {raw, embed, target, display, heading, start, end}.
+ *
+ * Offsets index the original text; links inside code are skipped.
  */
 export function findWikilinks(text) {
   const out = [];
+  const src = String(text);
+  const scan = maskCode(src);
   const re = /(!?)\[\[([^\]\n]+?)\]\]/g;
   let m;
-  while ((m = re.exec(String(text)))) {
+  // Masked regions are all spaces and so contain no `]]`; a match therefore
+  // never straddles one, and the captures equal the original text at m.index.
+  while ((m = re.exec(scan))) {
     const { target, display, heading } = parseWikilink(m[2]);
     out.push({
       raw: m[0], embed: m[1] === "!", target, display, heading,
