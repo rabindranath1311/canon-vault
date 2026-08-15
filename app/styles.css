@@ -1384,18 +1384,38 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   color: var(--faint); font-size: var(--fz-micro); font-style: italic;
 }
 .bento-tile-empty::before { content: 'no image'; }
+/* Each tile is a whole inspo page, not an image — so it has a name, and a wall
+   of names you can only read one at a time by hovering is a wall you cannot
+   scan. The title stays on; hover reveals the second line (item count, date),
+   which is the part you only want when you are deciding.
+   The scrim holds its weight through the text band instead of fading linearly
+   across it — a single `to top` ramp is at roughly 40% alpha exactly where the
+   title sits, which is the weakest place it could have been. */
 .bento-tile-overlay {
   position: absolute; inset: auto 0 0 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0));
+  background: linear-gradient(to top,
+    rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.78) 46%, rgba(0,0,0,0.46) 72%, rgba(0,0,0,0) 100%);
   color: #fff;
-  padding: 28px 12px 10px;
+  padding: 34px 12px 10px;
   display: flex; flex-direction: column; gap: 3px;
   font-size: var(--fz-micro);
-  opacity: 0;
-  transition: opacity 0.18s;
+  transition: background var(--dur-2) var(--ease-out);
   pointer-events: none;
 }
-.bento-tile:hover .bento-tile-overlay { opacity: 1; }
+/* Collapsed rather than merely transparent: an always-drawn two-line scrim
+   covers a third of a short tile, and this is a wall you look at. One line of
+   `--fz-micro` — the row is a count and a date, it never wraps. */
+.bento-tile-meta {
+  height: 0; opacity: 0; overflow: hidden;
+  transition: height var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+}
+.bento-tile:hover .bento-tile-meta,
+.bento-tile:focus-visible .bento-tile-meta {
+  height: calc(var(--fz-micro) * 1.45); opacity: 0.9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-tile-meta { transition: none; }
+}
 .bento-tile-empty .bento-tile-overlay {
   background: none; color: var(--fg);
   position: static; padding: 10px 12px;
@@ -1405,10 +1425,7 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   font-size: var(--fz-mini); font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.bento-tile-meta {
-  display: flex; justify-content: space-between;
-  opacity: 0.85;
-}
+.bento-tile-meta { display: flex; justify-content: space-between; }
 @media (max-width: 1400px) { .pages-bento { column-count: 3; } }
 @media (max-width: 900px)  { .pages-bento { column-count: 2; } }
 @media (max-width: 560px)  { .pages-bento { column-count: 1; } }

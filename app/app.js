@@ -277,7 +277,31 @@ function cacheSetPage(p) {
   // `body`; caching one made the page view render a truncated, whitespace-
   // collapsed body — which silently swallowed the `## Thread` section of any
   // page longer than the excerpt.
-  if (p && p.id && p.bodyIsFull !== false) _pageCache.set(p.id, { page: p, ts: Date.now() });
+  if (p && p.id && p.bodyIsFull !== false) {
+    _pageCache.set(p.id, { page: p, ts: Date.now() });
+    noteTabTitle(p.id, p.title || p.slug);
+  }
+}
+
+/* A tab is how you find a page again, so it has to say the page's name.
+   The label was read from this cache alone — and the cache is empty on the
+   render that opens the page, so a freshly opened tab said "Page · 01KVZA"
+   until something unrelated happened to re-render the strip, and a reloaded
+   window said it forever. The name is recorded on the tab instead: it
+   persists with the tab, and it is patched into the strip in place rather
+   than through render(), because this runs inside a load. */
+function noteTabTitle(id, title) {
+  if (!title || typeof app === 'undefined' || !app.tabs) return;
+  let changed = false;
+  for (const t of app.tabs) {
+    if (t.route === 'page' && t.openPageId === id && t.title !== title) {
+      t.title = title; changed = true;
+    }
+  }
+  if (!changed) return;
+  persistTabs();
+  const nodes = document.querySelectorAll('.tabs .tab .tab-label');
+  app.tabs.forEach((t, i) => { if (nodes[i]) nodes[i].textContent = tabLabel(t); });
 }
 function cacheInvalidatePage(id) { _pageCache.delete(id); }
 
@@ -3214,6 +3238,8 @@ function V2PageView(pageId, onChange, onDeleted) {
     // no meaningless blank, and a line saying where the values actually go —
     // because writing them changes the file Obsidian and your agent read.
     const endInput = h('input', {
+      // The "Ends" label points here; without the id it named nothing.
+      id: 'pj-end',
       className: 'pj-field', type: 'date', value: String(page.meta.end_date || ''),
       onInput: (e) => { page.meta.end_date = e.target.value || null; queueSave(); refreshSummary(); syncOngoing(); },
     });
@@ -4077,11 +4103,15 @@ function AboutMeScreen() {
        These are sentences, not keys — "Tone to match", "Preferred form" —
        and in the shared 84px label column they wrapped into three-line
        uppercase stacks that took longer to read than the answers would. */
+    // The label sits above the field rather than wrapping it, so the pairing
+    // has to be stated. `sectionKey.fieldKey` is already unique per field.
+    const fid = 'am-' + sectionKey + '-' + fieldKey;
     return h('div', { className: 'am-field' },
-      h('label', { className: 'am-lbl' }, label,
+      h('label', { className: 'am-lbl', for: fid }, label,
         hint ? h('span', { className: 'am-hint' }, hint) : null),
       h('input', {
         className: 'am-input',
+        id: fid,
         value: renderVal,
         placeholder: kind === 'list' ? 'Separate with commas' : '',
         onInput: (e) => {
@@ -4702,6 +4732,7 @@ function persistTabs() {
       tabs: app.tabs.map((t) => ({
         id: t.id, route: t.route, openPageId: t.openPageId,
         parentRoute: t.parentRoute || null,
+        title: t.title || null,
       })),
       activeTabId: app.activeTabId,
     }));
@@ -4730,7 +4761,9 @@ function loadTabs() {
 
 function tabLabel(t) {
   if (t.route === 'page' && t.openPageId) {
-    // Use a cached page title when we have one (zero round trip).
+    // Recorded on the tab by noteTabTitle, so it survives a reload and an
+    // evicted cache. The cache is the fallback; the ULID is the last resort.
+    if (t.title) return t.title;
     const cached = (typeof cacheGetPage === 'function') ? cacheGetPage(t.openPageId) : null;
     if (cached && (cached.title || cached.slug)) return cached.title || cached.slug;
     return 'Page · ' + t.openPageId.slice(0, 6);
@@ -4800,6 +4833,9 @@ function _syncActiveTab() {
   const t = activeTab();
   if (!t) return;
   t.route = app.route;
+  // The recorded name belongs to the page that was open. Point the tab
+  // somewhere else and the name has to go with it, or the strip lies.
+  if (t.openPageId !== app.openPageId) t.title = null;
   t.openPageId = app.openPageId;
   persistTabs();
 }
@@ -4860,6 +4896,7 @@ function openPage(id, opts) {
   const t = activeTab();
   if (t) {
     t.route = 'page';
+    if (t.openPageId !== id) t.title = null;
     t.openPageId = id;
     if (fromRoute && fromRoute !== 'page') t.parentRoute = fromRoute;
     persistTabs();
@@ -5035,11 +5072,27 @@ function SettingsScreen() {
       sub ? h('span', { className: 'set-sec-sub' }, sub) : null),
     ...rows);
 
-  const row = (label, hint, control) => h('div', { className: 'set-row' },
-    h('div', { className: 'set-row-l' },
-      h('div', { className: 'set-row-label' }, label),
-      hint ? h('div', { className: 'set-row-hint' }, hint) : null),
-    h('div', { className: 'set-row-c' }, control));
+  // Every settings row is built here, so the label association is made here
+  // too — a row's text is its control's name, and a screen reader had no way
+  // to know that from a sibling <div>. The hint becomes the description.
+  const row = (label, hint, control) => {
+    const native = control && /^(INPUT|SELECT|TEXTAREA)$/.test(control.tagName || '');
+    if (native && !control.id) control.id = 'set-' + (++row._n);
+    const hintEl = hint ? h('div', { className: 'set-row-hint' }, hint) : null;
+    if (native && hintEl) {
+      hintEl.id = control.id + '-hint';
+      control.setAttribute('aria-describedby', hintEl.id);
+    }
+    return h('div', { className: 'set-row' },
+      h('div', { className: 'set-row-l' },
+        h(native ? 'label' : 'div',
+          native ? { className: 'set-row-label', for: control.id }
+                 : { className: 'set-row-label' },
+          label),
+        hintEl),
+      h('div', { className: 'set-row-c' }, control));
+  };
+  row._n = 0;
 
   const select = (key, options) => {
     const el = h('select', {
