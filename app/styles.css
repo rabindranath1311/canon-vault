@@ -3452,19 +3452,6 @@ img.canvas-item-image {
 
 /* — Vault connect + reconnect banner (6.1 / 6.4). Self-contained: the connect
      screen renders before app.js has loaded. */
-.sb-connect { max-width: 30rem; margin: 16vh auto; padding: 0 2rem;
-  font-family: var(--font-sans); color: var(--text); }
-.sb-connect h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: var(--track-title); margin: 0 0 0.75rem; }
-.sb-connect p { line-height: 1.6; color: var(--text-dim); margin: 0 0 1.5rem; }
-.sb-connect-cta { font: inherit; font-weight: 550; cursor: pointer;
-  padding: 0.55rem 1.1rem; border-radius: 6px; border: 0;
-  background: var(--cta); color: var(--color-onyx); }
-/* The demo is the secondary path: available, never competing with the CTA. */
-.sb-connect p.sb-connect-alt { margin: 1.25rem 0 0; font-size: 0.875rem; }
-.sb-connect-demo { font: inherit; font-size: inherit; cursor: pointer;
-  padding: 0; border: 0; background: none; color: var(--text);
-  text-decoration: underline; text-underline-offset: 3px; }
-.sb-connect-demo:hover { color: var(--cta); }
 .sb-vault-banner { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9000;
   display: flex; gap: 0.75rem; align-items: center; justify-content: center;
   padding: 0.6rem 1rem; font-family: var(--font-sans);
@@ -4612,10 +4599,8 @@ code, pre, kbd, samp {
 
 /* ═══════════════════════════════════════════════════════════════════════
    COLOUR MODE PICKER
-   In the sidebar footer rather than behind the gear: appearance is the one
-   setting people change on a whim, and a whim does not survive two clicks.
-   Each chip paints its own mode's page and ink, so the control previews the
-   answer instead of naming it.
+   In Settings → Appearance. Each chip paints its own mode's page and ink, so
+   the control previews the answer instead of naming it.
    ═══════════════════════════════════════════════════════════════════════ */
 /* The picker now sits in a Settings row rather than the sidebar footer, so
    it no longer needs a divider to hold itself apart from the status lines —
@@ -5722,3 +5707,199 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
    missing rather than a card with nothing more to say. */
 .project-card { padding: var(--sp-3) var(--sp-4); gap: var(--sp-1); }
 .project-card-meta { padding-top: 0; border-top: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BRAND GRADIENTS — and where they are allowed
+
+   The depth layer above is deliberately TONAL: washes mixed from --accent
+   and --k-c, because the working UI is a monochrome instrument panel and a
+   chromatic gradient in it would be the accent competing with the text.
+   That rule stands. This layer is the exception it names — "full-bleed
+   brand, for the one or two places that want to be a statement" — and the
+   places are the ones with no vault content in them yet: the front door and
+   an empty screen. Nowhere a note is being read or written.
+
+   The palette is the product's own, not a SaaS hero: warm paper light with a
+   lime edge, and indigo only as the far corner. Light falling across a sheet
+   rather than a purple-to-blue banner.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --grad-field:
+    radial-gradient(72% 56% at 22% -14%,
+      color-mix(in srgb, var(--lime) 26%, transparent) 0%, transparent 58%),
+    radial-gradient(62% 58% at 108% 96%,
+      color-mix(in srgb, var(--indigo) 20%, transparent) 0%, transparent 62%),
+    radial-gradient(80% 70% at -12% 108%,
+      color-mix(in srgb, var(--accent) 7%, transparent) 0%, transparent 58%);
+  /* The one saturated object on the page. */
+  --grad-cta: linear-gradient(135deg, var(--i-6) 0%, var(--i-7) 58%, var(--i-6) 100%);
+  /* Paper, at the threshold of visible. */
+  --grad-paper: radial-gradient(circle,
+    color-mix(in srgb, var(--i-7) 9%, transparent) 1px, transparent 1px);
+}
+[data-theme="dark"], [data-theme="midnight"] {
+  --grad-field:
+    radial-gradient(72% 56% at 22% -14%,
+      color-mix(in srgb, var(--lime) 13%, transparent) 0%, transparent 58%),
+    radial-gradient(62% 58% at 108% 96%,
+      color-mix(in srgb, var(--indigo) 26%, transparent) 0%, transparent 62%),
+    radial-gradient(80% 70% at -12% 108%,
+      color-mix(in srgb, var(--brand) 12%, transparent) 0%, transparent 58%);
+  --grad-cta: linear-gradient(135deg, var(--i-6) 0%, var(--i-7) 58%, var(--i-6) 100%);
+  --grad-paper: radial-gradient(circle,
+    color-mix(in srgb, var(--i-7) 9%, transparent) 1px, transparent 1px);
+}
+
+/* ── The front door ──────────────────────────────────────────────────── */
+.sb-connect {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: var(--sp-7);
+  max-width: 62rem; margin: 0 auto; padding: var(--sp-8) var(--sp-6);
+  font-family: var(--font-sans); color: var(--fg);
+}
+/* Two fixed full-bleed layers behind the column, so the field reaches the
+   window edges at any width instead of stopping at a 62rem gutter — and so
+   the two can be treated differently, which they must be. On one element the
+   paper grid tiles the whole viewport at even strength and stops reading as
+   paper and starts reading as noise; masked to a soft pool under the hero, it
+   is a surface the content sits on. */
+.sb-connect { position: relative; isolation: isolate; }
+.sb-connect::before,
+.sb-connect::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.sb-connect::before { background-image: var(--grad-field); }
+.sb-connect::after {
+  background-image: var(--grad-paper);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(95% 70% at 34% 26%, #000 0%, transparent 72%);
+          mask-image: radial-gradient(95% 70% at 34% 26%, #000 0%, transparent 72%);
+}
+
+.sb-hero { max-width: 38rem; }
+.sb-connect-brand { margin-bottom: var(--sp-6); }
+.sb-hero-h {
+  font-size: var(--fz-display);
+  line-height: 1.14;
+  font-weight: 600;
+  letter-spacing: var(--track-display);
+  text-wrap: balance;
+  margin: 0 0 var(--sp-3);
+}
+.sb-hero-p {
+  font-size: var(--fz-prose); line-height: 1.6;
+  color: var(--muted); margin: 0 0 var(--sp-5);
+  max-width: 34rem;
+}
+
+.sb-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+.sb-connect-cta {
+  font: inherit; font-size: var(--fz-body); font-weight: 550;
+  cursor: pointer; padding: 11px 22px;
+  border: 0; border-radius: var(--radius-input);
+  background-image: var(--grad-cta);
+  background-size: 200% 100%;
+  color: var(--bg);
+  box-shadow: var(--shadow-raised);
+  transition: background-position var(--dur-4) var(--ease-out),
+              transform var(--dur-2) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out);
+}
+.sb-connect-cta:hover {
+  background-position: 100% 0;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-overlay);
+}
+.sb-connect-cta:active { transform: translateY(0); transition-duration: 40ms; }
+/* The demo is a door, not a footnote in a sentence — but it is the second one,
+   so it is outlined where the first is filled. */
+.sb-connect-demo {
+  font: inherit; font-size: var(--fz-body); font-weight: 500;
+  cursor: pointer; padding: 10px 18px;
+  border: 1px solid var(--line); border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  color: var(--fg);
+  transition: border-color var(--dur-1) var(--ease-out),
+              background var(--dur-1) var(--ease-out);
+}
+.sb-connect-demo:hover { border-color: var(--i-3); background: var(--paper); }
+.sb-actions-note {
+  margin: var(--sp-3) 0 0; font-size: var(--fz-mini); color: var(--faint);
+}
+
+.sb-promises {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.sb-promise {
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--paper) 76%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-2) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              border-color var(--dur-1) var(--ease-out);
+}
+.sb-promise:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+  border-color: var(--i-2);
+}
+.sb-promise-t {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fz-h3); font-weight: 600;
+  letter-spacing: var(--track-title);
+}
+.sb-promise-d {
+  margin: 0; font-size: var(--fz-mini); line-height: 1.55; color: var(--muted);
+}
+
+.sb-what { max-width: 44rem; }
+.sb-what-s {
+  cursor: pointer; list-style: none;
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fz-mini); color: var(--muted);
+  padding: var(--sp-2) 0;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.sb-what-s::-webkit-details-marker { display: none; }
+.sb-what-s::before {
+  content: '';
+  width: 0; height: 0; flex: none;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.sb-what[open] .sb-what-s::before { transform: rotate(90deg); }
+.sb-what-s:hover { color: var(--fg); }
+.sb-what-l {
+  margin: var(--sp-2) 0 0; padding-left: 1.35rem;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  font-size: var(--fz-mini); line-height: 1.55; color: var(--muted);
+  max-width: 42rem;
+}
+
+/* Entrance: the lockup, then the sentence, then the doors, then the promises.
+   One sequence on the one screen where the app has nothing else to say yet. */
+@keyframes cv-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.sb-connect-brand,
+.sb-hero-h, .sb-hero-p, .sb-actions, .sb-actions-note,
+.sb-promise, .sb-what {
+  animation: cv-rise var(--dur-4) var(--ease-out) both;
+}
+.sb-connect-brand { animation-delay: 0ms; }
+.sb-hero-h        { animation-delay: 60ms; }
+.sb-hero-p        { animation-delay: 110ms; }
+.sb-actions       { animation-delay: 160ms; }
+.sb-actions-note  { animation-delay: 200ms; }
+.sb-promise       { animation-delay: calc(240ms + var(--i) * 60ms); }
+.sb-what          { animation-delay: 440ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-connect-brand, .sb-hero-h, .sb-hero-p, .sb-actions, .sb-actions-note,
+  .sb-promise, .sb-what { animation: none; }
+  .sb-connect-cta, .sb-promise { transition: none; }
+}

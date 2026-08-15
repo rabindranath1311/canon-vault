@@ -122,39 +122,97 @@ function brandLockup() {
   return el;
 }
 
+/* A tiny element factory. app.js has a real one, but app.js does not exist
+   yet on this screen — bridge.js is what stands the vault up. */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+/* What the reader is actually deciding, and why it is safe. Kept here rather
+   than in a marketing site because this screen is where the question gets
+   asked, and the answer is short enough to give in full. */
+const PROMISES = [
+  ["On your disk",
+   "Files stay in the folder you pick. There is no server to send them to and no account to make."],
+  ["Obsidian-native",
+   "Plain markdown, wikilinks, frontmatter, canvases. Same folder open in both apps, live."],
+  ["Agent-ready",
+   "The file convention is public, so your coding agent reads and writes the same vault you do."],
+];
+
+const WHAT_HAPPENS = [
+  "Your browser asks permission for that one folder. You can withdraw it whenever you like.",
+  "An empty folder gets a starting structure and its own copy of the convention.",
+  "A folder that already has notes is adopted exactly as it is — nothing is written to any file until you edit it here.",
+];
+
+/* The front door.
+ *
+ * It used to be a lockup, one sentence, a button and a link, top-left on an
+ * empty page: the barest screen in the app, in the one place where somebody
+ * is deciding whether to hand over a folder. Everything below answers a
+ * question that decision actually raises — what is this, what does it cost
+ * me, and what happens the moment I click.
+ */
 function firstRun(onPick, onDemo) {
   const root = document.getElementById("root") || document.body;
   root.innerHTML = "";
-  const wrap = document.createElement("main");
-  wrap.className = "sb-connect";
-  const brand = brandLockup();
-  const h = document.createElement("h1");
-  h.textContent = "Open your vault";
-  const p = document.createElement("p");
-  p.textContent = "Pick the folder your notes live in. They stay on your disk — "
-    + "nothing is uploaded, and Obsidian or any editor can open the same files.";
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "sb-connect-cta";
-  b.textContent = "Choose folder";
-  b.addEventListener("click", onPick);
-  wrap.append(brand, h, p, b);
+  const wrap = el("main", "sb-connect");
+
+  const hero = el("div", "sb-hero");
+  hero.appendChild(brandLockup());
+  hero.appendChild(el("h1", "sb-hero-h", "A thinking surface over your own files."));
+  hero.appendChild(el("p", "sb-hero-p",
+    "Canon Vault reads and writes plain markdown straight from a folder on your "
+    + "disk. Nothing is uploaded, nothing is synced, and there is no account — "
+    + "your notes are just files, and they stay that way."));
+
+  const actions = el("div", "sb-actions");
+  const cta = el("button", "sb-connect-cta", "Choose a folder");
+  cta.type = "button";
+  cta.addEventListener("click", onPick);
+  actions.appendChild(cta);
 
   // Handing over a folder is a real decision, and nobody makes it for software
   // they have not seen work. The demo runs the whole app against an in-memory
   // vault of invented pages — no picker, no permission prompt, nothing written.
+  // It was a text link inside a sentence; it is a door, so it looks like one.
   if (onDemo) {
-    const alt = document.createElement("p");
-    alt.className = "sb-connect-alt";
-    const link = document.createElement("button");
-    link.type = "button";
-    link.className = "sb-connect-demo";
-    link.textContent = "Try a demo vault";
-    link.addEventListener("click", onDemo);
-    alt.append(document.createTextNode("Not ready? "), link,
-               document.createTextNode(" — invented pages, nothing touches your disk."));
-    wrap.appendChild(alt);
+    const demo = el("button", "sb-connect-demo", "Try a demo vault");
+    demo.type = "button";
+    demo.addEventListener("click", onDemo);
+    actions.appendChild(demo);
   }
+  hero.appendChild(actions);
+  hero.appendChild(el("p", "sb-actions-note",
+    onDemo ? "The demo is invented pages held in memory — it never touches your disk."
+           : "Chromium browsers only, because the folder API exists nowhere else."));
+  wrap.appendChild(hero);
+
+  const promises = el("ul", "sb-promises");
+  PROMISES.forEach(([t, d], i) => {
+    const li = el("li", "sb-promise");
+    li.style.setProperty("--i", String(i));
+    li.appendChild(el("h2", "sb-promise-t", t));
+    li.appendChild(el("p", "sb-promise-d", d));
+    promises.appendChild(li);
+  });
+  wrap.appendChild(promises);
+
+  /* A folder picker is a permission prompt, and a permission prompt you did
+     not expect is a permission prompt you decline. Closed by default — this
+     is reassurance for the people who want it, not a step for everyone. */
+  const det = el("details", "sb-what");
+  const sum = el("summary", "sb-what-s", "What happens when you choose a folder");
+  det.appendChild(sum);
+  const ol = el("ol", "sb-what-l");
+  WHAT_HAPPENS.forEach((t) => ol.appendChild(el("li", null, t)));
+  det.appendChild(ol);
+  wrap.appendChild(det);
+
   root.appendChild(wrap);
 }
 
