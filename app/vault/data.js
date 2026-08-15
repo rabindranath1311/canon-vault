@@ -709,7 +709,14 @@ export class Data {
     // went, but a restore also needs to know where to put it back.
     const e = this.v.index.get(id);
     const path = e ? e.path : null;
-    const canvasPath = path && path.endsWith(".md") ? path.replace(/\.md$/, ".canvas") : null;
+    /* Only a board has a `.canvas` sidecar. This used to derive one for every
+       page, so the receipt for a plain note claimed a companion file that
+       cannot exist. untrash() guards on `trashedCanvas` — which del() sets
+       only when it really moved one — so nothing acted on it; a receipt that
+       describes files that were never there is still the wrong receipt. */
+    const canvasPath = (e && e.kind === "canvas" && path && path.endsWith(".md"))
+      ? path.replace(/\.md$/, ".canvas")
+      : null;
     const r = await this.v.del(id);
     await this.v.buildIndex();
     return (r && r.ok) ? { ...r, path, canvasPath } : r;

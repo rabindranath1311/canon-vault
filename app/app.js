@@ -1153,7 +1153,15 @@ function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
               if (e.metaKey || e.ctrlKey) { newTab(it.id, null, { switchTo: true }); return; }
               setRoute(it.id);
             },
-            title: 'click · ⌘-click to open in new tab',
+            /* Was 'click · ⌘-click to open in new tab' on all eleven rows: a
+               tooltip that pops over the primary navigation on every hover,
+               says the same generic thing each time, and teaches nothing
+               after the first. A row's tooltip is its own name, and only
+               when the label is not already sitting next to the icon.
+               The aria-label is unconditional — collapsed, the label is
+               `display: none` and the icon would name nothing. */
+            title: app.navCollapsed ? it.label : null,
+            'aria-label': it.label,
             style: meta ? { '--k-c': meta.color } : null,
           },
             h('span', { className: 'nav-icon' + (meta ? ' kind-glyph' : '') },
