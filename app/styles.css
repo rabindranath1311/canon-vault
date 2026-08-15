@@ -1163,11 +1163,14 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 }
 
 /* Screen wrapper */
+/* `.main` is the scroller; a screen just grows. It used to be a scroller too,
+   with `height: 100%` — two nested scroll containers, which is invisible on a
+   full-width screen and obvious on a narrow one: Settings is capped at 46rem,
+   so its scrollbar sat as a rule down the middle of the page instead of at the
+   window edge, and the wheel had to be over the form to move it. */
 .screen {
   padding: 18px 24px 60px;
   min-width: 0;
-  overflow-y: auto;
-  height: 100%;
 }
 .loading-stub {
   padding: 40px; text-align: center; color: var(--faint);

@@ -5168,13 +5168,14 @@ function SettingsScreen() {
   };
   row._n = 0;
 
-  const select = (key, options) => {
-    const el = h('select', {
-      className: 'set-input',
-      onChange: (e) => { prefs[key] = e.target.value; savePrefs(prefs); applyHtmlAttrs2(); },
-    }, options.map((o) => h('option', { value: o, selected: prefs[key] === o }, o)));
-    return el;
-  };
+  /* Options take `[value, label]` pairs. They used to be bare strings used as
+     both, so the one screen where you choose your colour mode offered
+     "midnight" and "cozy" in lowercase while the swatch row two panels away
+     called them Midnight and Cozy. */
+  const select = (key, options) => h('select', {
+    className: 'set-input',
+    onChange: (e) => { prefs[key] = e.target.value; savePrefs(prefs); applyHtmlAttrs2(); },
+  }, options.map(([v, l]) => h('option', { value: v, selected: prefs[key] === v }, l)));
 
   function applyHtmlAttrs2() {
     document.documentElement.setAttribute('data-theme', prefs.theme);
@@ -5209,8 +5210,10 @@ function SettingsScreen() {
 
   wrap.appendChild(section('Appearance', null,
     row('Colour mode', 'Also in the sidebar footer, as swatches.',
-      select('theme', THEME_IDS)),
-    row('Density', null, select('density', ['compact', 'cozy', 'comfortable']))));
+      // THEMES already carries the labels the swatch row uses.
+      select('theme', THEMES.map((t) => [t.id, t.label]))),
+    row('Density', null, select('density',
+      [['compact', 'Compact'], ['cozy', 'Cozy'], ['comfortable', 'Comfortable']]))));
 
   wrap.appendChild(section('Write safety', 'how much undo the app keeps for you',
     row('History snapshots per page',
