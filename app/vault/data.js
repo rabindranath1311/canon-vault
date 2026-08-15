@@ -653,6 +653,24 @@ export class Data {
     for (const [name, members] of byFolder) {
       const note = members.find((e) => e.path === `projects/${name}/${name}.md`);
       const rest = members.filter((e) => e !== note);
+      /* What is "inside" a project is folder membership PLUS the pages that
+         mention it — that is the rule the project page renders, and a card
+         that counts only the folder said "0 pages inside" above a page
+         showing two of them. Both were true; only one of them was the answer
+         to the question the label asks. */
+      const seen = new Set(rest.map((e) => e.id));
+      let mentioned = 0;
+      if (note) {
+        const title = String(note.title || "").toLowerCase();
+        const idl = String(note.id || "").toLowerCase();
+        for (const e of this.v.list()) {
+          if (e.id === note.id || seen.has(e.id)) continue;
+          if ((e.mentions || []).some((m) => {
+            const ml = String(m).toLowerCase();
+            return ml === idl || (title && ml === title);
+          })) mentioned++;
+        }
+      }
       items.push({
         id: note ? note.id : `project:${name}`,
         name,
@@ -661,7 +679,7 @@ export class Data {
         notePath: note ? note.path : null,
         excerpt: note ? note.excerpt || "" : "",
         updated: members.map((e) => e.updated).filter(Boolean).sort().pop() || null,
-        memberCount: rest.length,
+        memberCount: rest.length + mentioned,
         members: rest.map((e) => pageOut(e)),
       });
     }

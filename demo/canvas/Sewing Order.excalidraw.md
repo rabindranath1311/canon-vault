@@ -4,7 +4,7 @@ kind: canvas
 title: Sewing Order
 created: 2026-07-19T11:05:00+00:00
 updated: 2026-08-24T16:40:00+00:00
-tags: [excalidraw]
+tags: [bookbinding, current]
 aliases: [Sewing Order]
 excalidraw-plugin: parsed
 ---

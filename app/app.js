@@ -818,6 +818,14 @@ function registerObjectUrl(el, url) {
   obs.observe(document.body, { childList: true, subtree: true });
 }
 
+/* "1 projects". Ten places counted things and each decided for itself whether
+   to bother with the plural; most did not. One helper, so the app stops
+   sounding like a database report. `many` defaults to `one + "s"`. */
+function nOf(n, one, many) {
+  const k = Number(n) || 0;
+  return k + ' ' + (k === 1 ? one : (many || one + 's'));
+}
+
 function fmtDate(iso) {
   try {
     const d = new Date(iso);
@@ -1338,8 +1346,10 @@ function V2Home(state, onOpen, onCreate, onKind) {
         h('div', { className: 'dash-sub' },
           h('span', null,
             h('b', null, String(s.fresh_this_week || 0)), ' new this week · ',
-            h('b', null, String(s.mentions_total || 0)), ' mentions · ',
-            h('b', null, String(s.pages_total || 0)), ' pages total'),
+            h('b', null, String(s.mentions_total || 0)),
+            (Number(s.mentions_total) === 1 ? ' mention · ' : ' mentions · '),
+            h('b', null, String(s.pages_total || 0)),
+            (Number(s.pages_total) === 1 ? ' page total' : ' pages total')),
           h('span', { className: 'dash-sub-r' },
             'updated ', fmtDate(s.last_synced || ''))),
         h('button', { className: 'btn-primary dash-cta', onClick: onCreate }, '+ new page')),
@@ -1417,9 +1427,9 @@ function V2Home(state, onOpen, onCreate, onKind) {
           o.captures >= 5 ? String(o.confidence) + '%'
             : (o.confidence >= 80 ? 'tight' : o.confidence >= 50 ? 'loose' : 'early'))),
       h('div', { className: 'obs-stats' },
-        h('b', null, String(o.captures)), ' pages',
+        h('b', null, String(o.captures)), Number(o.captures) === 1 ? ' page' : ' pages',
         h('span', { className: 'obs-dot' }),
-        h('b', null, String(o.days)), ' days active'),
+        h('b', null, String(o.days)), Number(o.days) === 1 ? ' day active' : ' days active'),
       // Zero days used to render as a flat dashed line, which reads as a
       // broken chart rather than as a quiet week. Every column now has a
       // visible floor, so an empty day looks like an empty day.
@@ -1621,7 +1631,7 @@ function ListView_Bento(pages, onOpen) {
         h('div', { className: 'bento-tile-overlay' },
           h('div', { className: 'bento-tile-title' }, p.title || '(untitled)'),
           h('div', { className: 'bento-tile-meta' },
-            h('span', null, itemCount(p) + ' items'),
+            h('span', null, nOf(itemCount(p), 'item')),
             h('span', null, fmtDate(p.updated)))));
     }));
 }
@@ -1682,10 +1692,10 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
     else view = ListView_Table(filtered, onOpen);
     listSlot.appendChild(view);
     // Update count line
-    if (countEl) countEl.textContent = (query ? filtered.length + ' of ' : '') + pages.length + ' page' + (pages.length === 1 ? '' : 's');
+    if (countEl) countEl.textContent = (query ? filtered.length + ' of ' : '') + nOf(pages.length, 'page');
   }
 
-  const countEl = h('span', null, pages.length + ' page' + (pages.length === 1 ? '' : 's'));
+  const countEl = h('span', null, nOf(pages.length, 'page'));
   const searchInput = h('input', {
     className: 'list-search',
     type: 'search',
@@ -1698,7 +1708,7 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
   });
 
   append(wrap, PageHeader(title, null,
-    meta ? meta.hint : (pages.length + ' pages total'),
+    meta ? meta.hint : (nOf(pages.length, 'page') + ' total'),
     h('button', { className: 'btn-primary', onClick: onCreate },
       '+ new ' + (meta ? meta.label.toLowerCase() : 'page'))));
   wrap.appendChild(h('div', { className: 'list-search-row' },
@@ -2801,7 +2811,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       h('button', { className: 'canvas-zoom-btn', title: 'fit all items',
         onClick: () => fitView() }, 'fit')));
     toolbarKids.push(h('div', { className: 'canvas-toolbar-hint' },
-      items.length, ' items · ',
+      nOf(items.length, 'item'), ' · ',
       edges.length ? edges.length + ' connections · ' : '',
       'drag to pan · ⌘+scroll to zoom'));
 
@@ -3430,7 +3440,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       clear(insideCard);
       const count = insidePages.length;
       insideCard.appendChild(h('div', { className: 'pj-card-hd' },
-        'Inside this project · ', String(count), count === 1 ? ' page' : ' pages'));
+        'Inside this project · ', nOf(count, 'page')));
 
       const addWrap = h('div', { className: 'pj-add' });
       function paintAdd() {
@@ -3976,7 +3986,7 @@ function TagsIndexScreen() {
   Promise.resolve(SB.data().tags()).then(({ tags }) => {
     clear(wrap);
     append(wrap, PageHeader('Tags', null,
-      (tags || []).length + ' tags in the vault. Click any to filter.', null));
+      nOf((tags || []).length, 'tag') + ' in the vault. Click any to filter.', null));
     if (!tags || !tags.length) {
       wrap.appendChild(EmptyState('No tags yet.', 'Add tags to your pages — they\'ll show up here.'));
       return;
@@ -3993,7 +4003,7 @@ function TagsIndexScreen() {
          count is printed right there. It rides on the count badge now. */
       cloud.appendChild(h('button', {
         className: 'tag-chip tag-chip-btn tag-cloud-chip',
-        title: t.count + (t.count === 1 ? ' page' : ' pages'),
+        title: nOf(t.count, 'page'),
         onClick: () => setRoute('tag:' + t.tag),
       },
         h('span', { className: 'tag-cloud-name' }, t.tag),
@@ -4018,7 +4028,7 @@ function TagFilterScreen(tag) {
     (items || []).forEach((p) => cacheSetPage(p));
     clear(wrap);
     append(wrap, PageHeader('#' + tag, null,
-      (items || []).length + ' pages',
+      nOf((items || []).length, 'page'),
       h('button', { className: 'side-action', onClick: () => setRoute('tags') }, '← all tags')));
     if (!items || !items.length) {
       wrap.appendChild(EmptyState('No pages with #' + tag + ' yet.', 'Add the tag to a page to see it here.'));
@@ -4045,7 +4055,7 @@ function MentionFilterScreen(slug) {
     append(wrap, PageHeader(
       '@' + slug,
       mention_tag && mention_tag.name ? mention_tag.name : null,
-      (items || []).length + ' pages mention this',
+      nOf((items || []).length, 'page') + ((items || []).length === 1 ? ' mentions this' : ' mention this'),
       backTo()));
     if (!items || !items.length) {
       wrap.appendChild(EmptyState('No pages mention @' + slug + ' yet.',
@@ -4569,7 +4579,7 @@ function ProjectsScreen() {
       h('div', { className: 'project-card-meta' },
         h('span', { 'data-pjcount': p.id },
           counts[p.id] != null
-            ? (counts[p.id] + (counts[p.id] === 1 ? ' page inside' : ' pages inside'))
+            ? (nOf(counts[p.id], 'page') + ' inside')
             : 'counting…'),
         when ? h('span', { className: 'project-card-when' }, when) : null));
   }
@@ -4593,7 +4603,7 @@ function ProjectsScreen() {
         h('p', { className: 'sb-sub' },
           busy ? 'loading…' : projects.length === 0
             ? 'no projects yet — projects are containers; create one and drop topics / canvases under it'
-            : (projects.length + ' projects'))),
+            : nOf(projects.length, 'project'))),
       h('div', { className: 'sb-row' },
         h('button', { className: 'sb-primary', onClick: newProject }, '+ new project')));
 
