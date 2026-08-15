@@ -1,8 +1,12 @@
 /* Canon Vault — terminal/brutalist research-lab UI, wired to the real vault.
-   Served by the FastAPI backend (server/secondbrain). All data is live:
-   /api/overview, /api/activity, /api/category, /api/page, /api/graph,
-   POST /api/capture, plus /chat (Ask) and /search (⌘K). No mock content —
-   sparse vault → honest empty states. Zero deps, no build step. */
+
+   Screens and rendering only. There is no backend: every value on screen comes
+   from app/vault/, which reads the folder the user picked through the File
+   System Access API. `fetch()` to an origin appears zero times in this file and
+   must stay that way — see CONTRIBUTING.md.
+
+   No mock content — a sparse vault renders honest empty states.
+   Zero deps, no build step. */
 
 'use strict';
 
@@ -25,7 +29,25 @@ function h(tag, props, ...kids) {
       else if (key === 'html') el.innerHTML = val;
       else if (key === 'value') el.value = val;
       else if (key === 'checked') el.checked = !!val;
-      else if (key === 'onClick') el.addEventListener('click', val);
+      else if (key === 'onClick') {
+        el.addEventListener('click', val);
+        // A <div onclick> is unreachable without a mouse. Rows, cards, tiles
+        // and chips are all built that way here, so the fix belongs in the
+        // factory rather than at 14 call sites that would drift apart.
+        // Native controls already do this; only the improvised ones need it.
+        if (!/^(button|a|input|select|textarea|label)$/i.test(tag)
+            && props.role == null && props.tabIndex == null) {
+          if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+          if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+          el.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            // Space scrolls the page by default, which is never what a
+            // focused row is asking for.
+            e.preventDefault();
+            el.click();
+          });
+        }
+      }
       else if (key === 'onInput' || key === 'onChange') el.addEventListener('input', val);
       else if (key === 'onKeyDown') el.addEventListener('keydown', val);
       else if (key === 'onMouseDown') el.addEventListener('mousedown', val);
@@ -127,14 +149,83 @@ function FirstRunPanel(onCreate) {
       h('li', null, h('b', null, 'inspo/'), ' visual reference')));
 }
 
-function EmptyState(msg, sub) {
-  return h('div', {
-    style: {
-      border: '1px dashed var(--line-soft)', background: 'var(--paper)',
-      padding: '28px 22px', color: 'var(--muted)', fontSize: 'var(--fz-mini)',
-      lineHeight: '1.7', textAlign: 'center',
+/* An empty state is the first thing a new vault shows on most screens, so it
+   is the app's first impression more often than the dashboard is. This one
+   used to be grey text in a dashed box — technically informative, and it read
+   like a validation error. The monogram behind it turns the same information
+   into a considered blank page, and `action` gives the state a way out
+   instead of describing one. */
+/* ── toast ──────────────────────────────────────────────────────────────
+   One transient message with an optional single action. Exists because
+   `.trash/` and `.history/` have always been there and the interface never
+   mentioned either: the app was safer than it looked, which is the wrong
+   direction for a tool holding the only copy of your notes. */
+let _toastTimer = null;
+function toast(message, opts = {}) {
+  const { actionLabel, onAction, tone, ms = actionLabel ? 8000 : 3200 } = opts;
+  document.querySelectorAll('.cv-toast').forEach((n) => n.remove());
+  clearTimeout(_toastTimer);
+
+  const el = h('div', { className: 'cv-toast' + (tone ? ' cv-toast-' + tone : ''), role: 'status' },
+    h('span', { className: 'cv-toast-msg' }, message));
+  if (actionLabel && onAction) {
+    el.appendChild(h('button', {
+      className: 'cv-toast-action',
+      onClick: async () => { el.remove(); clearTimeout(_toastTimer); await onAction(); },
+    }, actionLabel));
+  }
+  el.appendChild(h('button', {
+    className: 'cv-toast-x', title: 'Dismiss', 'aria-label': 'Dismiss',
+    onClick: () => { el.remove(); clearTimeout(_toastTimer); },
+  }, '\u2715'));
+  document.body.appendChild(el);
+  // An undo offer gets longer than a bare confirmation — you need time to
+  // realise you did not mean it.
+  _toastTimer = setTimeout(() => el.remove(), ms);
+  return el;
+}
+
+/* Pick a snapshot. Deliberately plain — a list of times, newest first, and
+   nothing else, because a snapshot carries no other metadata. */
+function historyDialog(snaps, title) {
+  return new Promise((resolve) => {
+    const close = (v) => {
+      bg.remove();
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(null); } };
+    const pretty = (stamp) => String(stamp).replace('T', '  ').replace(/-(\d{2})-(\d{2})$/, ':$1:$2');
+    const bg = h('div', {
+      className: 'modal-bg',
+      onClick: (e) => { if (e.target === bg) close(null); },
     },
-  }, msg, sub ? h('div', { style: { color: 'var(--faint)', marginTop: '6px' } }, sub) : null);
+      h('div', { className: 'modal confirm-modal' },
+        h('div', { className: 'modal-hd' },
+          h('b', null, 'Version history'),
+          h('button', { className: 'sb-twk-x', onClick: () => close(null) }, '\u2715')),
+        h('div', { className: 'modal-body' },
+          h('p', { className: 'history-lede' },
+            String(snaps.length),
+            snaps.length === 1 ? ' earlier version of ' : ' earlier versions of ',
+            h('b', null, title), ', kept in ', h('code', null, '.history/'), '.'),
+          h('div', { className: 'history-list' },
+            snaps.map((sn) => h('button', {
+              className: 'history-row', onClick: () => close(sn),
+            },
+              h('span', { className: 'history-when' }, pretty(sn.stamp)),
+              h('span', { className: 'history-go' }, 'Restore')))))));
+    document.body.appendChild(bg);
+    document.addEventListener('keydown', onKey, true);
+  });
+}
+
+function EmptyState(msg, sub, action) {
+  return h('div', { className: 'empty-state' },
+    h('span', { className: 'empty-state-mark' }, brandMark()),
+    h('div', { className: 'empty-state-msg' }, msg),
+    sub ? h('div', { className: 'empty-state-sub' }, sub) : null,
+    action || null);
 }
 function basename(slug) { return String(slug).split('/').pop(); }
 
@@ -343,112 +434,6 @@ function AutocompleteInput(opts) {
   return wrap;
 }
 
-/* ── Global per-page chat (survives navigation) ────────────────────
-   sendPageChat() owns the full chat lifecycle for one turn. It saves the
-   optimistic state immediately, kicks off the API call, and finishes by
-   patching the final response into the page's meta.thread. This way:
-   - The in-flight request keeps going even if the user navigates away.
-   - When the answer arrives we surface a notification if the user isn't
-     on that page; otherwise the chat UI re-renders via the listener. */
-const _chatNotifs = [];   // [{pageId, title, message, status, ts}]
-const _chatListeners = new Set();  // (pageId) => void
-
-function onChatThreadChange(fn) { _chatListeners.add(fn); return () => _chatListeners.delete(fn); }
-function emitChatThreadChange(pageId) {
-  _chatListeners.forEach((fn) => { try { fn(pageId); } catch (_) {} });
-}
-
-function pushChatNotif(n) { _chatNotifs.push(n); renderChatNotifs(); }
-function updateChatNotif(pageId, status, extra = {}) {
-  for (let i = _chatNotifs.length - 1; i >= 0; i--) {
-    if (_chatNotifs[i].pageId === pageId && _chatNotifs[i].status === 'pending') {
-      Object.assign(_chatNotifs[i], { status, ts: new Date().toISOString() }, extra);
-      break;
-    }
-  }
-  renderChatNotifs();
-}
-function dismissChatNotif(idx) { _chatNotifs.splice(idx, 1); renderChatNotifs(); }
-function renderChatNotifs() {
-  let host = document.getElementById('chat-notifs');
-  if (!host) {
-    host = document.createElement('div');
-    host.id = 'chat-notifs';
-    host.className = 'chat-notifs';
-    document.body.appendChild(host);
-  }
-  clear(host);
-  _chatNotifs.forEach((n, idx) => {
-    // Hide stale completed notifs — auto-dismiss after 12s.
-    if (n.status !== 'pending' && Date.now() - new Date(n.ts).getTime() > 12000) return;
-    const isReady = n.status === 'ready';
-    const isError = n.status === 'error';
-    const cls = 'chat-notif chat-notif-' + n.status;
-    const item = h('div', { className: cls,
-      onClick: () => {
-        if (app.openPageId !== n.pageId) openPage(n.pageId);
-        dismissChatNotif(idx);
-      } },
-      h('span', { className: 'chat-notif-dot' }),
-      h('div', { className: 'chat-notif-body' },
-        h('div', { className: 'chat-notif-title' },
-          isReady ? '✓ reply ready' : isError ? '✗ chat failed' : '⋯ thinking',
-          h('span', { className: 'chat-notif-page' }, ' · ', n.title || 'untitled')),
-        h('div', { className: 'chat-notif-msg' }, (n.message || '').slice(0, 80))),
-      h('button', { className: 'chat-notif-x',
-        onClick: (e) => { e.stopPropagation(); dismissChatNotif(idx); } }, '×'));
-    host.appendChild(item);
-  });
-  // Auto-cleanup pass for stale entries
-  if (_chatNotifs.some((n) => n.status !== 'pending' && Date.now() - new Date(n.ts).getTime() > 12000)) {
-    setTimeout(() => {
-      const before = _chatNotifs.length;
-      for (let i = _chatNotifs.length - 1; i >= 0; i--) {
-        const n = _chatNotifs[i];
-        if (n.status !== 'pending' && Date.now() - new Date(n.ts).getTime() > 12000) _chatNotifs.splice(i, 1);
-      }
-      if (_chatNotifs.length !== before) renderChatNotifs();
-    }, 12500);
-  }
-}
-
-async function sendPageChat(pageId, message) {
-  if (!pageId || !message) return;
-  let p = cacheGetPage(pageId);
-  if (!p) { try { p = await SB.data().page(pageId); cacheSetPage(p); } catch (_) { return; } }
-  p.meta = p.meta || {};
-  if (!Array.isArray(p.meta.thread)) p.meta.thread = [];
-  // History captured BEFORE we add the new turn.
-  const history = p.meta.thread.map((m) => ({ role: m.role, content: m.content }));
-  p.meta.thread.push({ role: 'user', content: message, ts: new Date().toISOString() });
-  p.meta.thread.push({ role: 'assistant', content: '…', ts: new Date().toISOString() });
-  cacheSetPage(p);
-  emitChatThreadChange(pageId);
-  // Persist optimistic state (don't await — fire-and-forget so UI updates fast).
-  SB.data().updatePage(pageId, { meta: p.meta }).catch(() => {});
-  pushChatNotif({ pageId, title: p.title, message, status: 'pending', ts: new Date().toISOString() });
-  try {
-    throw new Error('per-page chat is gone — in-app LLM features were removed (SPEC §16)');
-    const cur = cacheGetPage(pageId) || p;
-    cur.meta = cur.meta || {}; cur.meta.thread = cur.meta.thread || [];
-    const last = cur.meta.thread[cur.meta.thread.length - 1];
-    if (last) last.content = r.reply || '(empty reply)';
-    cacheSetPage(cur);
-    await SB.data().updatePage(pageId, { meta: cur.meta }).catch(() => {});
-    emitChatThreadChange(pageId);
-    updateChatNotif(pageId, 'ready');
-  } catch (e) {
-    const cur = cacheGetPage(pageId) || p;
-    cur.meta = cur.meta || {}; cur.meta.thread = cur.meta.thread || [];
-    const last = cur.meta.thread[cur.meta.thread.length - 1];
-    if (last) last.content = '✗ ' + (e.message || e);
-    cacheSetPage(cur);
-    await SB.data().updatePage(pageId, { meta: cur.meta }).catch(() => {});
-    emitChatThreadChange(pageId);
-    updateChatNotif(pageId, 'error');
-  }
-}
-
 /* In-memory cache so we don't re-fetch the same URL multiple times in one session. */
 const _ogCache = new Map();
 async function fetchLinkPreview(url) {
@@ -471,6 +456,15 @@ async function fetchLinkPreview(url) {
    wrapper via innerHTML because h() has no SVG namespace support. Icons
    inherit `currentColor` and size via font-size (1em). */
 const LUCIDE = {
+  'panel-left-close': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>',
+  'panel-left-open':  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
+  'link-2':      '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
+  'history':     '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  'check':       '<path d="M20 6 9 17l-5-5"/>',
+  'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  'download':    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  'braces':      '<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>',
+  'trash-2':     '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
   'home':        '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
   'files':       '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v9a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
   'message-circle': '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -504,9 +498,46 @@ function icon(name, cls) {
   });
 }
 
+/* ── Brand ──────────────────────────────────────────────────────────────
+   The CV monogram and the CANON-VAULT wordmark, inlined from the source
+   artwork in app/icons/. Inlined rather than <img src>'d because the
+   deployed CSP blocks an external request and there is no build step to
+   inline one at ship time.
+
+   Both are OUTLINED — filled paths, not live strokes. That is what makes
+   them hold up from 16px to 512px: there is no stroke width to scale down
+   into a sub-pixel smear, which is exactly what made the earlier
+   stroke-based placeholder look washed out in a favicon.
+
+   The single fill is `currentColor`, so one asset serves both themes — the
+   source exports carry `fill="black"`, which is invisible on the dark
+   ground, and that substitution is the only edit made to them.
+
+   TO UPDATE: re-export from app/icons/mark.svg and app/icons/wordmark.svg,
+   swap the path data below, and keep each viewBox in sync with its file.
+   app/vault/bridge.js holds a second copy for the first-run screen. */
+const BRAND_MARK_VB = '0 0 144 100';
+const BRAND_MARK = `<path d="M49.6426 11.3103C58.0084 10.2422 66.4938 11.9487 73.7959 16.1687C79.489 19.4587 84.2172 24.1354 87.5654 29.7243C89.1394 32.3521 87.7727 35.6274 84.9463 36.8083C82.1207 37.9888 78.9145 36.6121 77.1885 34.0827C72.2514 26.8472 63.9417 22.0965 54.5215 22.0964C39.3753 22.0964 27.0967 34.375 27.0967 49.5212C27.0967 64.6673 39.3753 76.946 54.5215 76.946C61.1452 76.9459 67.2197 74.5962 71.959 70.6862C74.3225 68.7365 77.7872 68.3119 80.1709 70.237C82.5557 72.1631 82.9517 75.6935 80.7031 77.7771C75.9253 82.2042 70.0782 85.3689 63.6933 86.9343C55.5022 88.9424 46.8782 88.2067 39.1455 84.8405C31.4128 81.4742 24.998 75.6632 20.8867 68.2995C16.7755 60.9358 15.1949 52.4258 16.3867 44.0769C17.5787 35.7279 21.4779 28.0009 27.4853 22.0817C33.4929 16.1626 41.2768 12.3784 49.6426 11.3103ZM118.446 34.2038C120.06 31.4092 123.681 30.5291 126.397 32.2712C128.903 33.8786 129.734 37.1532 128.297 39.7605L104.945 82.1384C102.861 85.9205 97.4132 85.8849 95.3789 82.0759L82.4726 57.9099C80.797 54.7724 77.4572 52.8875 73.9053 53.0749L64.3369 53.5788C62.7427 57.431 58.9497 60.1421 54.5215 60.1423C48.6556 60.1423 43.9004 55.387 43.9004 49.5212C43.9004 43.6553 48.6556 38.9001 54.5215 38.9001C59.1359 38.9003 63.0619 41.8435 64.5273 45.9548H82.7578C86.0319 45.9549 89.0572 47.7014 90.6943 50.5368L99.8555 66.404L118.446 34.2038Z" fill="currentColor"/>`;
+
+const BRAND_WORD_VB = '0 0 1712 91';
+const BRAND_WORD = `<path d="M58.9241 90.7148C22.4681 90.7148 0 73.4966 0 45.327C0 17.3398 22.8178 0 58.487 0C81.8294 0 100.276 7.6052 108.581 20.4428C109.98 22.4505 110.679 24.5191 110.679 26.3444C110.679 30.5425 106.745 33.2195 100.713 33.2195C95.555 33.2195 92.1455 31.5159 89.6976 27.6829C83.8401 18.2525 72.3875 13.3243 58.6619 13.3243C36.9806 13.3243 23.0801 25.736 23.0801 45.327C23.0801 65.0396 36.8932 77.3905 58.7493 77.3905C73.1744 77.3905 84.2773 73.0099 90.0473 63.762C92.3203 60.1723 95.2053 58.7121 100.101 58.7121C106.308 58.7121 110.592 61.5717 110.592 65.7089C110.592 67.7167 109.893 69.5419 108.494 71.6105C100.451 83.5355 82.5288 90.7148 58.9241 90.7148Z" fill="currentColor"/> <path d="M181.228 90.2889C174.321 90.2889 169.862 87.4902 169.862 83.0487C169.862 81.8319 170.3 80.1283 171.349 78.2422L207.98 8.94371C211.039 3.10292 216.11 0.425891 224.328 0.425891C232.633 0.425891 237.704 2.98124 240.851 8.88287L277.569 78.2422C278.619 80.25 279.056 81.6494 279.056 83.0487C279.056 87.3076 274.335 90.2889 267.778 90.2889C261.658 90.2889 258.249 88.3419 256.238 83.6571L247.933 66.8649H200.811L192.505 83.5355C190.407 88.2811 187.085 90.2889 181.228 90.2889ZM206.144 54.4532H242.425L224.503 16.9748H223.891L206.144 54.4532Z" fill="currentColor"/> <path d="M354.762 90.2889C347.943 90.2889 343.834 87.3685 343.834 82.3795V8.51782C343.834 3.46797 348.292 0.425891 355.549 0.425891C360.532 0.425891 363.592 1.64272 367.264 5.11069L426.013 62.971H426.8V8.33529C426.8 3.34629 430.909 0.425891 437.64 0.425891C444.459 0.425891 448.481 3.34629 448.481 8.33529V82.4403C448.481 87.4293 444.372 90.2889 437.028 90.2889C431.87 90.2889 428.898 89.1329 425.313 85.6041L366.389 27.6829H365.602V82.3795C365.602 87.3685 361.494 90.2889 354.762 90.2889Z" fill="currentColor"/> <path d="M574.719 90.7148C537.913 90.7148 514.833 73.3141 514.833 45.3878C514.833 17.4615 537.913 0 574.719 0C611.437 0 634.517 17.4615 634.517 45.3878C634.517 73.3141 611.437 90.7148 574.719 90.7148ZM574.719 77.3296C597.187 77.3296 611.524 64.9179 611.524 45.3878C611.524 25.7968 597.187 13.3851 574.719 13.3851C552.163 13.3851 537.913 25.7968 537.913 45.3878C537.913 64.9179 552.163 77.3296 574.719 77.3296Z" fill="currentColor"/> <path d="M711.797 90.2889C704.978 90.2889 700.869 87.3685 700.869 82.3795V8.51782C700.869 3.46797 705.327 0.425891 712.584 0.425891C717.567 0.425891 720.627 1.64272 724.298 5.11069L783.048 62.971H783.835V8.33529C783.835 3.34629 787.944 0.425891 794.675 0.425891C801.494 0.425891 805.516 3.34629 805.516 8.33529V82.4403C805.516 87.4293 801.407 90.2889 794.063 90.2889C788.905 90.2889 785.933 89.1329 782.348 85.6041L723.424 27.6829H722.637V82.3795C722.637 87.3685 718.528 90.2889 711.797 90.2889Z" fill="currentColor"/> <path d="M884.369 60.3548C878.424 60.3548 873.966 57.7995 873.966 53.6014C873.966 49.4033 878.424 46.848 884.369 46.848H923.885C929.917 46.848 934.289 49.4033 934.289 53.6014C934.289 57.7995 929.917 60.3548 923.885 60.3548H884.369Z" fill="currentColor"/> <path d="M1045.58 90.2889C1037.18 90.2889 1032.38 87.7944 1029.14 81.7102L991.461 12.0466C990.587 10.5256 990.237 9.06539 990.237 7.66604C990.237 3.34629 994.958 0.425891 1001.95 0.425891C1007.81 0.425891 1011.39 2.25114 1013.23 6.38836L1045.66 72.4015H1046.19L1078.54 6.26668C1080.46 2.12945 1083.69 0.425891 1089.55 0.425891C1096.37 0.425891 1101.09 3.34629 1101.09 7.48351C1101.09 8.88287 1100.65 10.2822 1099.87 11.7424L1061.93 81.7711C1058.78 87.7944 1053.97 90.2889 1045.58 90.2889Z" fill="currentColor"/> <path d="M1157.04 90.2889C1150.13 90.2889 1145.67 87.4902 1145.67 83.0487C1145.67 81.8319 1146.11 80.1283 1147.16 78.2422L1183.79 8.94371C1186.85 3.10292 1191.92 0.425891 1200.14 0.425891C1208.45 0.425891 1213.52 2.98124 1216.66 8.88287L1253.38 78.2422C1254.43 80.25 1254.87 81.6494 1254.87 83.0487C1254.87 87.3076 1250.15 90.2889 1243.59 90.2889C1237.47 90.2889 1234.06 88.3419 1232.05 83.6571L1223.74 66.8649H1176.62L1168.32 83.5355C1166.22 88.2811 1162.9 90.2889 1157.04 90.2889ZM1181.96 54.4532H1218.24L1200.31 16.9748H1199.7L1181.96 54.4532Z" fill="currentColor"/> <path d="M1369.91 90.7148C1338 90.7148 1318.07 77.4513 1318.07 58.2862V8.57866C1318.07 3.40713 1322.36 0.425891 1329.35 0.425891C1336.43 0.425891 1340.63 3.40713 1340.63 8.57866V56.8869C1340.63 68.8726 1351.21 77.0254 1369.91 77.0254C1388.62 77.0254 1399.29 68.8726 1399.29 56.8869V8.57866C1399.29 3.40713 1403.49 0.425891 1410.57 0.425891C1417.56 0.425891 1421.76 3.40713 1421.76 8.57866V58.2862C1421.76 77.4513 1401.91 90.7148 1369.91 90.7148Z" fill="currentColor"/> <path d="M1503.76 89.2546C1496.76 89.2546 1492.48 86.2125 1492.48 81.1018V8.57866C1492.48 3.40713 1496.76 0.425891 1503.76 0.425891C1510.84 0.425891 1515.04 3.40713 1515.04 8.57866V75.9911H1563.38C1569.5 75.9911 1573.7 78.5465 1573.7 82.6228C1573.7 86.6992 1569.59 89.2546 1563.38 89.2546H1503.76Z" fill="currentColor"/> <path d="M1661.56 90.2889C1654.56 90.2889 1650.37 87.3076 1650.37 82.1361V14.7237H1621.52C1615.4 14.7237 1611.2 12.1683 1611.2 8.09193C1611.2 4.01554 1615.31 1.4602 1621.52 1.4602H1701.68C1707.89 1.4602 1712 4.01554 1712 8.09193C1712 12.1683 1707.8 14.7237 1701.68 14.7237H1672.83V82.1361C1672.83 87.3076 1668.64 90.2889 1661.56 90.2889Z" fill="currentColor"/>`;
+
+function brandMark(cls) {
+  return h('span', {
+    className: 'brand-mark' + (cls ? ' ' + cls : ''),
+    html: `<svg viewBox="${BRAND_MARK_VB}" fill="currentColor" aria-hidden="true">${BRAND_MARK}</svg>`,
+  });
+}
+function brandWord(cls) {
+  return h('span', {
+    className: 'brand-word' + (cls ? ' ' + cls : ''),
+    html: `<svg viewBox="${BRAND_WORD_VB}" fill="currentColor" aria-hidden="true">${BRAND_WORD}</svg>`,
+  });
+}
+
 const KIND_META = {
   'note':     { label: 'Note',     icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'Anything read as prose. A bookmark, a quote, an article — the chrome follows the frontmatter.' },
-  'canvas':   { label: 'Canvas',   icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A board for pasted links, text, images. Talk to the AI about everything on it.' },
+  'canvas':   { label: 'Board',    icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A JSON Canvas board of links, text and images. Obsidian owns the arrangement; read-only here.' },
   'topic':    { label: 'Topic',    icon: 'pilcrow', glyph: '¶', color: 'var(--k-topic)',   hint: 'A text page for a subject you want to think through.' },
   'markdown': { label: 'Markdown', icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'A rendered markdown article — section headers, pulled quotes, related, contradicts. Beautiful long-form.' },
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
@@ -519,6 +550,29 @@ function kindIcon(kind, cls) {
   const meta = KIND_META[kind];
   return icon(meta && meta.icon ? meta.icon : 'file-text', cls);
 }
+// `kind: canvas` covers two file formats that behave nothing alike here: a
+// `.canvas` board is Obsidian's, read-only; a `.excalidraw.md` drawing is ours,
+// fully editable. Showing both under one "Canvas" pill was the single most
+// confusing thing about the model — you could not tell from the page whether
+// your edits would be kept. This is the one place that decides, so the header,
+// the lists and the project view cannot drift apart.
+const DRAWING_META = {
+  label: 'Drawing', icon: 'shapes', glyph: '✎', color: 'var(--k-canvas)',
+  hint: 'An Excalidraw drawing. Edited here and in Obsidian — this app writes it.',
+};
+function isDrawingPath(path) { return /\.excalidraw\.md$/i.test(String(path || '')); }
+/** The chrome for a page, splitting `canvas` by file format. */
+function metaForPage(p) {
+  if (p && p.kind === 'canvas' && isDrawingPath(p.path)) return DRAWING_META;
+  /* A note carrying a url IS a bookmark as far as the reader is concerned:
+     the sidebar files it under Bookmark, the page renders the bookmark
+     chrome. It used to keep saying "Note" on its own kind pill, because
+     bookmark is a derived facet rather than a stored kind — a true fact
+     about the data model that the user has no reason to know. The label
+     follows the chrome, decided here, once. */
+  if (p && p.kind === 'note' && p.meta && p.meta.url) return KIND_META.bookmark;
+  return KIND_META[p && p.kind] || KIND_META.note;
+}
 // "by kind" capture types.
 // SPEC §5: 13 kinds collapsed to 4. The old markdown/bookmark/snippet entries
 // stay in KIND_META only as a fallback for a stranger's vault; they are not
@@ -527,8 +581,23 @@ const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'inspo'];
 // Work-mode (design architecture) kinds. Same store + same mention/tag graph
 // as the personal kinds above; only the surface (nav, home, create) differs.
 
+/* A kind marker.
+   This used to be a bordered, tinted, labelled box on every row — six of them
+   down a column already headed "Kind", each one a little rectangle competing
+   with the title beside it. In a table the column says what the value means,
+   so the marker only has to say WHICH, and a coloured icon does that faster
+   than a word does. `withLabel` is for the places that have no column header
+   to lean on. */
 function KindChip(kind, opts = {}) {
-  const meta = KIND_META[kind] || { label: kind, glyph: '?', color: 'var(--muted)' };
+  const meta = KIND_META[kind] || { label: kind, color: 'var(--muted)' };
+  if (!opts.withLabel) {
+    return h('span', {
+      className: 'kind-mark' + (opts.large ? ' lg' : ''),
+      style: { '--k-c': meta.color },
+      title: meta.label,
+      'aria-label': meta.label,
+    }, kindIcon(kind));
+  }
   return h('span', {
     className: 'kind-chip' + (opts.large ? ' lg' : ''),
     style: { '--k-c': meta.color },
@@ -600,6 +669,16 @@ async function getPageIndex(force) {
 }
 function invalidatePageIndex() { _pageIndexCache = null; }
 
+/* A vault-relative path → the indexed page at it, or null. JSON Canvas `file`
+   nodes address by path, unlike wikilinks (which go basename → alias → path),
+   so this is a plain lookup and deliberately not `resolveWikilink`. */
+function pageByPath(path) {
+  const want = String(path || '').replace(/^\.?\//, '').toLowerCase();
+  if (!want) return null;
+  const entries = (window.SB_VAULT && window.SB_VAULT.list()) || [];
+  return entries.find((e) => String(e.path || '').toLowerCase() === want) || null;
+}
+
 /* 6.10: turn wikilinks in rendered HTML into clickable links, resolved the way
    Obsidian resolves them — basename → aliases → relative path, case-insensitive.
    Handles [[T]], [[T|display]], [[T#heading]] and ![[file]] embeds. A link is
@@ -653,13 +732,27 @@ function decorateMentions(rootEl) {
    request just 404s and every image node renders blank. Resolve it the same
    way `renderVaultEmbed` does — read the bytes, mint an object URL, and hand
    it to the same revocation bookkeeping. */
+/* An object URL minted from a typeless Blob works for PNG and JPEG because the
+   browser sniffs the magic bytes — and fails silently for SVG, which has none
+   worth sniffing and is refused as an <img> source without an explicit type.
+   So the type comes from the extension. */
+const MIME_FOR = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+  webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml',
+};
+function imageBlob(bytes, path) {
+  const ext = String(path).split('.').pop().toLowerCase();
+  const type = MIME_FOR[ext];
+  return type ? new Blob([bytes], { type }) : new Blob([bytes]);
+}
+
 function vaultImage(assetPath, props = {}) {
   const img = h('img', { loading: 'lazy', alt: '', ...props });
   const vault = window.SB_VAULT;
   if (!vault || !assetPath) return img;
   vault.readBlob(assetPath)
     .then((bytes) => {
-      const url = URL.createObjectURL(new Blob([bytes]));
+      const url = URL.createObjectURL(imageBlob(bytes, assetPath));
       img.src = url;
       img.dataset.objectUrl = url;
       registerObjectUrl(img, url);
@@ -679,7 +772,7 @@ function renderVaultEmbed(target) {
   if (vault) {
     vault.readBlob('attachments/' + target)
       .then((bytes) => {
-        const url = URL.createObjectURL(new Blob([bytes]));
+        const url = URL.createObjectURL(imageBlob(bytes, target));
         img.src = url;
         img.dataset.objectUrl = url;
         registerObjectUrl(img, url);
@@ -747,7 +840,7 @@ const NAV = [
 // into the Ask flow so it handles both "find a page" and "ask the AI"
 // in a single input. ⌘K focuses this input from anywhere.
 function TabBarSearch() {
-  const wrap = h('div', { className: 'tab-search', title: 'search pages · ⌘K · enter to ask AI' });
+  const wrap = h('div', { className: 'tab-search', title: 'Search pages · ⌘K' });
   // Named searchGlyph, not `icon` — a local by that name would shadow the
   // global icon() helper for this whole function.
   const searchGlyph = h('span', { className: 'tab-search-glyph' }, icon('search'));
@@ -770,10 +863,8 @@ function TabBarSearch() {
       const askHint = (input.value || '').trim();
       results.appendChild(h('div', { className: 'tab-search-empty' },
         askHint
-          ? h('div', null, 'No page matches "',
-              h('b', null, askHint),
-              '". ', h('span', { className: 'kbd' }, 'Enter'), ' to ask the AI.')
-          : 'Type to search pages, or ask a question.'));
+          ? h('div', null, 'No page matches "', h('b', null, askHint), '".')
+          : 'Type to search pages by title, body or tag.'));
       return;
     }
     items.forEach((p, i) => {
@@ -855,10 +946,27 @@ function TabBarSearch() {
 // ── TabBar (top of the app — Notion-style multi-tab work surface) ───────
 function TabBar(tabs, activeTabId, onSwitch, onClose, onNew) {
   return h('div', { className: 'tabbar' },
+    // Monogram only. In app chrome the name is dead weight — you know which
+    // app you are in by the time you have opened a vault, and the tab strip
+    // needs the width more than the identity does. The full lockup stays on
+    // the first-run screen, which is the one place the name is doing work.
+    /* The brand cell spans the sidebar's width so the rule between chrome
+       and content runs unbroken — but that left an 18px mark alone in 244px
+       of nothing. The collapse control lives here now: it belongs to the
+       sidebar, it sits at the sidebar's edge, and the space was already
+       paid for. */
     h('div', { className: 'tab-brand' },
-      h('span', { className: 'glyph' }, '◐'),
-      h('span', null, 'SECOND BRAIN'),
-      h('small', null, 'v0.6')),
+      h('a', {
+        className: 'tab-brand-link', href: '#home', title: 'Canon Vault v0.6',
+        'aria-label': 'Canon Vault — home',
+        onClick: (e) => { e.preventDefault(); setRoute('home'); },
+      }, brandMark()),
+      h('button', {
+        className: 'nav-collapse',
+        title: app.navCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+        'aria-label': app.navCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+        onClick: () => { setNavCollapsed(!app.navCollapsed); render(); },
+      }, icon(app.navCollapsed ? 'panel-left-open' : 'panel-left-close'))),
     TabBarSearch(),
     h('div', { className: 'tabs', role: 'tablist' },
       ...tabs.map((t) => h('div', {
@@ -911,7 +1019,7 @@ function SearchPanel(onClose) {
     clear(resultsBox);
     if (!items.length) {
       resultsBox.appendChild(h('div', { className: 'search-empty' },
-        'No page matches. Press Enter to ask the AI instead.'));
+        'No page matches.'));
       return;
     }
     items.forEach((p) => {
@@ -938,7 +1046,7 @@ function SearchPanel(onClose) {
 
   const input = h('input', {
     className: 'search-input', autofocus: 'true',
-    placeholder: 'search pages · enter to ask AI · esc to close',
+    placeholder: 'Search pages…',
     onInput: (e) => {
       clearTimeout(searchTimer);
       const q = e.target.value.trim();
@@ -971,7 +1079,15 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
   const groupLabel = (g) => g.group === 'kinds'
     ? `by kind — ${total} pages`
     : g.label;
+  // Drag handle on the sidebar's right edge, and a collapse toggle. Same
+  // shape as the activity log's resizer so both rails behave identically.
+  const resize = h('div', { className: 'nav-resize', title: 'Drag to resize' });
+  resize.addEventListener('pointerdown', (e) => startNavResize(e, resize));
+  resize.addEventListener('dblclick', () => { app.navW = 244; applyNavW();
+    try { localStorage.setItem('sb.navW', '244'); } catch (_) {} });
+
   return h('div', { className: 'nav' },
+    resize,
     // ── top: Create button (search lives in the top tab bar now) ────────
     // Work mode is project-first: this makes a new project (the container),
     // not a lone design page.
@@ -979,10 +1095,11 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
       h('button', {
         className: 'btn-create',
         onClick: onCreate,
-        title: 'Create new page (n)',
+        title: 'Create new page  (⌘N)',
       },
         h('span', { className: 'btn-create-plus' }, icon('plus')),
-        h('span', null, 'Create new'))),
+        h('span', { className: 'nav-lbl' }, 'Create new')),
+      ),
 
     // ── nav groups (scrollable) ─────────────────────────────────────────
     h('div', { className: 'nav-scroll' },
@@ -1004,71 +1121,56 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
           },
             h('span', { className: 'nav-icon' + (meta ? ' kind-glyph' : '') },
               icon(it.icon || (meta && meta.icon) || 'file-text')),
-            h('span', null, it.label),
+            h('span', { className: 'nav-lbl' }, it.label),
             it.href ? h('span', { className: 'ct' }, '↗') : h('span', { className: 'ct' }, c != null ? String(c) : ''));
         })))),
 
-    // ── bottom: agent status + sync + settings ──────────────────────────
+    // ── bottom: colour mode + status + settings ─────────────────────────
+    // The mode picker lives HERE, not behind the gear. Appearance is the one
+    // setting people change on a whim — by time of day, by room light — and
+    // burying a whim behind two clicks means it never gets used. Swatches
+    // rather than a labelled list, because the swatch IS the answer to the
+    // question you are asking: what will this look like.
     h('div', { className: 'nav-foot' },
+      ThemePicker(),
       h('div', { className: 'nav-status-row' },
         h('span', { className: 'dot', style: offline ? { background: 'var(--signal-alert)' } : null }),
         h('span', { className: 'nav-status-label' }, offline ? 'vault unavailable' : 'vault ready')),
       h('div', { className: 'nav-status-row' },
         h('span', { className: 'nav-status-label nav-status-sync' },
-          offline ? 'not synced' : ('synced ' + (lastSynced || 'just now')))),
+          offline ? 'not saved' : ('saved ' + (lastSynced || 'just now')))),
       h('button', {
         className: 'nav-gear', onClick: onSettingsToggle, title: 'Settings / tweak',
         'aria-expanded': String(!!app.settingsOpen),
       },
-        h('span', null, icon('settings')),
-        h('span', null, 'Settings'))));
+        h('span', { className: 'nav-icon' }, icon('settings')),
+        h('span', { className: 'nav-lbl' }, 'Settings'))));
 }
 
-function startLogResize(e, handle) {
-  e.preventDefault();
-  const min = 240;
-  const max = Math.min(680, window.innerWidth - 460);
-  handle.classList.add('dragging');
-  document.body.classList.add('col-resizing');
-  const onMove = (ev) => {
-    const w = Math.max(min, Math.min(max, window.innerWidth - ev.clientX));
-    app.logW = w;
-    applyLogW();
-  };
-  const onUp = () => {
-    handle.classList.remove('dragging');
-    document.body.classList.remove('col-resizing');
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    try { localStorage.setItem('sb.logW', String(app.logW)); } catch (_) {}
-  };
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
+/* A row of real colour chips. Each paints its own page + ink, so the control
+   previews the mode instead of naming it. System gets a split chip — half
+   light, half dark — which reads as "whichever your OS is" without a label. */
+function ThemePicker() {
+  const current = app.t.theme || 'system';
+  return h('div', {
+    className: 'theme-picker', role: 'radiogroup', 'aria-label': 'Colour mode',
+  },
+    ...THEMES.map((t) => {
+      const on = current === t.id;
+      const chip = h('button', {
+        className: 'theme-chip' + (on ? ' on' : '') + (t.id === 'system' ? ' theme-chip-system' : ''),
+        role: 'radio', 'aria-checked': String(on),
+        title: t.label + (t.id === 'system' ? ' — follows your OS' : ''),
+        'aria-label': t.label,
+        onClick: () => setTweak('theme', t.id),
+      });
+      if (t.swatch) {
+        chip.style.setProperty('--chip-bg', t.swatch[0]);
+        chip.style.setProperty('--chip-ink', t.swatch[1]);
+      }
+      return chip;
+    }));
 }
-
-function ActivityLog(entries, agentBusy, offline) {
-  const handle = h('div', { className: 'log-resize', title: 'drag to resize' });
-  handle.addEventListener('pointerdown', (e) => startLogResize(e, handle));
-  return h('div', { className: 'log' },
-    handle,
-    h('div', { className: 'log-head' },
-      h('span', null, 'agent · activity'),
-      h('span', { className: 'live' }, h('span', { className: 'pulse' }), offline ? 'offline' : 'live')),
-    h('div', { className: 'log-body' },
-      entries && entries.length
-        ? entries.map((e) => h('div', { className: `log-entry ${e.actor === 'you' ? 'you' : ''}` },
-            h('span', { className: 't' }, e.t),
-            h('span', { className: `tag ${e.tag}` }, e.tag),
-            h('span', { className: 'msg' },
-              e.actor === 'you' ? [h('b', null, 'you · '), e.msg] : e.msg)))
-        : h('div', { style: { padding: '14px', color: 'var(--faint)', fontSize: 'var(--fz-mini)' } },
-            offline ? 'log unavailable — backend offline' : 'no activity logged yet')),
-    h('div', { className: 'log-foot' },
-      agentBusy
-        ? [h('span', { style: { color: 'var(--signal-warn)' } }, '●'), ' working…']
-        : [h('span', { style: { color: 'var(--signal-pos)' } }, '●'), ' idle · monitoring inbox']));
-}
-
 
 function PageHeader(title, meta, sub, right) {
   return [
@@ -1084,25 +1186,90 @@ function PageHeader(title, meta, sub, right) {
 
 /* ── v2 screens ───────────────────────────────────────────────────────── */
 
+/* One creation picker for the whole app.
+
+   There were three grammars. This modal offered five kinds. The project
+   screen's picker offered six — the same five plus Drawing. And a new
+   project came from a browser `prompt()` dialog, which is a different visual
+   language entirely and cannot be styled, themed or cancelled consistently.
+
+   A person creating something should meet the same control every time,
+   whichever door they came through. So: every creatable thing is here,
+   including Project and Drawing, and Project asks for its name inline
+   instead of handing off to the browser. */
+const CREATABLE_KINDS = [...KIND_ORDER, 'drawing', 'project'];
+function creatableMeta(k) {
+  if (k === 'drawing') return DRAWING_META;
+  if (k === 'project') return {
+    label: 'Project', icon: 'folder', color: 'var(--k-proj)',
+    hint: 'A folder that holds pages. Not a kind — a container for the others.',
+  };
+  return KIND_META[k] || {};
+}
+
 function CreateModal(open, onPick, onClose) {
   if (!open) return null;
+  const body = h('div', { className: 'modal-body' });
+  // `open === 'project'` means someone pressed "New project" and should land
+  // on the name field, not on the grid they already made a choice in.
+  const startAt = open === 'project' ? 'project' : 'grid';
+
+  function paintGrid() {
+    clear(body);
+    body.appendChild(h('div', { className: 'kind-grid' },
+      CREATABLE_KINDS.map((k) => {
+        const m = creatableMeta(k);
+        return h('button', {
+          className: 'kind-card', style: { '--k-c': m.color },
+          onClick: () => (k === 'project' ? paintProjectName() : onPick(k)),
+        },
+          h('div', { className: 'kind-card-g' }, k === 'drawing' || k === 'project'
+            ? icon(m.icon) : kindIcon(k)),
+          h('div', { className: 'kind-card-l' }, m.label),
+          h('div', { className: 'kind-card-h' }, m.hint));
+      })));
+  }
+
+  /* A project is a folder, so it needs a name before it can exist — the one
+     creatable thing that cannot be made empty and titled later. It asks here
+     rather than through prompt(). */
+  function paintProjectName() {
+    clear(body);
+    const input = h('input', {
+      className: 'set-input create-name', placeholder: 'Project name',
+      autocomplete: 'off',
+      onKeyDown: (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); go(); }
+        if (e.key === 'Escape') { e.preventDefault(); paintGrid(); }
+      },
+    });
+    const err = h('div', { className: 'create-err' });
+    const go = () => {
+      const v = (input.value || '').trim();
+      if (!v) { err.textContent = 'Give the project a name first.'; input.focus(); return; }
+      onPick('project', v);
+    };
+    body.appendChild(h('div', { className: 'create-name-form' },
+      h('button', { className: 'btn create-back', onClick: paintGrid },
+        icon('arrow-right', 'flip'), 'Back'),
+      h('label', { className: 'create-name-l', for: 'cv-new-project' },
+        'Name this project'),
+      h('div', { className: 'create-name-row' }, input,
+        h('button', { className: 'btn-create', onClick: go }, 'Create')),
+      h('p', { className: 'create-name-h' },
+        'This becomes a folder in your vault, with a note inside it of the same name.'),
+      err));
+    setTimeout(() => input.focus(), 0);
+  }
+
+  if (startAt === 'project') paintProjectName(); else paintGrid();
   return h('div', { className: 'modal-bg', onClick: (e) => { if (e.target.classList.contains('modal-bg')) onClose(); } },
     h('div', { className: 'modal' },
       h('div', { className: 'modal-hd' },
-        h('b', null, false ? 'CREATE DESIGN PAGE' : 'CREATE NEW'),
-        h('button', { className: 'sb-twk-x', onClick: onClose }, '✕')),
-      h('div', { className: 'modal-body' },
-        h('div', { className: 'kind-grid' },
-          KIND_ORDER.map((k) => {
-            const m = KIND_META[k];
-            return h('button', {
-              className: 'kind-card', style: { '--k-c': m.color },
-              onClick: () => onPick(k),
-            },
-              h('div', { className: 'kind-card-g' }, kindIcon(k)),
-              h('div', { className: 'kind-card-l' }, m.label),
-              h('div', { className: 'kind-card-h' }, m.hint));
-          })))));
+        h('b', null, 'Create new'),
+        h('span', { className: 'modal-kbd' }, '\u2318N'),
+        h('button', { className: 'sb-twk-x', onClick: onClose }, '\u2715')),
+      body));
 }
 
 function V2Home(state, onOpen, onCreate, onKind) {
@@ -1119,18 +1286,24 @@ function V2Home(state, onOpen, onCreate, onKind) {
     if ((s.pages_total || 0) === 0) {
       append(wrap, [
         h('div', { className: 'dash-hd' },
-          h('h1', { className: 'dash-title' }, 'dashboard',
-            h('span', { className: 'dash-title-c' }, ' // ',
+          h('h1', { className: 'dash-title' }, 'Dashboard',
+            h('span', { className: 'dash-title-c' }, 
               h('span', { className: 'dim' }, 'nothing captured yet')))),
         FirstRunPanel(onCreate),
       ]);
       return;
     }
 
+    /* "Via" records how a page arrived — hand-written, clipped, imported.
+       In a vault you wrote yourself every row says "self", and a column
+       whose every cell is identical is a column carrying no information.
+       Render it only when the data actually varies. */
+    const showVia = new Set(recent.map((r) => r.via)).size > 1;
+
     append(wrap, [
       h('div', { className: 'dash-hd' },
-        h('h1', { className: 'dash-title' }, 'dashboard',
-          h('span', { className: 'dash-title-c' }, ' // ', h('span', { className: 'dim' }, "what's in the air"))),
+        h('h1', { className: 'dash-title' }, 'Dashboard',
+          h('span', { className: 'dash-title-c' },  h('span', { className: 'dim' }, "what's in the air"))),
         h('div', { className: 'dash-sub' },
           h('span', null,
             h('b', null, String(s.fresh_this_week || 0)), ' new this week · ',
@@ -1142,8 +1315,8 @@ function V2Home(state, onOpen, onCreate, onKind) {
 
       // ── Current obsessions ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'CURRENT OBSESSIONS'),
-        h('span', { className: 'sect-hd-c' }, '// detected by tag clustering')),
+        h('span', null, 'Current obsessions'),
+        h('span', { className: 'sect-hd-c' }, 'detected by tag clustering')),
       obs.length === 0
         ? EmptyState('No themes detected yet.',
             'Once a tag is on 2+ pages it starts surfacing here as a cluster.')
@@ -1152,57 +1325,85 @@ function V2Home(state, onOpen, onCreate, onKind) {
 
       // ── Recent captures ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'RECENT PAGES'),
-        h('span', { className: 'sect-hd-c' }, '// last 72h')),
+        h('span', null, 'Recent pages'),
+        h('span', { className: 'sect-hd-c' }, 'last 72h')),
       recent.length === 0
         ? EmptyState('No recent pages.', 'Create one above.')
         : h('div', { className: 'pages-table recent-table' },
-            h('div', { className: 'pages-th recent-th' },
-              h('span', null, 'ID'),
-              h('span', null, 'KIND'),
-              h('span', null, 'TITLE'),
-              h('span', null, 'VIA'),
-              h('span', null, 'TAGS'),
-              h('span', null, 'WHEN')),
+            /* Two columns were dropped here.
+
+               ID printed a ULID prefix. Nobody recalls a page by ULID, and
+               it took the leftmost, most-scanned column in the table. It is
+               still one click away in the Metadata rail.
+
+               Via read "← self" on every row in a self-authored vault. A
+               column whose every cell is identical carries no information;
+               it is now rendered only when some row actually differs. */
+            h('div', { className: 'pages-th recent-th' + (showVia ? '' : ' recent-th-novia') },
+              h('span', null, 'Kind'),
+              h('span', null, 'Title'),
+              showVia ? h('span', { className: 'recent-via-h' }, 'Via') : null,
+              h('span', { className: 'pages-tags-h' }, 'Tags'),
+              h('span', null, 'When')),
             recent.map((r) => h('div', {
-              className: 'pages-row recent-row', onClick: () => onOpen(r.id),
+              className: 'pages-row recent-row' + (showVia ? '' : ' recent-row-novia'), onClick: () => onOpen(r.id),
             },
-              h('span', { className: 'recent-id' }, r.short_id),
               h('span', null, KindChip(r.kind)),
               h('span', { className: 'pages-title' }, r.title),
-              h('span', { className: 'recent-via' }, '← ', r.via),
+              showVia ? h('span', { className: 'recent-via' }, r.via) : null,
               h('span', { className: 'pages-tags' },
                 (r.tags || []).slice(0, 2).map((t) => h('span', { className: 'tag-chip' }, t))),
               h('span', { className: 'pages-when' }, fmtDate(r.updated))))),
 
       // ── Activity buckets (replaces v1's "memory tiers") ──
       h('div', { className: 'sect-hd' },
-        h('span', null, 'ACTIVITY BUCKETS'),
-        h('span', { className: 'sect-hd-c' }, '// auto-cohorted by recency')),
+        h('span', null, 'Activity buckets'),
+        h('span', { className: 'sect-hd-c' }, 'auto-cohorted by recency')),
       h('div', { className: 'tier-grid' },
         buckets.map((b) => bucketCard(b))),
     ]);
   }
 
   function obsessionCard(o) {
+    const spark = o.sparkline || [];
+    const peak = Math.max(1, ...spark);
+    // A theme IS a tag, so the card says so and doubles as the way into that
+    // tag's pages — it was previously a dead end unless you clicked one of the
+    // three member links.
+    const openTag = () => setRoute('tag:' + o.title);
     return h('div', { className: 'obs-card' },
       h('div', { className: 'obs-hd' },
-        h('span', { className: 'obs-title' }, o.title),
-        h('span', { className: 'obs-weight' }, 'w=', String(o.weight))),
+        h('button', { className: 'obs-title', onClick: openTag,
+          title: 'See every page tagged ' + o.title },
+          h('span', { className: 'obs-hash' }, '#'), o.title),
+        // "w=1" was internal vocabulary leaking into the UI — nobody outside
+        // the clustering code knows what w is. Confidence is the same signal
+        // in a form that answers a question a reader would actually ask.
+        /* This printed "100%" on a three-page cluster, which invites more
+           trust than a three-page cluster has earned. Below a handful of
+           pages the honest answer is a word, not a number. */
+        h('span', { className: 'obs-weight', title: 'How tightly these pages cluster' },
+          o.captures >= 5 ? String(o.confidence) + '%'
+            : (o.confidence >= 80 ? 'tight' : o.confidence >= 50 ? 'loose' : 'early'))),
       h('div', { className: 'obs-stats' },
-        h('span', null, h('b', null, String(o.captures)), ' pages'),
-        ' · ',
-        h('span', null, h('b', null, String(o.days)), ' days'),
-        ' · ',
-        h('span', null, h('b', null, String(o.confidence)), '% confidence')),
-      h('div', { className: 'spark' },
-        (o.sparkline || []).map((v) => {
-          const m = Math.max(1, Math.max(...(o.sparkline || [1])));
-          const pct = Math.round((v / m) * 100);
-          return h('div', { className: 'spark-bar', style: { height: pct + '%', opacity: v ? '1' : '0.18' } });
-        })),
-      h('div', { className: 'obs-tags' },
-        (o.related_tags || []).slice(0, 6).map((t) => h('span', { className: 'tag-chip' }, t))),
+        h('b', null, String(o.captures)), ' pages',
+        h('span', { className: 'obs-dot' }),
+        h('b', null, String(o.days)), ' days active'),
+      // Zero days used to render as a flat dashed line, which reads as a
+      // broken chart rather than as a quiet week. Every column now has a
+      // visible floor, so an empty day looks like an empty day.
+      h('div', { className: 'spark', 'aria-hidden': 'true' },
+        spark.map((v) => h('div', { className: 'spark-col' },
+          h('div', {
+            className: 'spark-bar' + (v ? '' : ' spark-bar-zero'),
+            style: { height: Math.max(6, Math.round((v / peak) * 100)) + '%' },
+          })))),
+      (o.related_tags || []).length
+        ? h('div', { className: 'obs-tags' },
+            (o.related_tags || []).slice(0, 6).map((t) => h('button', {
+              className: 'tag-chip tag-chip-btn', onClick: () => setRoute('tag:' + t),
+            }, t)))
+        : null,
       h('div', { className: 'obs-members' },
         h('div', { className: 'obs-members-l' }, 'top pages in this theme'),
         (o.members || []).map((m) => h('button', {
@@ -1210,7 +1411,8 @@ function V2Home(state, onOpen, onCreate, onKind) {
         },
           h('span', { className: 'obs-member-g', style: { color: (KIND_META[m.kind] || {}).color || 'var(--muted)' } },
             kindIcon(m.kind)),
-          h('span', null, m.title)))));
+          h('span', { className: 'obs-member-t' }, m.title),
+          h('span', { className: 'obs-member-go' }, icon('arrow-right'))))));
   }
 
   function bucketCard(b) {
@@ -1218,7 +1420,9 @@ function V2Home(state, onOpen, onCreate, onKind) {
     return h('div', { className: 'tier-card' },
       h('div', { className: 'tier-hd' },
         h('span', null, b.label.toUpperCase()),
-        h('span', { className: 'tier-letter' }, b.letter)),
+        // The single-letter badge said "F" beside a heading reading "FRESH".
+        // A label and its own initial are not two pieces of information.
+        ),
       h('div', { className: 'tier-n' },
         h('span', { className: 'tier-count' }, String(b.count)),
         b.cap ? h('span', { className: 'tier-cap' }, ' of ', String(b.cap)) : h('span', { className: 'tier-cap' }, ' pages (unbounded)')),
@@ -1234,8 +1438,8 @@ function V2Home(state, onOpen, onCreate, onKind) {
   // Initial paint with a minimal scaffold so the screen isn't blank during fetch.
   append(wrap, [
     h('div', { className: 'dash-hd' },
-      h('h1', { className: 'dash-title' }, 'dashboard',
-        h('span', { className: 'dash-title-c' }, ' // ', h('span', { className: 'dim' }, 'loading…'))),
+      h('h1', { className: 'dash-title' }, 'Dashboard',
+        h('span', { className: 'dash-title-c' },  h('span', { className: 'dim' }, 'loading…'))),
       h('div', { className: 'dash-sub' }, ' '),
       h('button', { className: 'btn-primary dash-cta', onClick: onCreate }, '+ new page')),
   ]);
@@ -1302,26 +1506,22 @@ function itemCount(p) {
 function ListView_Board(pages, onOpen) {
   return h('div', { className: 'pages-board' },
     pages.map((p) => {
-      const items = (p.meta && Array.isArray(p.meta.layout)) ? p.meta.layout : [];
-      const previewItems = items.slice(0, 4);
+      // A list never loads geometry: `pages()` serves index entries, and SPEC §7
+      // keeps full bodies (and the `.canvas` sidecar) out of the index. So the
+      // node count here is UNKNOWN, not zero — this card used to render it as
+      // "empty board · 0 items" for every board in the vault, which is a claim
+      // about the user's work rather than about what we loaded.
+      const drawing = isDrawingPath(p.path);
       return h('div', { className: 'board-card', onClick: () => onOpen(p.id) },
         h('div', { className: 'board-card-hd' },
           h('span', { className: 'board-card-title' }, p.title || '(untitled)'),
           h('span', { className: 'board-card-when' }, fmtDate(p.updated))),
         h('div', { className: 'board-card-preview' },
-          previewItems.length === 0
-            ? h('div', { className: 'board-card-empty' },
-                /\.excalidraw\.md$/i.test(p.path || '') ? '✎ drawing' : 'empty canvas')
-            : previewItems.map((it) => h('div', { className: 'board-card-mini board-card-mini-' + it.type },
-                it.type === 'image' && (it.assetUrl || it.asset)
-                  ? (it.assetUrl
-                      ? h('img', { src: it.assetUrl, loading: 'lazy', alt: '' })
-                      : vaultImage(it.asset))
-                  : it.type === 'link'
-                    ? h('span', null, '↗ ', (it.url || '').replace(/^https?:\/\//, '').slice(0, 32))
-                    : h('span', null, (it.text || '').slice(0, 50)))) ),
+          h('div', { className: 'board-card-empty' },
+            drawing ? '✎ drawing' : '▦ board')),
         h('div', { className: 'board-card-ft' },
-          h('span', { className: 'board-card-count' }, items.length + ' items'),
+          h('span', { className: 'board-card-count' },
+            firstLineOf(p.excerpt || '', 60) || (drawing ? 'Excalidraw' : 'JSON Canvas')),
           h('span', { className: 'board-card-tags' },
             (p.tags || []).slice(0, 3).map((t) => h('span', { className: 'tag-chip' }, t)))));
     }));
@@ -1395,10 +1595,10 @@ function ListView_Bento(pages, onOpen) {
 function ListView_Table(pages, onOpen) {
   return h('div', { className: 'pages-table' },
     h('div', { className: 'pages-th' },
-      h('span', null, 'KIND'),
-      h('span', null, 'TITLE'),
-      h('span', null, 'TAGS'),
-      h('span', null, 'UPDATED')),
+      h('span', null, 'Kind'),
+      h('span', null, 'Title'),
+      h('span', null, 'Tags'),
+      h('span', null, 'Updated')),
     pages.map((p) => h('div', { className: 'pages-row', onClick: () => onOpen(p.id) },
       h('span', null, KindChip(p.kind)),
       h('span', { className: 'pages-title' }, p.title || '(untitled)'),
@@ -1409,7 +1609,9 @@ function ListView_Table(pages, onOpen) {
 
 function V2PagesList(kind, pages, onOpen, onCreate) {
   const meta = kind ? KIND_META[kind] : null;
-  const title = meta ? meta.label.toLowerCase() : 'all pages';
+  // Sentence case, like every other screen title. It used to lowercase the
+  // kind label — so the nav said "Note" and the screen it opened said "note".
+  const title = meta ? meta.label : 'All pages';
   const wrap = h('div', { className: 'screen' });
   // Local filter state. We keep the input value in a closure so re-render
   // doesn't clobber what the user has typed.
@@ -1481,14 +1683,79 @@ function V2PageView(pageId, onChange, onDeleted) {
   // they attached). They're run before every re-layout and on screen unmount.
   let bodyTeardowns = [];
   const onBodyTeardown = (fn) => bodyTeardowns.push(fn);
+  /* Which mentions are worth showing as chips.
+     A mention chip means "a link to another page you can open". Two things
+     were getting in that are neither, and both looked like broken links:
+
+       · the page's OWN file — a board whose .canvas path is listed among its
+         mentions, so "Binding Methods" showed a chip reading
+         "Binding Methods.canvas" pointing at itself;
+       · asset paths — five chips all reading "attachments/endpaper…",
+         truncated to the point of being indistinguishable.
+
+     This filters for DISPLAY only. The underlying array is untouched, so the
+     file on disk keeps whatever Obsidian put there and nothing is lost on the
+     next save. Returns {mn, i} so the remove button still splices the right
+     index out of the real array. */
+  const ASSET_RE = /^(attachments|assets)\//i;
+  const visibleMentions = () => {
+    const own = new Set();
+    if (page.path) {
+      own.add(String(page.path));
+      own.add(String(page.path).split('/').pop());
+      own.add(String(page.path).split('/').pop().replace(/\.[^.]+$/, ''));
+    }
+    if (page.title) own.add(String(page.title));
+    return (page.mentions || [])
+      .map((mn, i) => ({ mn, i }))
+      .filter(({ mn }) => {
+        const v = String(mn || '');
+        if (!v) return false;
+        if (ASSET_RE.test(v)) return false;
+        if (/\.(png|jpe?g|gif|webp|svg|avif)$/i.test(v)) return false;
+        return !own.has(v) && !own.has(v.split('/').pop());
+      });
+  };
+
   const runBodyTeardowns = () => {
     bodyTeardowns.forEach((fn) => { try { fn(); } catch (_) {} });
     bodyTeardowns = [];
   };
 
+  /* Save status. Every edit here autosaves 600ms after you stop typing, and
+     until now said nothing at all — you were asked to trust that a file on
+     your own disk had been rewritten, with no evidence. That is the sharpest
+     bit of friction in the app: it is not slow or hard, it is silent.
+     Three states, deliberately quiet — this reassures, it does not announce. */
+  const setSaveState = (state, detail) => {
+    const el = wrap.querySelector('.save-state');
+    if (!el) return;
+    el.setAttribute('data-state', state);
+    // The reason goes in the title: the strip stays one word wide, and the
+    // detail is one hover away rather than absent.
+    if (detail) el.setAttribute('title', detail); else el.removeAttribute('title');
+    clear(el);
+    if (state === 'saving') {
+      el.appendChild(h('span', { className: 'save-dot' }));
+      el.appendChild(document.createTextNode('Saving…'));
+    } else if (state === 'saved') {
+      el.appendChild(icon('check'));
+      el.appendChild(document.createTextNode('Saved'));
+      // Fade back to nothing — a permanent "Saved" becomes furniture and
+      // stops meaning anything.
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { if (el.getAttribute('data-state') === 'saved') setSaveState('idle'); }, 2200);
+    } else if (state === 'error') {
+      clearTimeout(el._t);       // a failure stays put until the next attempt
+      el.appendChild(icon('x'));
+      el.appendChild(document.createTextNode('Not saved'));
+    }
+  };
+
   const queueSave = () => {
     if (!page) return;
     dirty = true;
+    setSaveState('saving');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(commit, 600);
   };
@@ -1501,12 +1768,26 @@ function V2PageView(pageId, onChange, onDeleted) {
         mentions: page.mentions, kind: page.kind, slug: page.slug,
         meta: page.meta,
       });
-      if (!patched) return;                 // refused; the user has been told
+      if (!patched) return;                 // refused; savePage() set the state
       page.updated = patched.updated;
+      setSaveState('saved');
+      if (patched.path && patched.path !== page.path) {
+        // The file follows the title, so a save can move it. The deep link is
+        // patched in place rather than re-laid out: the rename lands while the
+        // user is still typing in the title field, and a re-render would take
+        // the caret with it.
+        page.path = patched.path;
+        const obs = wrap.querySelector('.page-meta-obs');
+        const href = obsidianUrl(page.path);
+        if (obs && href) obs.href = href;
+      }
       cacheSetPage(patched);  // keep page cache fresh so revisits are instant
       invalidatePageIndex();  // title may have changed → refresh mention labels
       onChange && onChange(patched);
-    } catch (e) { console.warn('save failed', e); }
+    } catch (e) {
+      console.warn('save failed', e);
+      setSaveState('error');
+    }
   };
 
   /* 6.3: conflict UI. put() re-reads `updated` from disk before writing and
@@ -1517,7 +1798,12 @@ function V2PageView(pageId, onChange, onDeleted) {
     const r = await SB.data().updatePage(page.id, force ? { ...patch, force: true } : patch);
     if (!r || r.ok !== false) return r;
     if (r.reason !== 'conflict') {
+      // Every refusal that is not a conflict used to end here, as a
+      // console.warn nobody has open. The edit stayed on screen, so the page
+      // looked saved and was not — the worst failure mode a local-first app
+      // has, because the only copy is the one you are about to close.
       console.warn('save refused:', r.reason, r.message || '');
+      setSaveState('error', r.message || r.reason || 'The vault refused the write.');
       return null;
     }
     const overwrite = await confirmDialog({
@@ -1550,13 +1836,10 @@ function V2PageView(pageId, onChange, onDeleted) {
   // ── Body renderers ────────────────────────────────────────────────────
   function renderDefaultBody() {
     return h('div', { className: 'page-body' },
-      h('textarea', {
-        className: 'page-body-ta',
-        placeholder: page.kind === 'snippet' ? 'a quick thought…' :
-                     page.kind === 'bookmark' ? 'context for this link…' :
-                     'body…',
-        value: page.body,
-        onInput: (e) => { page.body = e.target.value; queueSave(); },
+      ProseEditor({
+        getValue: () => page.body,
+        setValue: (v) => { page.body = v; queueSave(); },
+        placeholder: 'Write…  Markdown works, [[wikilinks]] resolve, #tags stick.',
       }));
   }
 
@@ -1575,9 +1858,8 @@ function V2PageView(pageId, onChange, onDeleted) {
   function renderTopicBody() {
     if (!page.meta) page.meta = {};
     if (!Array.isArray(page.meta.attachments)) page.meta.attachments = [];
-    if (!Array.isArray(page.meta.thread)) page.meta.thread = [];
 
-    const wrap = h('div', { className: 'page-body topic-chat-body' });
+    const wrap = h('div', { className: 'page-body topic-body' });
 
     // ── Attached materials section ──
     const attSec = h('div', { className: 'topic-att-sec' });
@@ -1831,7 +2113,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       chatBtn.textContent = '+ chat ▾';
       chatBtn.addEventListener('click', () => openChatPicker(chatBtn));
       attSec.appendChild(h('div', { className: 'topic-att-hd' },
-        h('span', null, 'ATTACHED MATERIALS · ', String(page.meta.attachments.length)),
+        h('span', null, 'Attached materials · ', String(page.meta.attachments.length)),
         h('div', { className: 'topic-att-actions' },
           h('button', { onClick: () => pasteAttachmentModal('text') }, '+ text'),
           h('button', { onClick: () => pasteAttachmentModal('markdown') }, '+ markdown'),
@@ -1929,142 +2211,22 @@ function V2PageView(pageId, onChange, onDeleted) {
       attSec.appendChild(list);
     }
 
-    // ── Chat thread ──
-    const threadList = h('div', { className: 'topic-thread-list' });
-
-    function renderThread() {
-      clear(threadList);
-      if (!page.meta.thread.length) {
-        threadList.appendChild(h('div', { className: 'topic-thread-empty' },
-          'Start a conversation about this topic. The AI sees About Me + this page + everything you attach.'));
-        return;
-      }
-      page.meta.thread.forEach((m) => {
-        const c = h('div', { className: 'topic-msg-c md-body' });
-        if (m.role === 'assistant') {
-          renderMarkdown(m.content).forEach((node) => c.appendChild(node));
-        } else {
-          c.textContent = m.content;
-        }
-        threadList.appendChild(h('div', { className: 'topic-msg topic-msg-' + m.role },
-          h('div', { className: 'topic-msg-r' }, m.role === 'user' ? 'you' : m.role),
-          c));
-      });
-      threadList.scrollTop = threadList.scrollHeight;
-    }
-
-    const input = h('textarea', {
-      className: 'topic-chat-input',
-      placeholder: 'message… (⏎ to send, ⇧⏎ for newline)',
-      onKeyDown: async (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          await send();
-        }
-      },
-    });
-
-    // Topic chat goes through the global sendPageChat so it survives navigation
-    // and surfaces a notification when the answer is ready elsewhere.
-    function send() {
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      input.style.height = '';
-      sendPageChat(page.id, text);
-    }
-    // Re-render the topic thread whenever sendPageChat updates this page
-    const _topicChatUnsub = onChatThreadChange((cid) => {
-      if (cid !== page.id) return;
-      const cached = cacheGetPage(page.id);
-      if (cached && cached.meta && Array.isArray(cached.meta.thread)) {
-        page.meta.thread = cached.meta.thread;
-      }
-      renderThread();
-    });
-    onBodyTeardown(_topicChatUnsub);
-
-
     renderAttachments();
-    renderThread();
 
     // ── Topic description (collapsible, secondary) ──
-    let descExpanded = !!(page.body && page.body.trim());
-    const descSec = h('div', { className: 'topic-desc-sec' });
-    const descToggle = h('button', {
-      className: 'topic-desc-toggle',
-      onClick: () => {
-        descExpanded = !descExpanded;
-        descSec.classList.toggle('expanded', descExpanded);
-        descToggle.textContent = descExpanded ? '− topic description' : '+ topic description';
-      },
-    }, descExpanded ? '− topic description' : '+ topic description');
-    descSec.classList.toggle('expanded', descExpanded);
-    descSec.appendChild(descToggle);
+    const descSec = h('div', { className: 'topic-desc-sec expanded' });
 
-    /* 6.7 / 6.19: a topic body is markdown like any other page, so it renders as
-       markdown by default and only becomes a textarea when you choose to edit.
-       This is what makes a migrated `## Thread` section a real heading instead
-       of literal text — the thread lives in the body now (task 1.24), and an
-       always-on editor was hiding it. */
-    let descMode = (page.body && page.body.trim()) ? 'view' : 'edit';
-    const descHost = h('div', { className: 'topic-desc-host' });
-    const descEdit = h('button', { className: 'topic-desc-mode' }, 'edit');
-
-    function paintDesc() {
-      clear(descHost);
-      descEdit.textContent = descMode === 'view' ? 'edit' : 'done';
-      if (descMode === 'edit') {
-        descHost.appendChild(h('textarea', {
-          className: 'topic-desc-ta',
-          placeholder: 'optional context · markdown, [[wikilinks]] and #tags…',
-          value: page.body,
-          onInput: (e) => { page.body = e.target.value; queueSave(); },
-        }));
-        return;
-      }
-      const rendered = h('div', { className: 'md-rendered topic-desc-md' });
-      try {
-        rendered.innerHTML = SB.data().renderHtml(page.body || '').html;
-        decorateMentions(rendered);
-        decorateHashtags(rendered);
-      } catch (e) {
-        rendered.textContent = page.body || '';
-      }
-      descHost.appendChild(rendered);
-    }
-    descEdit.addEventListener('click', () => {
-      descMode = descMode === 'view' ? 'edit' : 'view';
-      paintDesc();
-    });
-    if (page.body && page.body.trim()) descSec.appendChild(descEdit);
-    descSec.appendChild(descHost);
-    paintDesc();
+    descSec.appendChild(ProseEditor({
+      getValue: () => page.body,
+      setValue: (v) => { page.body = v; queueSave(); },
+      placeholder: 'What are you working out here?\n\nMarkdown, [[wikilinks]] and #tags all work.',
+      minHeight: 360,
+    }));
 
     wrap.appendChild(attSec);
     wrap.appendChild(descSec);
 
-    // The chat section is returned separately so the layout can place it as
-    // its own grid column (centre of the 3-col topic layout).
-    const chatSec = h('div', { className: 'topic-chat-sec' },
-      h('div', { className: 'topic-chat-hd' },
-        h('span', null, 'CHAT'),
-        h('span', { className: 'topic-chat-clear', onClick: async () => {
-          if (!page.meta.thread.length) return;
-          if (!confirm('Clear all messages in this thread?')) return;
-          page.meta.thread = [];
-          const cached = cacheGetPage(page.id) || page;
-          cached.meta = cached.meta || {};
-          cached.meta.thread = [];
-          cacheSetPage(cached);
-          await SB.data().updatePage(page.id, { meta: cached.meta }).catch(() => {});
-          emitChatThreadChange(page.id);
-        } }, page.meta.thread.length ? 'clear' : '')),
-      threadList,
-      // 6.13: no message input. Existing threads stay visible, read-only.
-      h('div', { className: 'topic-chat-ro' }, 'thread is read-only'));
-
-    return { body: wrap, chatSec };
+    return { body: wrap };
   }
 
   /* 6.7 / 6.19: a board page still has a body, and after task 1.24 that body is
@@ -2187,119 +2349,62 @@ function V2PageView(pageId, onChange, onDeleted) {
     return String(md).replace(/^---\n[\s\S]*?\n---\n/, '');
   }
 
-  function renderBoardBody(opts = {}) {
-    const { withImages = false, kindLabel = 'canvas' } = opts;
-    // SPEC §10: geometry lives in the `.canvas` file and Obsidian owns it —
-    // the app never writes it. So every control that would create or move a
-    // node is omitted, not merely styled inert. Leaving "+ text" and the pen
-    // on screen let a user do work the app had no way to save, which is the
-    // exact "appears to work, silently discarded" failure this was meant to
-    // avoid. One flag drives the class and the controls so they cannot drift.
-    const READ_ONLY = true;
+  /**
+   * A `.canvas` board, rendered read-only.
+   *
+   * JSON Canvas is Obsidian's format and Obsidian owns it. This view draws the
+   * nodes and edges it finds there and never writes geometry back — not a gap
+   * to be closed later, but the reason a board is safe to open here at all.
+   *
+   * The editing half of this renderer (item drag, resize, pen + eraser strokes,
+   * "+ text" / "+ link" / "+ image", drop, paste, ⌘Z) has been REMOVED rather
+   * than disabled. It used to sit behind a `READ_ONLY` flag that only hid the
+   * toolbar: the handlers stayed live on the viewport, so an Apple Pencil
+   * stroke, a paste, or a ⌘Z still reached `queueSave()` and wrote a page whose
+   * geometry had nowhere to go. Half-removed editing is worse than either
+   * choice — it is how the app came to write a YAML header over a user's board.
+   *
+   * Anything the app itself writes is a drawing, and drawings are Excalidraw.
+   * One editor, one format, one owner per scene.
+   */
+  function renderCanvasBody() {
     if (!page.meta) page.meta = {};
-    if (!Array.isArray(page.meta.layout)) page.meta.layout = [];
-    // Page-level strokes (the whole canvas is a sketch board). Points are
-    // stored in *world* coords so they pan + zoom with the rest of the canvas.
-    if (!Array.isArray(page.meta.strokes)) page.meta.strokes = [];
-    // Edges come from the `.canvas` file alongside the nodes. Same rule as
-    // geometry: Obsidian owns them, we only draw them.
-    if (!Array.isArray(page.meta.edges)) page.meta.edges = [];
-
-    // Board-level drawing tool state. Mental model:
-    //   - boardTool.mode ∈ 'move' | 'pen' | 'erase'.
-    //     'move' (default): mouse pans + drags items; finger pans;
-    //                       Apple Pencil contact AUTO-switches into 'pen'
-    //                       so a stylus user doesn't need to tap the toolbar.
-    //     'pen':            mouse + pencil draw. Finger still pans.
-    //     'erase':          mouse + pencil erase. Finger still pans.
-    //   - 2-finger touch always pinch-zooms (never draws).
-    const boardTool = {
-      mode: 'move',
-      color: '#1a1a1a',
-      width: 3,
-    };
-
-    // Undo / redo history for strokes. Each entry is an op:
-    //   { type: 'add', stroke }          → undo removes it
-    //   { type: 'erase', strokes: [...] } → undo restores them
-    // Cleared on tab switch / page unload (not persisted).
-    const sketchHistory = [];
-    const sketchRedo = [];
-    let refreshFloat = () => {};  // float toolbar repaint hook (set below)
-    function recordOp(op) { sketchHistory.push(op); sketchRedo.length = 0; refreshFloat(); }
-    function undoStroke() {
-      const op = sketchHistory.pop();
-      if (!op) return;
-      if (op.type === 'add') {
-        page.meta.strokes = page.meta.strokes.filter((s) => s.id !== op.stroke.id);
-      } else if (op.type === 'erase') {
-        page.meta.strokes.push(...op.strokes);
-      }
-      renderAllStrokes();
-      queueSave();
-      sketchRedo.push(op);
-      refreshFloat();
-    }
-    function redoStroke() {
-      const op = sketchRedo.pop();
-      if (!op) return;
-      if (op.type === 'add') {
-        page.meta.strokes.push(op.stroke);
-      } else if (op.type === 'erase') {
-        const ids = new Set(op.strokes.map((s) => s.id));
-        page.meta.strokes = page.meta.strokes.filter((s) => !ids.has(s.id));
-      }
-      renderAllStrokes();
-      queueSave();
-      sketchHistory.push(op);
-      refreshFloat();
-    }
-
-    // Stroke ID generator (for undo/redo lookups).
-    function genStrokeId() {
-      return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    }
+    // Both come from the `.canvas` file via data.js; absent means "not a board
+    // yet", which renders as an empty surface rather than an error.
+    const items = Array.isArray(page.meta.layout) ? page.meta.layout : [];
+    const edges = Array.isArray(page.meta.edges) ? page.meta.edges : [];
 
     const surface = h('div', { className: 'canvas-surface' });
-    // 6.12 / SPEC §10: the app never writes geometry. Arranging happens in
-    // Obsidian, which removes the hardest and riskiest part of canvas support
-    // entirely. The board renders, but pointer events are off so a drag cannot
-    // even appear to work — silently discarding edits would be worse than
-    // disallowing them.
-    const viewport = h('div', { className: 'canvas-viewport' + (READ_ONLY ? ' board-ro' : '') });
-    const _obsHref = obsidianUrl(page.path);
+    const viewport = h('div', { className: 'canvas-viewport board-ro' });
+    const obsHref = obsidianUrl(page.path);
     viewport.appendChild(h('div', { className: 'board-readonly' },
       h('span', null, 'Boards are read-only here — arrange them in Obsidian.'),
-      _obsHref ? h('a', { href: _obsHref }, 'open in Obsidian ↗') : null));
-
-    // ── Strokes layer (inside surface so it inherits pan + zoom) ─────────
-    const STROKES_NS = 'http://www.w3.org/2000/svg';
-    const strokesSvg = document.createElementNS(STROKES_NS, 'svg');
-    strokesSvg.setAttribute('class', 'canvas-strokes');
-    strokesSvg.setAttribute('viewBox', '0 0 10000 10000');
-    strokesSvg.setAttribute('width', '10000');
-    strokesSvg.setAttribute('height', '10000');
-    strokesSvg.setAttribute('preserveAspectRatio', 'none');
-    Object.assign(strokesSvg.style, {
-      position: 'absolute', left: '0', top: '0', pointerEvents: 'none',
-    });
-    const strokesG = document.createElementNS(STROKES_NS, 'g');
-    strokesSvg.appendChild(strokesG);
-    surface.appendChild(strokesSvg);
+      obsHref ? h('a', { href: obsHref }, 'open in Obsidian ↗') : null));
 
     // ── Edges layer ──────────────────────────────────────────────────────
-    // Sits *below* the cards and the strokes (inserted before both), inside
-    // `surface` so it inherits pan + zoom for free. No viewBox and
-    // overflow:visible, because JSON Canvas coordinates are routinely
-    // negative — a 0-origin viewBox like the strokes layer's would clip
-    // every board whose nodes sit left of or above the origin.
-    const edgesSvg = document.createElementNS(STROKES_NS, 'svg');
+    // Sits below the cards, inside `surface` so it inherits pan + zoom for free.
+    //
+    // The span and the matching negative origin are both load-bearing. This
+    // layer used to be `width=0 height=0` with `overflow: visible`, on the
+    // theory that an outer <svg> would then paint outside its own viewport —
+    // it does not, so every connection computed here was drawn into a zero-size
+    // box and clipped away. The geometry was right and nothing ever appeared.
+    // A viewBox centred on the origin gives the layer real extent while keeping
+    // world coordinates one-to-one, and JSON Canvas coordinates are routinely
+    // negative, so the origin has to sit in the middle rather than the corner.
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const EDGE_SPAN = 20000;          // half-extent, in world units
+    const edgesSvg = document.createElementNS(SVG_NS, 'svg');
     edgesSvg.setAttribute('class', 'canvas-edges');
-    edgesSvg.setAttribute('width', '0');
-    edgesSvg.setAttribute('height', '0');
-    const edgesG = document.createElementNS(STROKES_NS, 'g');
+    edgesSvg.setAttribute('width', String(EDGE_SPAN * 2));
+    edgesSvg.setAttribute('height', String(EDGE_SPAN * 2));
+    edgesSvg.setAttribute('viewBox',
+      `${-EDGE_SPAN} ${-EDGE_SPAN} ${EDGE_SPAN * 2} ${EDGE_SPAN * 2}`);
+    edgesSvg.style.left = `${-EDGE_SPAN}px`;
+    edgesSvg.style.top = `${-EDGE_SPAN}px`;
+    const edgesG = document.createElementNS(SVG_NS, 'g');
     edgesSvg.appendChild(edgesG);
-    surface.insertBefore(edgesSvg, strokesSvg);
+    surface.appendChild(edgesSvg);
 
     // JSON Canvas colors are either a hex string or a preset "1".."6".
     const EDGE_PRESET = {
@@ -2318,17 +2423,15 @@ function V2PageView(pageId, onChange, onDeleted) {
       const geom = window.SB_EDGE_GEOM;
       if (typeof geom !== 'function') return;
       const boxes = new Map();
-      for (const it of page.meta.layout) {
-        boxes.set(it.id, {
-          x: it.x || 0, y: it.y || 0, w: it.w || 240, h: it.h || 220,
-        });
+      for (const it of items) {
+        boxes.set(it.id, { x: it.x || 0, y: it.y || 0, w: it.w || 240, h: it.h || 220 });
       }
-      for (const e of page.meta.edges) {
+      for (const e of edges) {
         const g = geom(e, boxes.get(e.fromNode), boxes.get(e.toNode));
         if (!g) continue;               // an endpoint that isn't on the board
         const color = edgeColor(e.color);
 
-        const path = document.createElementNS(STROKES_NS, 'path');
+        const path = document.createElementNS(SVG_NS, 'path');
         path.setAttribute('d', g.d);
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke-width', '2');
@@ -2338,14 +2441,13 @@ function V2PageView(pageId, onChange, onDeleted) {
         path.style.stroke = color;
         edgesG.appendChild(path);
 
-        // Arrowheads. The tip sits on the anchor and the base steps back
-        // along the outward normal, so it lines up with the curve's tangent.
+        // Arrowheads. The tip sits on the anchor and the base steps back along
+        // the outward normal, so it lines up with the curve's tangent.
         const HEAD = 9;
         for (const p of g.arrows) {
           const bx = p.x + p.nx * HEAD, by = p.y + p.ny * HEAD;
-          // Perpendicular to the normal, for the two base corners.
-          const px = -p.ny, py = p.nx;
-          const tri = document.createElementNS(STROKES_NS, 'polygon');
+          const px = -p.ny, py = p.nx;          // perpendicular, for the base
+          const tri = document.createElementNS(SVG_NS, 'polygon');
           tri.setAttribute('points', [
             `${p.x},${p.y}`,
             `${bx + px * HEAD * 0.45},${by + py * HEAD * 0.45}`,
@@ -2356,7 +2458,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         }
 
         if (g.label) {
-          const text = document.createElementNS(STROKES_NS, 'text');
+          const text = document.createElementNS(SVG_NS, 'text');
           text.setAttribute('x', g.label.x);
           text.setAttribute('y', g.label.y);
           text.setAttribute('text-anchor', 'middle');
@@ -2368,44 +2470,11 @@ function V2PageView(pageId, onChange, onDeleted) {
       }
     }
 
-    function strokeToPathStr(points, baseW) {
-      if (!points || points.length === 0) return '';
-      if (points.length === 1) {
-        const p = points[0];
-        const r = baseW * 0.5 * (0.6 + 0.6 * (p.p || 0.5));
-        return 'M ' + (p.x - r) + ' ' + p.y +
-               ' a ' + r + ' ' + r + ' 0 1 0 ' + (r * 2) + ' 0' +
-               ' a ' + r + ' ' + r + ' 0 1 0 ' + (-r * 2) + ' 0 Z';
-      }
-      const left = [], right = [];
-      for (let i = 0; i < points.length; i++) {
-        const prev = points[i - 1] || points[i];
-        const next = points[i + 1] || points[i];
-        const dx = next.x - prev.x, dy = next.y - prev.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const nx = -dy / len, ny = dx / len;
-        const w = baseW * (0.5 + 0.7 * (points[i].p || 0.5));
-        const px = points[i].x, py = points[i].y;
-        left.push((px + nx * w * 0.5) + ',' + (py + ny * w * 0.5));
-        right.push((px - nx * w * 0.5) + ',' + (py - ny * w * 0.5));
-      }
-      return 'M ' + left.join(' L ') + ' L ' + right.reverse().join(' L ') + ' Z';
-    }
-    function renderAllStrokes() {
-      while (strokesG.firstChild) strokesG.removeChild(strokesG.firstChild);
-      for (const s of page.meta.strokes) {
-        const path = document.createElementNS(STROKES_NS, 'path');
-        path.setAttribute('d', strokeToPathStr(s.points, s.width || 3));
-        path.setAttribute('fill', s.color || '#1a1a1a');
-        path.setAttribute('stroke', 'none');
-        strokesG.appendChild(path);
-      }
-    }
-
-    // ── Pan + zoom state ──────────────────────────────────────────
-    // Surface is transformed via translate + scale; viewport stays static
-    // (no scrollbars). All item.x/.y coords are in *world* space — never
-    // touched by zoom. Mouse → world conversion: (screen - pan) / zoom.
+    // ── Pan + zoom ────────────────────────────────────────────────────────
+    // The surface is transformed via translate + scale; the viewport stays
+    // static (no scrollbars). Item coords are world space, never touched by
+    // zoom. Screen → world is (screen - pan) / zoom.
+    let zoomReadout;
     let panX = 0, panY = 0, zoom = 1;
     const ZOOM_MIN = 0.2, ZOOM_MAX = 3;
     function applyTransform() {
@@ -2415,10 +2484,8 @@ function V2PageView(pageId, onChange, onDeleted) {
     function zoomAt(screenX, screenY, factor) {
       const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom * factor));
       if (next === zoom) return;
-      // Keep the world point under (screenX, screenY) stable.
-      const rect = viewport.getBoundingClientRect();
-      const mx = screenX - rect.left;
-      const my = screenY - rect.top;
+      const rect = viewport.getBoundingClientRect();   // keep the point stable
+      const mx = screenX - rect.left, my = screenY - rect.top;
       panX = mx - (mx - panX) * (next / zoom);
       panY = my - (my - panY) * (next / zoom);
       zoom = next;
@@ -2426,11 +2493,10 @@ function V2PageView(pageId, onChange, onDeleted) {
     }
     function resetView() { panX = 0; panY = 0; zoom = 1; applyTransform(); }
     function fitView() {
-      if (!page.meta.layout.length) { resetView(); return; }
-      // Compute world-space bbox of all items
+      if (!items.length) { resetView(); return; }
       const W = viewport.clientWidth, H = viewport.clientHeight;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const it of page.meta.layout) {
+      for (const it of items) {
         const x = it.x || 0, y = it.y || 0;
         const w = it.w || 240, ht = it.h || 220;
         if (x < minX) minX = x; if (y < minY) minY = y;
@@ -2444,127 +2510,64 @@ function V2PageView(pageId, onChange, onDeleted) {
       applyTransform();
     }
 
-    // Wheel: trackpad / Ctrl+wheel = zoom, plain wheel = pan.
-    // Let textareas/inputs handle their own scroll first — don't hijack
-    // the wheel when the user is reading inside a card.
+    // Wheel: ⌘/Ctrl+wheel zooms, plain wheel pans. A card that overflows gets
+    // to scroll itself first.
     viewport.addEventListener('wheel', (e) => {
-      const target = e.target;
-      const inField = target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT');
-      if (inField && !(e.ctrlKey || e.metaKey)) return;  // let the field scroll
+      const scrollable = e.target && e.target.closest && e.target.closest('.canvas-item-body');
+      if (scrollable && !(e.ctrlKey || e.metaKey)
+          && scrollable.scrollHeight > scrollable.clientHeight) return;
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         zoomAt(e.clientX, e.clientY, e.deltaY > 0 ? 0.92 : 1.08);
       } else {
-        panX -= e.deltaX;
-        panY -= e.deltaY;
+        panX -= e.deltaX; panY -= e.deltaY;
         applyTransform();
       }
     }, { passive: false });
 
-    // ── Pointer dispatch:
-    //    - Apple Pencil → if mode='move' auto-switch to 'pen' and draw,
-    //      else follow the active tool (pen draws, erase erases).
-    //    - Finger (1 touch) → pan. Finger (2 touches) → pinch zoom.
-    //    - Mouse → follow active tool: 'move' = pan + drag, 'pen' = draw,
-    //      'erase' = erase. No separate "draw with mouse" toggle.
-    let liveStroke = null, livePath = null;
-    // Track active touch pointers for pinch detection.
-    const touchPoints = new Map();   // pointerId → {x, y}
+    // ── Pointer: pan with one pointer, pinch-zoom with two ───────────────
+    // Every pointer type pans. There is no draw mode and no drag mode, so a
+    // stylus behaves exactly like a finger and cannot start an edit the board
+    // has no way to keep.
+    const touchPoints = new Map();      // pointerId → {x, y}
     let pinchState = null;
-    // Track currently-erased strokes for one-shot undo at pointerup.
-    let eraseSession = null;
 
-    function eraseNear(wx, wy, radius) {
-      const removed = [];
-      page.meta.strokes = page.meta.strokes.filter((s) => {
-        for (const p of (s.points || [])) {
-          if (Math.hypot(p.x - wx, p.y - wy) <= radius) { removed.push(s); return false; }
-        }
-        return true;
-      });
-      if (removed.length) {
-        renderAllStrokes();
-        if (eraseSession) eraseSession.push(...removed);
-      }
+    function startPinch() {
+      const pts = Array.from(touchPoints.values());
+      pinchState = {
+        startDist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
+        startZoom: zoom,
+        startCenterX: (pts[0].x + pts[1].x) / 2,
+        startCenterY: (pts[0].y + pts[1].y) / 2,
+        startPanX: panX, startPanY: panY,
+      };
     }
-
-    // `action` is 'pen' | 'erase' — the tool actually applied for this
-    // gesture. `startDrawing` is reused by both pencil and mouse and may
-    // override the visible mode (e.g. Apple Pencil auto-draws in move).
-    function startDrawing(e, action) {
-      e.preventDefault();
-      try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
-      const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-      const eraseR = 14 / zoom;
-      if (action === 'erase') {
-        eraseSession = [];
-        eraseNear(wx, wy, eraseR);
-        const moveErase = (ev) => {
-          if (!ev.buttons) return;
-          const [x, y] = screenToWorld(ev.clientX, ev.clientY);
-          eraseNear(x, y, eraseR);
-        };
-        const upErase = () => {
-          viewport.removeEventListener('pointermove', moveErase);
-          viewport.removeEventListener('pointerup', upErase);
-          viewport.removeEventListener('pointercancel', upErase);
-          if (eraseSession && eraseSession.length) {
-            recordOp({ type: 'erase', strokes: eraseSession });
-            queueSave();
-          }
-          eraseSession = null;
-        };
-        viewport.addEventListener('pointermove', moveErase);
-        viewport.addEventListener('pointerup', upErase);
-        viewport.addEventListener('pointercancel', upErase);
-        return;
-      }
-      const pressure = e.pressure > 0 ? e.pressure : 0.5;
-      liveStroke = {
-        id: genStrokeId(),
-        color: boardTool.color, width: boardTool.width,
-        points: [{ x: wx, y: wy, p: pressure }],
-      };
-      livePath = document.createElementNS(STROKES_NS, 'path');
-      livePath.setAttribute('fill', boardTool.color);
-      livePath.setAttribute('stroke', 'none');
-      livePath.setAttribute('d', strokeToPathStr(liveStroke.points, boardTool.width));
-      strokesG.appendChild(livePath);
-      const moveDraw = (ev) => {
-        if (!liveStroke) return;
-        ev.preventDefault();
-        const samples = (typeof ev.getCoalescedEvents === 'function')
-          ? ev.getCoalescedEvents() : [ev];
-        for (const s of samples) {
-          const [x, y] = screenToWorld(s.clientX, s.clientY);
-          liveStroke.points.push({ x, y, p: s.pressure > 0 ? s.pressure : 0.5 });
-        }
-        livePath.setAttribute('d', strokeToPathStr(liveStroke.points, liveStroke.width));
-      };
-      const endDraw = () => {
-        viewport.removeEventListener('pointermove', moveDraw);
-        viewport.removeEventListener('pointerup', endDraw);
-        viewport.removeEventListener('pointercancel', endDraw);
-        if (!liveStroke) return;
-        page.meta.strokes.push(liveStroke);
-        recordOp({ type: 'add', stroke: liveStroke });
-        liveStroke = null;
-        livePath = null;
-        queueSave();
-      };
-      viewport.addEventListener('pointermove', moveDraw);
-      viewport.addEventListener('pointerup', endDraw);
-      viewport.addEventListener('pointercancel', endDraw);
+    function updatePinch() {
+      if (!pinchState || touchPoints.size < 2) return;
+      const pts = Array.from(touchPoints.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const cx = (pts[0].x + pts[1].x) / 2, cy = (pts[0].y + pts[1].y) / 2;
+      const newZoom = Math.max(ZOOM_MIN,
+        Math.min(ZOOM_MAX, pinchState.startZoom * (dist / pinchState.startDist)));
+      const rect = viewport.getBoundingClientRect();
+      const mx = pinchState.startCenterX - rect.left;
+      const my = pinchState.startCenterY - rect.top;
+      // Zoom anchored at the original centroid, plus drag by the centroid delta.
+      panX = mx - (mx - pinchState.startPanX) * (newZoom / pinchState.startZoom)
+             + (cx - pinchState.startCenterX);
+      panY = my - (my - pinchState.startPanY) * (newZoom / pinchState.startZoom)
+             + (cy - pinchState.startCenterY);
+      zoom = newZoom;
+      applyTransform();
     }
-
     function startPanning(e) {
       const sx = e.clientX, sy = e.clientY;
-      const startPanX = panX, startPanY = panY;
+      const fromX = panX, fromY = panY;
       try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
       viewport.classList.add('panning');
       const mv = (ev) => {
-        panX = startPanX + (ev.clientX - sx);
-        panY = startPanY + (ev.clientY - sy);
+        panX = fromX + (ev.clientX - sx);
+        panY = fromY + (ev.clientY - sy);
         applyTransform();
       };
       const up = () => {
@@ -2578,600 +2581,128 @@ function V2PageView(pageId, onChange, onDeleted) {
       viewport.addEventListener('pointercancel', up);
     }
 
-    // ── Pinch zoom (two-finger touch) ────────────────────────────────────
-    function startPinch() {
-      const pts = Array.from(touchPoints.values());
-      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-      const cx = (pts[0].x + pts[1].x) / 2;
-      const cy = (pts[0].y + pts[1].y) / 2;
-      pinchState = {
-        startDist: dist, startZoom: zoom,
-        startCenterX: cx, startCenterY: cy,
-        startPanX: panX, startPanY: panY,
-      };
-    }
-    function updatePinch() {
-      if (!pinchState || touchPoints.size < 2) return;
-      const pts = Array.from(touchPoints.values());
-      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-      const cx = (pts[0].x + pts[1].x) / 2;
-      const cy = (pts[0].y + pts[1].y) / 2;
-      const ratio = dist / pinchState.startDist;
-      const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchState.startZoom * ratio));
-      const rect = viewport.getBoundingClientRect();
-      const mx = pinchState.startCenterX - rect.left;
-      const my = pinchState.startCenterY - rect.top;
-      // Zoom anchored at the original pinch centroid, plus drag by the
-      // current centroid delta.
-      panX = mx - (mx - pinchState.startPanX) * (newZoom / pinchState.startZoom)
-             + (cx - pinchState.startCenterX);
-      panY = my - (my - pinchState.startPanY) * (newZoom / pinchState.startZoom)
-             + (cy - pinchState.startCenterY);
-      zoom = newZoom;
-      applyTransform();
-    }
-
     viewport.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
-      if (e.target.closest('.canvas-item')) return;
       if (e.target.closest('.canvas-toolbar')) return;
-      if (e.target.closest('.sk-float')) return;
-
-      // Track touches; if a 2nd lands, switch into pinch mode and abort
-      // whatever the 1st was doing.
+      // Anything that acts on a click has to be left alone: starting a pan
+      // calls setPointerCapture, which retargets the pointerup and means the
+      // browser fires `click` on the viewport instead of the card.
+      if (e.target.closest('a, .canvas-item-clickable')) return;
+      // Text inside a card stays selectable for the same reason — a captured
+      // pointer turns every attempt to copy a line into a drag.
+      if (e.pointerType === 'mouse' && e.target.closest('.canvas-item-body')) return;
       if (e.pointerType === 'touch') {
         touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (touchPoints.size >= 2) {
-          // Cancel any in-progress 1-finger pan / draw and lock into pinch.
-          viewport.classList.remove('panning');
-          if (liveStroke) {
-            // Abandon the partial stroke; user actually wanted pinch.
-            if (livePath && livePath.parentNode) livePath.parentNode.removeChild(livePath);
-            liveStroke = null; livePath = null;
-          }
+          viewport.classList.remove('panning');   // abandon the 1-finger pan
           startPinch();
           e.preventDefault();
           return;
         }
       }
-
-      const isPen = e.pointerType === 'pen';
-      const isMouse = e.pointerType === 'mouse';
-
-      if (isPen) {
-        // Apple Pencil: if user hasn't picked a tool, default to 'pen' and
-        // light up the toolbar so they see what's active.
-        let action = boardTool.mode === 'erase' ? 'erase' : 'pen';
-        if (boardTool.mode === 'move') {
-          boardTool.mode = 'pen';
-          refreshFloat();
-        }
-        startDrawing(e, action);
-        return;
-      }
-
-      if (isMouse) {
-        // Mouse follows the currently-selected tool.
-        if (boardTool.mode === 'pen' || boardTool.mode === 'erase') {
-          startDrawing(e, boardTool.mode);
-        } else {
-          startPanning(e);
-        }
-        return;
-      }
-
-      // Touch (single finger) → pan. Two-finger touch is handled above.
       startPanning(e);
     });
 
-    // Pinch move + cleanup. Listening on `viewport` would miss pointermove
-    // events between the two fingers — `document` is more reliable.
-    document.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'touch') return;
-      if (!touchPoints.has(e.pointerId)) return;
+    // Pinch tracking on `document`: listening on the viewport misses moves
+    // that stray between the two fingers.
+    const onDocMove = (e) => {
+      if (e.pointerType !== 'touch' || !touchPoints.has(e.pointerId)) return;
       touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinchState) updatePinch();
-    });
+    };
     const releaseTouch = (e) => {
-      if (e.pointerType !== 'touch') return;
-      if (!touchPoints.has(e.pointerId)) return;
+      if (e.pointerType !== 'touch' || !touchPoints.has(e.pointerId)) return;
       touchPoints.delete(e.pointerId);
       if (touchPoints.size < 2) pinchState = null;
     };
+    document.addEventListener('pointermove', onDocMove);
     document.addEventListener('pointerup', releaseTouch);
     document.addEventListener('pointercancel', releaseTouch);
     if (typeof onBodyTeardown === 'function') {
       onBodyTeardown(() => {
-        document.removeEventListener('pointermove', releaseTouch);  // safety
+        document.removeEventListener('pointermove', onDocMove);
+        document.removeEventListener('pointerup', releaseTouch);
+        document.removeEventListener('pointercancel', releaseTouch);
       });
     }
 
-    // Forward declarations so toolbar buttons can reference them
-    let zoomReadout;
-    // Use the SURFACE's bounding rect (already includes pan + scale + the
-    // sticky toolbar's offset within the viewport) so a click at (cx, cy)
-    // converts to world coords exactly — no off-by-toolbar-height anymore.
-    function screenToWorld(clientX, clientY) {
-      const r = surface.getBoundingClientRect();
-      return [
-        (clientX - r.left) / zoom,
-        (clientY - r.top) / zoom,
-      ];
-    }
-    function viewportCenterWorld() {
-      const W = viewport.clientWidth, H = viewport.clientHeight;
-      return [
-        (-panX + W / 2) / zoom,
-        (-panY + H / 2) / zoom,
-      ];
-    }
-
+    // ── Cards ─────────────────────────────────────────────────────────────
     function buildItem(item) {
       const style = {
         left: (item.x || 0) + 'px',
         top: (item.y || 0) + 'px',
         width: (item.w || 240) + 'px',
       };
-      // Persist height too if the user has resized the card vertically.
       if (item.h && item.h > 60) style.height = item.h + 'px';
       const el = h('div', {
         className: `canvas-item canvas-item-${item.type}`,
-        style,
-        'data-id': item.id,
+        style, 'data-id': item.id,
       });
-      // Track CSS-resize changes (the user drags the bottom-right corner) and
-      // persist the new dimensions on the item. Skip the first fire which is
-      // just the initial layout, not a real resize.
-      try {
-        let firstObserve = true;
-        const ro = new ResizeObserver((entries) => {
-          if (firstObserve) { firstObserve = false; return; }
-          for (const entry of entries) {
-            const w = Math.round(entry.contentRect.width);
-            const h = Math.round(entry.contentRect.height);
-            const dW = Math.abs(w - (item.w || 240));
-            const dH = Math.abs(h - (item.h || 0));
-            if (dW > 2 || dH > 2) {
-              item.w = w; item.h = h;
-              queueSave();
-            }
-          }
-        });
-        ro.observe(el);
-        onBodyTeardown(() => ro.disconnect());
-      } catch (_) { /* ResizeObserver missing in very old browsers — non-fatal */ }
-      const glyph =
-        item.type === 'text' ? '◇ text' :
-        item.type === 'link' ? '↗ link' :
-        item.type === 'image' ? '▢ image' : item.type;
-      const handle = h('div', { className: 'canvas-item-handle' },
-        h('span', null, glyph),
-        h('button', { className: 'canvas-item-del', title: 'remove',
-          onClick: () => removeItem(item.id) }, '×'));
-      el.appendChild(handle);
+
       if (item.type === 'text') {
-        el.appendChild(h('textarea', {
-          className: 'canvas-item-text',
-          value: item.text || '',
-          placeholder: 'write…',
-          onInput: (e) => { item.text = e.target.value; queueSave(); },
-        }));
+        // JSON Canvas text nodes hold markdown, so render it as markdown —
+        // the old editor put the raw source in a textarea, which showed
+        // people their own `##` and `[[links]]` as literal characters.
+        const body = h('div', { className: 'canvas-item-body md-rendered' });
+        try {
+          body.innerHTML = SB.data().renderHtml(item.text || '').html;
+          decorateMentions(body);
+          decorateHashtags(body);
+        } catch (_) { body.textContent = item.text || ''; }
+        el.appendChild(body);
       } else if (item.type === 'image') {
-        // Image asset + caption underneath (always editable).
-        // assetUrl is the full URL the upload endpoint returned (a Supabase
-        // public URL, or /assets/<name> for the file backend). Fall back to
-        // the local path for items created before assetUrl existed.
-        if (item.assetUrl) {
-          el.appendChild(h('img', {
-            className: 'canvas-item-image',
-            src: item.assetUrl,
-            loading: 'lazy', alt: item.caption || '',
-          }));
-        } else if (item.asset) {
+        if (item.asset) {
           el.appendChild(vaultImage(item.asset,
             { className: 'canvas-item-image', alt: item.caption || '' }));
-        } else {
-          el.appendChild(h('div', { className: 'canvas-item-image-placeholder' }, 'drop an image…'));
         }
-        el.appendChild(h('textarea', {
-          className: 'canvas-item-caption',
-          value: item.caption || '',
-          placeholder: 'caption / context…',
-          onInput: (e) => { item.caption = e.target.value; queueSave(); },
-        }));
+        if (item.caption) {
+          el.appendChild(h('div', { className: 'canvas-item-caption' }, item.caption));
+        }
       } else if (item.type === 'link') {
-        el.appendChild(h('input', {
-          className: 'canvas-item-url',
-          value: item.url || '',
-          placeholder: 'https://…',
-          onInput: (e) => {
-            item.url = e.target.value;
-            queueSave();
-            clearTimeout(item._previewTimer);
-            item._previewTimer = setTimeout(() => refreshLink(el, item), 500);
-          },
-        }));
-        el.appendChild(h('input', {
-          className: 'canvas-item-title',
-          value: item.title || '',
-          placeholder: 'optional title',
-          onInput: (e) => { item.title = e.target.value; queueSave(); },
-        }));
-
-        // ── Context controls for the link ─────────────────────────────
-        // Two ways to pin source content onto this link so the AI sees it:
-        //   1. "↓ retrieve context" — auto-fetch (works for articles; YouTube
-        //      is unreliable because HF's IP gets a stripped-down page)
-        //   2. "✎ paste manually" — open an inline textarea where the user
-        //      pastes the transcript (or any other body) themselves
-        const ctxStatus = h('span', { className: 'canvas-item-ctx-status' });
-        const pasteBox = h('div', { className: 'canvas-item-ctx-paste',
-          style: { display: 'none' } });
-        function refreshCtxStatus() {
-          clear(ctxStatus);
-          if (item.content && item.content.body) {
-            const kind = item.content.kind || 'fetched';
-            const len = item.content.body.length;
-            ctxStatus.appendChild(h('span', { className: 'canvas-item-ctx-ok' },
-              '✓ ', kind, ' · ', String(len), ' chars'));
-            ctxStatus.appendChild(h('button', {
-              className: 'canvas-item-ctx-clear',
-              title: 'remove the stored content',
-              onClick: () => {
-                if (!confirm('Clear the stored context for this link?')) return;
-                item.content = null;
-                queueSave();
-                refreshCtxStatus();
-                ctxBtn.textContent = '↓ retrieve context';
-              },
-            }, '×'));
-          } else if (item.content && item.content.error) {
-            ctxStatus.appendChild(h('span', { className: 'canvas-item-ctx-err' },
-              '✗ ', item.content.error.slice(0, 60)));
-          }
-        }
-        const ctxBtn = h('button', {
-          className: 'canvas-item-ctx-btn',
-          onClick: async () => {
-            const url = (item.url || '').trim();
-            if (!url) { alert('add a URL first'); return; }
-            ctxBtn.disabled = true;
-            ctxBtn.textContent = '… fetching';
-            clear(ctxStatus);
-            try {
-              const r = await gone('link fetch', 'a browser page cannot fetch arbitrary URLs (SPEC §7)');
-              item.content = {
-                url: r.url,
-                kind: r.kind,
-                title: r.title,
-                body: r.body,
-                error: r.error || '',
-                fetched_at: new Date().toISOString(),
-              };
-              queueSave();
-              refreshCtxStatus();
-            } catch (e) {
-              item.content = { url, kind: 'error', title: '', body: '', error: String(e.message || e), fetched_at: new Date().toISOString() };
-              queueSave();
-              refreshCtxStatus();
-            } finally {
-              ctxBtn.disabled = false;
-              ctxBtn.textContent = item.content && item.content.body ? '↻ re-fetch' : '↓ retrieve context';
-            }
-          },
-        }, item.content && item.content.body ? '↻ re-fetch' : '↓ retrieve context');
-
-        // Manual-paste toggle. Opens an editable textarea that writes directly
-        // to item.content.body. For YouTube: copy the transcript from the
-        // "Show transcript" panel (⋮ menu → Show transcript → select all → ⌘C)
-        // and paste it here.
-        const pasteTA = h('textarea', {
-          className: 'canvas-item-ctx-paste-ta',
-          placeholder: 'paste a transcript, article body, or any source text here…',
+        const url = item.url || '';
+        el.appendChild(h('a', {
+          className: 'canvas-item-link', href: url, target: '_blank', rel: 'noreferrer',
+        }, item.title || url));
+        // No preview fetch: a static page cannot request an arbitrary origin,
+        // and pretending otherwise is what left "fetching preview…" on screen
+        // forever. The URL itself is the preview.
+        let host = '';
+        try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (_) {}
+        if (host) el.appendChild(h('div', { className: 'canvas-item-host' }, host));
+      } else if (item.type === 'file') {
+        // A vault file pinned to the board — usually a note. Show it as the
+        // page it is and open it in the app, so a board works as an index.
+        const name = String(item.file || '').split('/').pop().replace(/\.md$/i, '');
+        // Was a `§` glyph plus the full path printed underneath. The kind
+        // icon says more than the glyph did, and the path is a tooltip —
+        // a board is an index of pages, so it should read as page titles.
+        const hitPage = pageByPath(item.file);
+        el.setAttribute('title', item.file);
+        el.appendChild(h('div', { className: 'canvas-item-file' },
+          h('span', { className: 'canvas-item-file-glyph' },
+            kindIcon(hitPage ? hitPage.kind : 'note')),
+          h('span', { className: 'canvas-item-file-name' }, name || item.file)));
+        el.classList.add('canvas-item-clickable');
+        el.addEventListener('click', () => {
+          const hit = pageByPath(item.file);
+          if (hit) openPage(hit.id);
         });
-        pasteTA.value = (item.content && item.content.body && item.content.kind === 'manual')
-          ? item.content.body : '';
-        const pasteSave = h('button', {
-          className: 'btn-primary canvas-item-ctx-paste-save',
-          onClick: () => {
-            const text = pasteTA.value.trim();
-            if (!text) { pasteBox.style.display = 'none'; return; }
-            item.content = {
-              url: item.url || '',
-              kind: 'manual',
-              title: 'pasted source',
-              body: text,
-              error: '',
-              fetched_at: new Date().toISOString(),
-            };
-            queueSave();
-            refreshCtxStatus();
-            ctxBtn.textContent = '↻ re-fetch';
-            pasteBox.style.display = 'none';
-          },
-        }, 'save');
-        const pasteCancel = h('button', { className: 'side-action',
-          onClick: () => { pasteBox.style.display = 'none'; } }, 'cancel');
-        pasteBox.appendChild(pasteTA);
-        pasteBox.appendChild(h('div', { className: 'canvas-item-ctx-paste-actions' },
-          pasteCancel, pasteSave));
-
-        const pasteBtn = h('button', {
-          className: 'canvas-item-ctx-btn canvas-item-ctx-paste-btn',
-          title: 'paste a transcript / article body manually',
-          onClick: () => {
-            const visible = pasteBox.style.display !== 'none';
-            pasteBox.style.display = visible ? 'none' : 'flex';
-            if (!visible) setTimeout(() => pasteTA.focus(), 30);
-          },
-        }, '✎ paste');
-
-        el.appendChild(h('div', { className: 'canvas-item-ctx-row' },
-          ctxBtn, pasteBtn, ctxStatus));
-        el.appendChild(pasteBox);
-        refreshCtxStatus();
-
-        // Show cached preview immediately on first render (if any)
-        refreshLink(el, item);
+      } else if (item.type === 'group') {
+        // A frame drawn around other nodes. Rendered as a labelled outline so
+        // the grouping Obsidian shows survives the trip here.
+        el.appendChild(h('div', { className: 'canvas-item-grouplabel' }, item.label || ''));
+      } else {
+        // A node type JSON Canvas gained after this was written. Say so
+        // plainly rather than drawing an empty card.
+        el.appendChild(h('div', { className: 'canvas-item-unknown' },
+          item.type || 'unknown', ' node — open in Obsidian'));
       }
-      bindDrag(el, handle, item);
       return el;
     }
 
-    async function refreshLink(el, item) {
-      // ── "open ↗" link
-      let goLink = el.querySelector('.canvas-item-go');
-      if (item.url && /^https?:/.test(item.url)) {
-        if (!goLink) {
-          goLink = h('a', { className: 'canvas-item-go', target: '_blank' }, 'open ↗');
-          el.appendChild(goLink);
-        }
-        goLink.href = item.url;
-      } else if (goLink) {
-        goLink.remove();
-      }
-
-      // ── OG preview card (image + title + desc)
-      let preview = el.querySelector('.canvas-item-preview');
-      if (!item.url || !/^https?:/.test(item.url)) {
-        if (preview) preview.remove();
-        return;
-      }
-
-      // Skip refetch if URL hasn't changed since last preview
-      if (item._previewUrl === item.url && preview) return;
-      item._previewUrl = item.url;
-
-      if (!preview) {
-        preview = h('div', { className: 'canvas-item-preview' });
-        // Insert above the "open ↗" link
-        if (goLink) el.insertBefore(preview, goLink);
-        else el.appendChild(preview);
-      }
-
-      // If we have a cached OG, render it immediately while we refresh in background
-      function renderOg(og) {
-        clear(preview);
-        if (!og || og.error) {
-          preview.appendChild(h('div', { className: 'canvas-item-preview-err' }, 'no preview'));
-          return;
-        }
-        if (og.image) preview.appendChild(h('img', {
-          className: 'canvas-item-preview-img', src: og.image, loading: 'lazy', alt: '',
-        }));
-        const body = h('div', { className: 'canvas-item-preview-body' });
-        body.appendChild(h('div', { className: 'canvas-item-preview-title' }, og.title || og.site_name || og.url));
-        if (og.description) body.appendChild(h('div', { className: 'canvas-item-preview-desc' }, og.description.slice(0, 160)));
-        body.appendChild(h('div', { className: 'canvas-item-preview-site' }, og.site_name || ''));
-        preview.appendChild(body);
-      }
-
-      if (item.og) renderOg(item.og);
-      else {
-        clear(preview);
-        preview.appendChild(h('div', { className: 'canvas-item-preview-loading' }, 'fetching preview…'));
-      }
-
-      const og = await fetchLinkPreview(item.url);
-      if (og && !og.error) {
-        item.og = og;
-        queueSave();
-        renderOg(og);
-      } else if (!item.og) {
-        // No cached preview, and the fetch errored — show the error.
-        renderOg(og);
-      }
-      // else: keep the cached item.og visible, swallow the transient error.
-    }
-
-    function bindDrag(el, handle, item) {
-      handle.addEventListener('pointerdown', (e) => {
-        if (e.target.tagName === 'BUTTON') return;
-        e.preventDefault();
-        e.stopPropagation();  // don't trigger the viewport's pan handler
-        handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
-        const sx = e.clientX, sy = e.clientY;
-        const sl = item.x || 0, st = item.y || 0;
-        el.classList.add('dragging');
-        const mv = (ev) => {
-          // Divide screen-space delta by zoom so the item tracks the cursor
-          // at any zoom level (10px screen-move at 0.5x = 20 world-px).
-          item.x = sl + (ev.clientX - sx) / zoom;
-          item.y = st + (ev.clientY - sy) / zoom;
-          el.style.left = item.x + 'px';
-          el.style.top  = item.y + 'px';
-        };
-        const up = () => {
-          el.classList.remove('dragging');
-          document.removeEventListener('pointermove', mv);
-          document.removeEventListener('pointerup', up);
-          queueSave();
-        };
-        document.addEventListener('pointermove', mv);
-        document.addEventListener('pointerup', up);
-      });
-    }
-
-    function genItemId() {
-      return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    }
-
-    function addItem(type) {
-      // Drop the new item near the center of the current viewport in world space.
-      const [wx, wy] = viewportCenterWorld();
-      const cx = wx - 130, cy = wy - 60;
-      let item;
-      if (type === 'text') item = { id: genItemId(), type, x: cx, y: cy, w: 280, text: '' };
-      else if (type === 'image') item = { id: genItemId(), type, x: cx, y: cy, w: 280, asset: '', caption: '' };
-      else item = { id: genItemId(), type, x: cx, y: cy, w: 320, url: '', title: '' };
-      page.meta.layout.push(item);
-      surface.appendChild(buildItem(item));
-      queueSave();
-      return item;
-    }
-
-    function removeItem(id) {
-      page.meta.layout = page.meta.layout.filter((i) => i.id !== id);
-      const el = surface.querySelector('[data-id="' + id + '"]');
-      if (el) el.remove();
-      queueSave();
-    }
-
-    async function uploadImageFile(file, atX, atY) {
-      let asset = null, assetUrl = null;
-      try {
-        const j = await SB.data().writeAsset(file);
-        if (j && j.ok === false) throw new Error('refused: ' + j.reason);
-        asset = j.path;
-        assetUrl = j.url;
-      } catch (e) {
-        alert('image upload failed: ' + e.message);
-        return null;
-      }
-      const item = { id: genItemId(), type: 'image', x: atX, y: atY, w: 280, asset, assetUrl, caption: '' };
-      page.meta.layout.push(item);
-      surface.appendChild(buildItem(item));
-      queueSave();
-      return item;
-    }
-
-    // Drop-to-add (only on boards that allow images)
-    if (withImages) {
-      viewport.addEventListener('dragover', (e) => {
-        if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
-          e.preventDefault();
-          viewport.classList.add('dropping');
-        }
-      });
-      viewport.addEventListener('dragleave', () => viewport.classList.remove('dropping'));
-      viewport.addEventListener('drop', async (e) => {
-        viewport.classList.remove('dropping');
-        if (!e.dataTransfer || !e.dataTransfer.files.length) return;
-        e.preventDefault();
-        // Convert the drop point from screen coords to world coords.
-        const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-        let x = wx - 140;
-        let y = wy - 60;
-        for (const f of e.dataTransfer.files) {
-          if (!f.type.startsWith('image/')) continue;
-          await uploadImageFile(f, x, y);
-          x += 24; y += 24;
-        }
-      });
-    }
-
-    // Paste-to-add: window-level listener while this board is mounted.
-    // Image clipboard data → image item, URL text → link item with auto preview,
-    // plain text → text item. Skipped when the focus is inside a card's
-    // textarea/input so normal paste still works there.
-    const onPaste = (e) => {
-      const tgt = e.target;
-      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA')) return;
-      const items = e.clipboardData && e.clipboardData.items;
-      if (!items || !items.length) return;
-
-      const centerXY = () => {
-        const [wx, wy] = viewportCenterWorld();
-        return [wx - 130, wy - 80];
-      };
-
-      // First pass: image data trumps text (e.g. screenshots paste as both).
-      for (const it of items) {
-        if (it.kind === 'file' && it.type.startsWith('image/')) {
-          const f = it.getAsFile();
-          if (f) {
-            e.preventDefault();
-            const [x, y] = centerXY();
-            uploadImageFile(f, x, y);
-            return;
-          }
-        }
-      }
-
-      // Second pass: text → URL becomes a link card; otherwise a text card.
-      for (const it of items) {
-        if (it.kind === 'string' && (it.type === 'text/plain' || it.type === 'text/uri-list')) {
-          e.preventDefault();
-          it.getAsString((text) => {
-            const t = (text || '').trim();
-            if (!t) return;
-            const [x, y] = centerXY();
-            if (/^https?:\/\/\S+$/i.test(t) && t.length < 2000) {
-              const link = addItem('link');
-              link.x = x; link.y = y; link.url = t;
-              const el = surface.querySelector('[data-id="' + link.id + '"]');
-              if (el) {
-                el.style.left = x + 'px'; el.style.top = y + 'px';
-                const urlEl = el.querySelector('.canvas-item-url');
-                if (urlEl) urlEl.value = t;
-                refreshLink(el, link);
-              }
-              queueSave();
-            } else {
-              const txt = addItem('text');
-              txt.x = x; txt.y = y; txt.text = t;
-              const el = surface.querySelector('[data-id="' + txt.id + '"]');
-              if (el) {
-                el.style.left = x + 'px'; el.style.top = y + 'px';
-                const ta = el.querySelector('.canvas-item-text');
-                if (ta) ta.value = t;
-              }
-              queueSave();
-            }
-          });
-          return;
-        }
-      }
-    };
-    window.addEventListener('paste', onPaste);
-    if (typeof onBodyTeardown === 'function') {
-      onBodyTeardown(() => window.removeEventListener('paste', onPaste));
-    }
-
-    const toolbarKids = READ_ONLY ? [] : [
-      h('button', { onClick: () => addItem('text') }, '+ text'),
-      h('button', { onClick: () => addItem('link') }, '+ link'),
-    ];
-    if (withImages && !READ_ONLY) {
-      toolbarKids.push(h('label', { className: 'canvas-toolbar-upload' },
-        h('input', {
-          type: 'file', accept: 'image/*', multiple: true,
-          style: { display: 'none' },
-          onChange: async (e) => {
-            const [wx, wy] = viewportCenterWorld();
-            let dx = 0;
-            for (const f of e.target.files) {
-              await uploadImageFile(f, wx - 130 + dx, wy - 80 + dx);
-              dx += 24;
-            }
-            e.target.value = '';
-          },
-        }),
-        '+ image'));
-    }
-    // (Sketching tools live in a separate floating toolbar — see further down.)
-
-    // Zoom controls (right side of toolbar)
+    // ── Toolbar ───────────────────────────────────────────────────────────
+    // View controls only. Nothing here can change the board.
+    const toolbarKids = [];
     toolbarKids.push(h('div', { className: 'canvas-toolbar-spacer' }));
     toolbarKids.push(h('button', {
       className: 'canvas-expand-btn',
@@ -3179,9 +2710,8 @@ function V2PageView(pageId, onChange, onDeleted) {
       onClick: async () => {
         const wantFs = !app.canvasFullscreen;
         // The body class is the source of truth for layout; the real OS
-        // fullscreen request is "best effort" on top (browsers gate it
-        // to user-gesture handlers, and some — old iOS Safari — don't
-        // support requestFullscreen on arbitrary elements).
+        // fullscreen request is best-effort on top (browsers gate it to
+        // user-gesture handlers, and not every engine allows it on any element).
         app.canvasFullscreen = wantFs;
         document.body.classList.toggle('canvas-fullscreen', wantFs);
         try {
@@ -3193,130 +2723,34 @@ function V2PageView(pageId, onChange, onDeleted) {
             const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
             if (exit) await exit.call(document);
           }
-        } catch (_) { /* user denied or unsupported — in-page fullscreen still works */ }
+        } catch (_) { /* denied or unsupported — in-page fullscreen still works */ }
         setTimeout(() => { applyTransform(); }, 80);
       },
     }, '⛶ expand'));
+    const centerOf = () => {
+      const r = viewport.getBoundingClientRect();
+      return [r.left + viewport.clientWidth / 2, r.top + viewport.clientHeight / 2];
+    };
     toolbarKids.push(h('div', { className: 'canvas-zoom-controls' },
       h('button', { className: 'canvas-zoom-btn', title: 'zoom out',
-        onClick: () => zoomAt(
-          viewport.getBoundingClientRect().left + viewport.clientWidth / 2,
-          viewport.getBoundingClientRect().top + viewport.clientHeight / 2,
-          0.85,
-        ) }, '−'),
-      (zoomReadout = h('button', { className: 'canvas-zoom-readout', title: 'click to reset to 100%',
-        onClick: () => resetView() }, '100%')),
+        onClick: () => zoomAt(...centerOf(), 0.85) }, '−'),
+      (zoomReadout = h('button', { className: 'canvas-zoom-readout',
+        title: 'click to reset to 100%', onClick: () => resetView() }, '100%')),
       h('button', { className: 'canvas-zoom-btn', title: 'zoom in',
-        onClick: () => zoomAt(
-          viewport.getBoundingClientRect().left + viewport.clientWidth / 2,
-          viewport.getBoundingClientRect().top + viewport.clientHeight / 2,
-          1.15,
-        ) }, '+'),
+        onClick: () => zoomAt(...centerOf(), 1.15) }, '+'),
       h('button', { className: 'canvas-zoom-btn', title: 'fit all items',
         onClick: () => fitView() }, 'fit')));
     toolbarKids.push(h('div', { className: 'canvas-toolbar-hint' },
-      page.meta.layout.length, ' items · ',
-      page.meta.edges.length ? page.meta.edges.length + ' connections · ' : '',
-      'drag empty area to pan · ⌘+scroll to zoom'));
-    const toolbar = h('div', { className: 'canvas-toolbar' }, ...toolbarKids);
+      items.length, ' items · ',
+      edges.length ? edges.length + ' connections · ' : '',
+      'drag to pan · ⌘+scroll to zoom'));
 
-    page.meta.layout.forEach((it) => surface.appendChild(buildItem(it)));
-    renderAllEdges();     // connections from the .canvas file (read-only)
-    renderAllStrokes();   // page-level strokes (whole canvas sketch board)
-    viewport.appendChild(toolbar);
+    items.forEach((it) => surface.appendChild(buildItem(it)));
+    renderAllEdges();
+    viewport.appendChild(h('div', { className: 'canvas-toolbar' }, ...toolbarKids));
     viewport.appendChild(surface);
 
-    // ── Sketch toolbar: docked at bottom-center of the canvas viewport ──
-    // Tools: Move (default) / Pen / Eraser. Picking a tool drives BOTH
-    // the mouse and the Apple Pencil — no separate toggles. Finger always
-    // pans (we forbid drawing on touch by design).
-    const skBar = h('div', { className: 'sk-float' });
-
-    // Lucide-style stroke icons. Inline so the SVG inherits currentColor
-     // and scales with the .sk-float-btn svg size rule in CSS.
-    const SK_ICONS = {
-      hand:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 1 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>',
-      pen:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></svg>',
-      erase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3a2.5 2.5 0 0 1 0-3.5l9.6-9.6a2.5 2.5 0 0 1 3.5 0l5.6 5.6a2.5 2.5 0 0 1 0 3.5L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>',
-      undo:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>',
-      redo:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>',
-    };
-
-    refreshFloat = function refreshFloatImpl() {
-      clear(skBar);
-      const modeBtn = (m, iconKey, title) => h('button', {
-        className: 'sk-float-btn' + (boardTool.mode === m ? ' active' : ''),
-        title,
-        html: SK_ICONS[iconKey],
-        onClick: (e) => { e.stopPropagation(); boardTool.mode = m; refreshFloat(); },
-      });
-      skBar.appendChild(modeBtn('move',  'hand',  'Move + pan + drag items'));
-      skBar.appendChild(modeBtn('pen',   'pen',   'Pen — draw on the canvas'));
-      skBar.appendChild(modeBtn('erase', 'erase', 'Eraser — drag over strokes to remove'));
-      skBar.appendChild(h('div', { className: 'sk-float-sep' }));
-
-      // Colors + widths shown only when the pen tool is active.
-      if (boardTool.mode === 'pen') {
-        ['#1a1a1a', '#dc2626', '#2563eb', '#15803d'].forEach((c) => {
-          skBar.appendChild(h('button', {
-            className: 'sk-float-color' + (boardTool.color === c ? ' active' : ''),
-            style: { background: c }, title: 'Color ' + c,
-            onClick: (e) => { e.stopPropagation(); boardTool.color = c; refreshFloat(); },
-          }));
-        });
-        skBar.appendChild(h('div', { className: 'sk-float-sep' }));
-        [[1.5, '·'], [3, '•'], [6, '⬤']].forEach(([w, lab]) => {
-          skBar.appendChild(h('button', {
-            className: 'sk-float-width' + (boardTool.width === w ? ' active' : ''),
-            title: 'Width ' + w + 'px',
-            onClick: (e) => { e.stopPropagation(); boardTool.width = w; refreshFloat(); },
-          }, lab));
-        });
-        skBar.appendChild(h('div', { className: 'sk-float-sep' }));
-      }
-
-      skBar.appendChild(h('button', {
-        className: 'sk-float-btn',
-        title: 'Undo (⌘Z)',
-        disabled: sketchHistory.length === 0 ? 'disabled' : null,
-        html: SK_ICONS.undo,
-        onClick: (e) => { e.stopPropagation(); undoStroke(); },
-      }));
-      skBar.appendChild(h('button', {
-        className: 'sk-float-btn',
-        title: 'Redo (⌘⇧Z)',
-        disabled: sketchRedo.length === 0 ? 'disabled' : null,
-        html: SK_ICONS.redo,
-        onClick: (e) => { e.stopPropagation(); redoStroke(); },
-      }));
-    };
-    refreshFloat();
-
-    // Belt-and-suspenders: explicitly stop pointerdown / click / touchstart
-    // from bubbling out of the docked bar so the canvas viewport never
-    // mistakes a button tap for a draw / pan.
-    skBar.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
-    skBar.addEventListener('click', (e) => { e.stopPropagation(); });
-    skBar.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
-
-    if (!READ_ONLY) viewport.appendChild(skBar);
-
-    // Keyboard: ⌘Z / ⌘⇧Z for undo / redo while this canvas is mounted.
-    const onCanvasKey = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (!(e.metaKey || e.ctrlKey)) return;
-      if (e.key === 'z' || e.key === 'Z') {
-        e.preventDefault();
-        if (e.shiftKey) redoStroke(); else undoStroke();
-      }
-    };
-    window.addEventListener('keydown', onCanvasKey);
-    if (typeof onBodyTeardown === 'function') {
-      onBodyTeardown(() => window.removeEventListener('keydown', onCanvasKey));
-    }
-
-    // When V2PageView unmounts (user navigates away), drop the fullscreen
-    // body class so the next screen renders normally.
+    // Leaving the page must not strand the app in fullscreen.
     if (typeof onBodyTeardown === 'function') {
       onBodyTeardown(() => {
         if (app.canvasFullscreen) {
@@ -3326,19 +2760,14 @@ function V2PageView(pageId, onChange, onDeleted) {
       });
     }
 
-    // Initial view: fit all items if any, otherwise pan to (0,0).
+    // Initial view: fit the board if there is one, otherwise sit at the origin.
     setTimeout(() => {
-      applyTransform();  // initial render with zoom=1, pan=0,0
-      if (page.meta.layout.length) fitView();
+      applyTransform();
+      if (items.length) fitView();
     }, 0);
 
     return viewport;
   }
-
-  // Thin wrappers — keep the dispatch site simple.
-  // Both boards support images now — canvas + inspo only differ visually (canvas
-  // = neutral grid, inspo = warmer pink-tinted grid). Functionally identical.
-  function renderCanvasBody() { return renderBoardBody({ withImages: true, kindLabel: 'canvas' }); }
   // Inspo is a bento wall now, not a board: items live in the markdown body
   // (image, caption, #tags, source url; `##` headings group them), so Obsidian
   // renders the same page as images with captions. Geometry is gone entirely —
@@ -3348,6 +2777,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (!I) return renderDefaultBody();          // bridge too old — degrade, don't break
     const model = I.parse(page.body || '');
     let activeTag = null;
+    let editing = false;   // the wall opens in view mode; see card()
 
     const wrap = h('div', { className: 'page-body inspo-bento' });
     const toolbar = h('div', { className: 'bento-toolbar' });
@@ -3367,15 +2797,39 @@ function V2PageView(pageId, onChange, onDeleted) {
       clear(toolbar);
       // Tag filter strip — every tag on the page; click to filter, click again
       // to clear.
+      /* This is a FILTER, not a list of tags — but it rendered as lime
+         chips directly below the page's own lime tag chips, so the screen
+         opened with two near-identical rows and no clue that one of them
+         did something. Toggle-shaped, labelled, and only when there is
+         enough on the wall for filtering to be worth the row. */
       const tags = I.tags(model);
-      if (tags.length) {
+      const itemCount = model.groups.reduce((n, g) => n + g.items.length, 0);
+      if (tags.length > 1 && itemCount > 3) {
         toolbar.appendChild(h('div', { className: 'bento-tagstrip' },
+          h('span', { className: 'bento-filter-l' }, icon('search'), 'Filter'),
           tags.map((t) => h('button', {
             className: 'bento-tag' + (activeTag === t ? ' on' : ''),
+            'aria-pressed': String(activeTag === t),
             onClick: () => { activeTag = activeTag === t ? null : t; paint(); },
-          }, '#' + t))));
+          }, t)),
+          activeTag ? h('button', {
+            className: 'bento-tag bento-tag-clear',
+            onClick: () => { activeTag = null; paint(); },
+          }, icon('x'), 'Clear') : null));
       }
       const actions = h('div', { className: 'bento-actions' });
+
+      /* The mode switch. In view mode the wall is images and captions and
+         nothing else — the add-controls belong to editing too, because you
+         do not accidentally need "+ group" while looking at references. */
+      actions.appendChild(h('button', {
+        className: 'btn bento-mode' + (editing ? ' on' : ''),
+        title: editing ? 'Finish arranging' : 'Arrange this wall',
+        onClick: () => { editing = !editing; paint(); },
+      }, icon(editing ? 'check' : 'pen-line'), editing ? 'Done' : 'Arrange'));
+
+      if (!editing) { toolbar.appendChild(actions); return; }
+
       // Add an image: file picker → attachments/, then a fresh card.
       const fileIn = h('input', { type: 'file', accept: 'image/*', style: { display: 'none' } });
       fileIn.addEventListener('change', async () => {
@@ -3398,10 +2852,22 @@ function V2PageView(pageId, onChange, onDeleted) {
       actions.appendChild(h('button', {
         className: 'btn-secondary',
         onClick: () => {
-          const name = prompt('group name');
-          if (!name || !name.trim()) return;
-          model.groups.push({ name: name.trim(), items: [] });
-          save(); paint();
+          // Inline, not prompt() — same reason the project picker stopped
+          // using it: an OS dialog in the middle of a themed app.
+          const name = h('input', { className: 'set-input bento-newgroup',
+            placeholder: 'Group name', autocomplete: 'off' });
+          const commit = () => {
+            const v = (name.value || '').trim();
+            if (v) { model.groups.push({ name: v, items: [] }); save(); }
+            paint();
+          };
+          name.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { e.preventDefault(); paint(); }
+          });
+          name.addEventListener('blur', commit);
+          actions.replaceChildren(name);
+          name.focus();
         } }, '+ group'));
 
       // One-click migration for boards made under the old canvas model. An
@@ -3420,18 +2886,70 @@ function V2PageView(pageId, onChange, onDeleted) {
       toolbar.appendChild(actions);
     }
 
+    /* A wall has two states, and it used to only have one.
+
+       Every tile carried a caption input, a #tags input, a source-url input,
+       a group <select> and a remove × — permanently, on every card. A page
+       whose entire job is looking at images rendered as a column of forms,
+       and the images were the smallest thing on it.
+
+       View is now the default: image, caption, tags. Edit is a deliberate
+       switch, and the fields only exist then. The caption stays inline-
+       editable on click in view mode, because retyping a caption is the one
+       edit frequent enough that a mode switch would be a tax. */
     function card(item, group) {
       const el = h('div', { className: 'bento-card' });
+
       if (item.image) {
         el.appendChild(h('div', { className: 'bento-imgbox' }, vaultImage(item.image)));
       } else if (item.url) {
         const domain = (item.url.replace(/^https?:\/\//, '').split('/')[0] || '').slice(0, 40);
         el.appendChild(h('a', {
           className: 'bento-linkface', href: item.url, target: '_blank', rel: 'noopener',
-        }, '↗ ', domain || 'link'));
+        }, icon('link-2'), domain || 'link'));
+      } else {
+        el.appendChild(h('div', { className: 'bento-imgbox bento-imgbox-empty' },
+          h('span', null, 'No image yet')));
       }
+
+      if (!editing) {
+        // ── View ──────────────────────────────────────────────────────
+        const cap = h('div', {
+          className: 'bento-cap-view' + (item.caption ? '' : ' is-empty'),
+          title: 'Click to edit the caption',
+          onClick: (e) => {
+            e.stopPropagation();
+            const inp = h('input', {
+              className: 'bento-cap', value: item.caption || '', placeholder: 'Caption…',
+              onInput: (ev) => { item.caption = ev.target.value; save(); },
+              onKeyDown: (ev) => { if (ev.key === 'Enter' || ev.key === 'Escape') ev.target.blur(); },
+            });
+            inp.addEventListener('blur', () => paint());
+            cap.replaceWith(inp);
+            inp.focus(); inp.select();
+          },
+        }, item.caption || 'Add a caption');
+        el.appendChild(cap);
+
+        if ((item.tags || []).length) {
+          el.appendChild(h('div', { className: 'bento-tags-view' },
+            item.tags.map((t) => h('button', {
+              className: 'tag-chip tag-chip-btn',
+              onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
+            }, h('span', { className: 'tag-chip-h' }, '#'), h('span', null, t)))));
+        }
+        if (item.url && item.image) {
+          el.appendChild(h('a', {
+            className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
+            onClick: (e) => e.stopPropagation(),
+          }, icon('link-2'), 'Source'));
+        }
+        return el;
+      }
+
+      // ── Edit ────────────────────────────────────────────────────────
       const capIn = h('input', {
-        className: 'bento-cap', placeholder: 'caption…', value: item.caption || '',
+        className: 'bento-cap', placeholder: 'Caption…', value: item.caption || '',
         onInput: (e) => { item.caption = e.target.value; save(); },
       });
       const tagIn = h('input', {
@@ -3444,11 +2962,10 @@ function V2PageView(pageId, onChange, onDeleted) {
         },
       });
       const urlIn = h('input', {
-        className: 'bento-url-in', placeholder: 'source url…', value: item.url || '',
+        className: 'bento-url-in', placeholder: 'Source URL…', value: item.url || '',
         onChange: (e) => { item.url = e.target.value.trim() || null; save(); },
       });
-      // Group mover — a select of existing groups.
-      const sel = h('select', { className: 'bento-group-sel' },
+      const sel = h('select', { className: 'bento-group-sel', title: 'Move to group' },
         allGroupNames().map((n) => h('option', {
           value: n, selected: n === group.name ? 'selected' : undefined,
         }, n || '(ungrouped)')));
@@ -3460,18 +2977,18 @@ function V2PageView(pageId, onChange, onDeleted) {
         save(); paint();
       });
       const del = h('button', {
-        className: 'bento-del', title: 'remove',
+        className: 'bento-del', title: 'Remove this item',
         onClick: () => {
-          group.items.splice(group.items.indexOf(item), 1);
+          const removed = item;
+          const idx = group.items.indexOf(item);
+          group.items.splice(idx, 1);
           save(); paint();
-        } }, '×');
+          toast('Item removed', { actionLabel: 'Undo', onAction: () => {
+            group.items.splice(idx, 0, removed); save(); paint();
+          } });
+        } }, icon('trash-2'));
       el.appendChild(h('div', { className: 'bento-fields' }, capIn, tagIn, urlIn,
         h('div', { className: 'bento-row' }, sel, del)));
-      if (item.url && item.image) {
-        el.appendChild(h('a', {
-          className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
-        }, '↗ source'));
-      }
       return el;
     }
 
@@ -3505,90 +3022,34 @@ function V2PageView(pageId, onChange, onDeleted) {
 
   function renderSnippetBody() {
     return h('div', { className: 'page-body snippet-body' },
-      h('textarea', {
-        className: 'page-body-ta snippet-ta',
-        placeholder: 'a quick thought…',
-        value: page.body,
-        onInput: (e) => { page.body = e.target.value; queueSave(); },
+      ProseEditor({
+        getValue: () => page.body,
+        setValue: (v) => { page.body = v; queueSave(); },
+        placeholder: 'A quick thought…',
+        minHeight: 160,
       }));
   }
 
   function renderMarkdownBody() {
     if (!page.meta) page.meta = {};
-    const wrap = h('div', { className: 'page-body md-body' });
-    const article = h('article', { className: 'md-article' });
-    const editBox = h('textarea', {
-      className: 'page-body-ta md-edit-ta',
-      placeholder: 'write markdown…\n\n## section headers\n- bullet lists\n\n> blockquote with em-dash and page no.\n\nUse [[id]] for mentions and {{tag:foo}} for inline tags.',
-      value: page.body,
-      onInput: (e) => {
-        page.body = e.target.value;
-        queueSave();
-        clearTimeout(renderTimer);
-        renderTimer = setTimeout(() => paintArticle(), 350);
-      },
-    });
-    let renderTimer;
-    let mode = (page.body && page.body.trim()) ? 'view' : 'edit';
+    /* The note body. Two things changed here.
 
-    async function paintArticle() {
-      clear(article);
-      // Frontmatter pre-block (Source · Article / id / type / etc.)
-      const fmRows = [];
-      const m = KIND_META[page.kind] || {};
-      fmRows.push(['id',       page.id]);
-      fmRows.push(['kind',     m.label || page.kind]);
-      if (page.tags && page.tags.length)
-        fmRows.push(['tags',     page.tags.join(', ')]);
-      if (page.meta && page.meta.url)
-        fmRows.push(['url',      page.meta.url]);
-      if (page.meta && page.meta.captured)
-        fmRows.push(['captured', String(page.meta.captured)]);
-      if (page.meta && page.meta.author)
-        fmRows.push(['author',   String(page.meta.author)]);
-      const fmEl = h('pre', { className: 'md-frontmatter' },
-        '---\n',
-        ...fmRows.map(([k, v]) => k.padEnd(10) + ' ' + v + '\n'),
-        '---');
-      article.appendChild(fmEl);
+       It used to print a frontmatter block above the prose — id, kind, tags,
+       url — so the first thing you saw on your own note was
+       `id 01KVWR…`. Those facts are in the Metadata rail three inches to the
+       right, and in the chips row above. Three copies of the same machine
+       text, one of them ahead of the writing. The rail keeps them; this
+       doesn't.
 
-      // Render the markdown body via the server
-      const body = (page.body || '').trim();
-      if (!body) {
-        article.appendChild(h('div', { className: 'md-empty' },
-          'Empty. Switch to edit mode to write.'));
-      } else {
-        try {
-          const r = SB.data().renderHtml(body);
-          const rendered = h('div', { className: 'md-rendered', html: r.html });
-          const idx = await getPageIndex();
-          decorateMentions(rendered);  // [[Title]] → clickable page links (6.10)
-          decorateHashtags(rendered);       // #tags → chips
-          article.appendChild(rendered);
-        } catch (e) {
-          article.appendChild(h('div', { className: 'md-empty' }, 'Failed to render: ', String(e.message)));
-        }
-      }
-    }
-
-    function applyMode() {
-      wrap.classList.toggle('md-mode-edit', mode === 'edit');
-      wrap.classList.toggle('md-mode-view', mode === 'view');
-      modeBtn.textContent = mode === 'view' ? '✎ edit' : '✓ done';
-    }
-
-    const modeBtn = h('button', { className: 'md-mode-btn', onClick: () => {
-      mode = mode === 'view' ? 'edit' : 'view';
-      if (mode === 'view') paintArticle();
-      applyMode();
-    } }, '✎ edit');
-
-    wrap.appendChild(h('div', { className: 'md-mode-row' }, modeBtn));
-    wrap.appendChild(article);
-    wrap.appendChild(editBox);
-    paintArticle();
-    applyMode();
-    return wrap;
+       And it had its own view/edit toggle labelled `✎ edit` / `✓ done`, one
+       of three such toggles in the app. It uses the shared one now. */
+    return h('div', { className: 'page-body md-body' },
+      ProseEditor({
+        getValue: () => page.body,
+        setValue: (v) => { page.body = v; queueSave(); },
+        placeholder: 'Write…\n\n## Section headers\n- Bullet lists\n> A quote\n\n[[Wikilinks]] resolve and #tags stick.',
+        minHeight: 420,
+      }));
   }
 
   function renderBookmarkBody() {
@@ -3698,16 +3159,16 @@ function V2PageView(pageId, onChange, onDeleted) {
     renderLinks();
 
     const linkSection = h('div', { className: 'bm-section bm-section-link' },
-      h('div', { className: 'bm-section-l' }, 'LINKS · ', String(page.meta.links.length)),
+      h('div', { className: 'bm-section-l' }, 'Links · ', String(page.meta.links.length)),
       linksWrap);
 
     const contextSection = h('div', { className: 'bm-section bm-section-context' },
-      h('div', { className: 'bm-section-l' }, 'CONTEXT'),
-      h('textarea', {
-        className: 'page-body-ta bm-context-ta',
-        placeholder: 'why this matters · what to remember · who else cares…',
-        value: page.body,
-        onInput: (e) => { page.body = e.target.value; queueSave(); },
+      ProseEditor({
+        label: 'Context',
+        getValue: () => page.body,
+        setValue: (v) => { page.body = v; queueSave(); },
+        placeholder: 'Why this matters · what to remember · who else cares…',
+        minHeight: 180,
       }));
 
     wrap.appendChild(linkSection);
@@ -3722,63 +3183,100 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (!page.meta) page.meta = {};
     const wrap = h('div', { className: 'page-body project-body' });
 
-    const headerCard = h('div', { className: 'pj-card pj-header' });
-    function refreshHeader() {
-      clear(headerCard);
-      headerCard.appendChild(h('div', { className: 'pj-name' }, page.title || 'Untitled project'));
+    const STATUSES = [
+      ['planning', 'Planning'], ['active', 'Active'], ['paused', 'Paused'],
+      ['shipped', 'Shipped'],   ['archived', 'Archived'],
+    ];
+
+    // ── Summary strip ───────────────────────────────────────────────────
+    // The old header card restated the title, which the page header above it
+    // already shows in an editable field. What was actually useful in it was
+    // the status + timeline at a glance, so that is all that survives.
+    const summary = h('div', { className: 'pj-summary' });
+    function refreshSummary() {
+      clear(summary);
       const meta = page.meta || {};
-      const statusChip = meta.status
-        ? h('span', { className: 'pj-status pj-status-' + String(meta.status) }, meta.status)
-        : null;
-      const dateChip = (meta.start_date || meta.end_date)
-        ? h('span', { className: 'pj-dates' },
-            meta.start_date || '?', ' → ', meta.end_date || 'ongoing')
-        : null;
-      if (statusChip || dateChip) {
-        headerCard.appendChild(h('div', { className: 'pj-meta-row' }, statusChip, dateChip));
+      const label = (STATUSES.find((s) => s[0] === meta.status) || [])[1];
+      if (label) {
+        summary.appendChild(h('span', { className: 'pj-status pj-status-' + meta.status },
+          h('span', { className: 'pj-status-dot' }), label));
+      }
+      // Read as a sentence, not as "2026-07-02 → ?". A project with a start
+      // and no end is ongoing; that is the common case and it should say so.
+      if (meta.start_date || meta.end_date) {
+        const parts = [];
+        if (meta.start_date) parts.push('Started ' + meta.start_date);
+        parts.push(meta.end_date ? 'ended ' + meta.end_date : 'ongoing');
+        summary.appendChild(h('span', { className: 'pj-dates' }, parts.join(' · ')));
+      }
+      if (!summary.children.length) {
+        summary.appendChild(h('span', { className: 'pj-summary-empty' },
+          'No status or dates set yet.'));
       }
     }
-    refreshHeader();
+    refreshSummary();
 
-    // ── Metadata editor (status, dates, links) ─────────────────────────
-    const metaCard = h('div', { className: 'pj-card' },
-      h('div', { className: 'pj-card-hd' }, 'PROJECT META'),
-      h('div', { className: 'pj-meta-grid' },
-        h('label', null,
-          h('span', { className: 'cb-field-label' }, 'Status'),
-          h('select', {
-            value: String(page.meta.status || ''),
-            onChange: (e) => { page.meta.status = e.target.value || null; queueSave(); refreshHeader(); },
-          },
-            h('option', { value: '' }, '—'),
-            h('option', { value: 'planning' }, 'planning'),
-            h('option', { value: 'active' }, 'active'),
-            h('option', { value: 'paused' }, 'paused'),
-            h('option', { value: 'shipped' }, 'shipped'),
-            h('option', { value: 'archived' }, 'archived'),
-          )),
-        h('label', null,
-          h('span', { className: 'cb-field-label' }, 'Start'),
-          h('input', {
-            type: 'text', placeholder: 'YYYY-MM-DD', value: String(page.meta.start_date || ''),
-            onInput: (e) => { page.meta.start_date = e.target.value; queueSave(); refreshHeader(); },
-          })),
-        h('label', null,
-          h('span', { className: 'cb-field-label' }, 'End'),
-          h('input', {
-            type: 'text', placeholder: 'YYYY-MM-DD or "ongoing"', value: String(page.meta.end_date || ''),
-            onInput: (e) => { page.meta.end_date = e.target.value; queueSave(); refreshHeader(); },
-          }))));
-
-    // ── README / description ────────────────────────────────────────────
-    const readme = h('div', { className: 'pj-card pj-readme' },
-      h('div', { className: 'pj-card-hd' }, 'DESCRIPTION / README'),
-      h('textarea', {
-        className: 'page-body-ta',
-        placeholder: 'what this project is, why it matters, what success looks like…',
-        value: page.body,
-        onInput: (e) => { page.body = e.target.value; queueSave(); },
+    // ── Description ─────────────────────────────────────────────────────
+    // The third hand-rolled view/edit toggle in the app, now the shared one.
+    const descCard = h('div', { className: 'pj-card pj-readme' },
+      ProseEditor({
+        label: 'Description',
+        getValue: () => page.body,
+        setValue: (v) => { page.body = v; queueSave(); },
+        placeholder: 'What is this project, why does it matter, what does done look like?\n\nMarkdown works, and [[wikilinks]] resolve.',
+        minHeight: 220,
       }));
+
+    // ── Details ─────────────────────────────────────────────────────────
+    // Was "Project meta": three always-editable inputs with YYYY-MM-DD
+    // placeholders and a "—" status, which read as an empty form rather than
+    // as facts about the project. Now: real date pickers (the native control
+    // already speaks YYYY-MM-DD, so nothing is converted), a status list with
+    // no meaningless blank, and a line saying where the values actually go —
+    // because writing them changes the file Obsidian and your agent read.
+    const endInput = h('input', {
+      className: 'pj-field', type: 'date', value: String(page.meta.end_date || ''),
+      onInput: (e) => { page.meta.end_date = e.target.value || null; queueSave(); refreshSummary(); syncOngoing(); },
+    });
+    const ongoing = h('input', {
+      type: 'checkbox', checked: !page.meta.end_date,
+      onChange: (e) => {
+        if (e.target.checked) { page.meta.end_date = null; endInput.value = ''; }
+        endInput.disabled = e.target.checked;
+        queueSave(); refreshSummary();
+      },
+    });
+    function syncOngoing() {
+      ongoing.checked = !page.meta.end_date;
+      endInput.disabled = ongoing.checked;
+    }
+    const metaCard = h('div', { className: 'pj-card' },
+      h('div', { className: 'pj-card-hd' }, 'Details'),
+      h('div', { className: 'pj-card-body' },
+        h('div', { className: 'pj-field-row' },
+          h('label', { className: 'pj-field-l', for: 'pj-status' }, 'Status'),
+          h('select', {
+            id: 'pj-status', className: 'pj-field',
+            value: String(page.meta.status || ''),
+            onChange: (e) => { page.meta.status = e.target.value || null; queueSave(); refreshSummary(); },
+          },
+            h('option', { value: '' }, 'Not set'),
+            ...STATUSES.map(([v, l]) => h('option', { value: v }, l)))),
+        h('div', { className: 'pj-field-row' },
+          h('label', { className: 'pj-field-l', for: 'pj-start' }, 'Started'),
+          h('input', {
+            id: 'pj-start', className: 'pj-field', type: 'date',
+            value: String(page.meta.start_date || ''),
+            onInput: (e) => { page.meta.start_date = e.target.value || null; queueSave(); refreshSummary(); },
+          })),
+        h('div', { className: 'pj-field-row' },
+          h('label', { className: 'pj-field-l', for: 'pj-end' }, 'Ends'),
+          h('div', { className: 'pj-field-pair' },
+            endInput,
+            h('label', { className: 'pj-check' }, ongoing, h('span', null, 'Ongoing')))),
+        h('p', { className: 'pj-card-note' },
+          'These are written into the folder note’s frontmatter, so Obsidian and your agent read the same values.')));
+    syncOngoing();
 
     // ── Inside this project: grouped grid of pages that mention this id ─
     const insideCard = h('div', { className: 'pj-card pj-inside' });
@@ -3787,7 +3285,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     async function loadInside() {
       clear(insideCard);
-      insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'INSIDE THIS PROJECT'));
+      insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'Inside this project'));
       insideCard.appendChild(h('div', { className: 'sb-meta' }, 'loading…'));
       try {
         // Folder membership is the primary truth — a project holds its files.
@@ -3802,13 +3300,13 @@ function V2PageView(pageId, onChange, onDeleted) {
         renderInside();
       } catch (e) {
         clear(insideCard);
-        insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'INSIDE THIS PROJECT'));
+        insideCard.appendChild(h('div', { className: 'pj-card-hd' }, 'Inside this project'));
         insideCard.appendChild(h('div', { className: 'sb-meta' }, '✗ ', String(e.message || e)));
       }
     }
 
     function pageCard(p) {
-      const m = KIND_META[p.kind] || {};
+      const m = metaForPage(p);
       return h('div', {
         className: 'pj-inside-card',
         style: { '--k-c': m.color || 'var(--muted)' },
@@ -3821,57 +3319,94 @@ function V2PageView(pageId, onChange, onDeleted) {
       },
         h('div', { className: 'pj-inside-card-hd' },
           h('span', { className: 'pj-inside-glyph' }, kindIcon(p.kind)),
-          h('span', { className: 'pj-inside-kind' },
-            /\.excalidraw\.md$/i.test(p.path || '') ? 'Drawing' : (m.label || p.kind))),
+          h('span', { className: 'pj-inside-kind' }, m.label || p.kind)),
         h('div', { className: 'pj-inside-title' }, p.title || p.slug || '(untitled)'),
         p.body
           ? h('div', { className: 'pj-inside-snip' }, firstLineOf(p.body, 100))
           : null);
     }
 
+    // Every kind the vault knows, plus a drawing — the whole point of a
+    // project is holding them all in one folder.
+    const CREATABLE = [...KIND_ORDER, 'drawing'];
+    const metaForKind = (k) => (k === 'drawing' ? DRAWING_META : (KIND_META[k] || {}));
+
+    async function createInside(k) {
+      try {
+        const p = await SB.data().createPage({ kind: k, title: '', body: '', project: projectName });
+        if (!p || !p.id) throw new Error('no page id came back — ' + JSON.stringify(p).slice(0, 180));
+        invalidatePageIndex();
+        cacheSetPage(p);
+        const t = activeTab();
+        if (t) { t.parentRoute = 'project:' + projectId; persistTabs(); }
+        openPage(p.id);
+      } catch (err) {
+        alert('Create failed: ' + err.message);
+      }
+    }
+
+    // ── The create picker ───────────────────────────────────────────────
+    // Was a strip of six 10px buttons prefixed with unicode glyphs (§ ↗ ¶ ▦
+    // ◫ ✎) behind the label "+ create inside this project:". You had to
+    // already know what the symbols meant to use it.
+    //
+    // It is now the same kind-picker the global Create modal uses — icon,
+    // name, and the one-line hint that already lives in KIND_META and was
+    // previously buried in a `title` tooltip. Learning the vault's five kinds
+    // once should be enough; two different pickers for the same choice was
+    // most of why this screen felt like a different app.
+    //
+    // Progressive disclosure: an empty project shows the picker open, because
+    // that is the only thing you can usefully do. A project with pages in it
+    // shows one button, because the pages are the point.
+    let pickerOpen = false;
+    function kindPicker() {
+      return h('div', { className: 'pj-picker' },
+        ...CREATABLE.map((k) => {
+          const m = metaForKind(k);
+          return h('button', {
+            className: 'pj-picker-card',
+            style: { '--k-c': m.color },
+            onClick: () => createInside(k),
+          },
+            h('span', { className: 'pj-picker-icon' }, icon(m.icon || 'file-text')),
+            h('span', { className: 'pj-picker-l' }, m.label || k),
+            h('span', { className: 'pj-picker-h' }, m.hint || ''));
+        }));
+    }
+
     function renderInside() {
       clear(insideCard);
-      // Every kind the vault knows, plus a drawing — the whole point of a
-      // project is holding them all in one folder.
-      const CREATABLE = [...KIND_ORDER, 'drawing'];
-      const addBar = h('div', { className: 'pj-add-bar' },
-        h('span', { className: 'pj-add-label' }, '+ create inside this project:'),
-        ...CREATABLE.map((k) => {
-          const meta = k === 'drawing'
-            ? { label: 'Drawing', glyph: '✎', color: 'var(--k-canvas)',
-                hint: 'A freehand Excalidraw drawing inside this project.' }
-            : (KIND_META[k] || {});
-          return h('button', {
-            className: 'pj-add-btn',
-            title: meta.hint || ('Add a new ' + k),
-            style: { '--k-c': meta.color },
-            onClick: async () => {
-              try {
-                const p = await SB.data().createPage({
-                  kind: k, title: '', body: '',
-                  project: projectName,
-                });
-                if (!p || !p.id) throw new Error('server returned no page id — ' + JSON.stringify(p).slice(0, 180));
-                invalidatePageIndex();
-                cacheSetPage(p);
-                const t = activeTab();
-                if (t) { t.parentRoute = 'project:' + projectId; persistTabs(); }
-                openPage(p.id);
-              } catch (err) {
-                alert('Create failed: ' + err.message);
-              }
-            },
-          }, meta.glyph || '·', ' ', meta.label || k);
-        }));
+      const count = insidePages.length;
       insideCard.appendChild(h('div', { className: 'pj-card-hd' },
-        'INSIDE THIS PROJECT · ', String(insidePages.length), ' pages'));
-      insideCard.appendChild(addBar);
+        'Inside this project · ', String(count), count === 1 ? ' page' : ' pages'));
 
-      if (insidePages.length === 0) {
+      const addWrap = h('div', { className: 'pj-add' });
+      function paintAdd() {
+        clear(addWrap);
+        if (count === 0 || pickerOpen) {
+          if (count > 0) {
+            addWrap.appendChild(h('button', {
+              className: 'btn pj-add-toggle', onClick: () => { pickerOpen = false; paintAdd(); },
+            }, icon('x'), 'Close'));
+          }
+          addWrap.appendChild(kindPicker());
+        } else {
+          addWrap.appendChild(h('button', {
+            className: 'btn-create pj-add-toggle',
+            onClick: () => { pickerOpen = true; paintAdd(); },
+          }, icon('plus'), h('span', null, 'New in this project')));
+        }
+      }
+      paintAdd();
+      insideCard.appendChild(addWrap);
+
+      if (count === 0) {
         insideCard.appendChild(h('div', { className: 'pj-empty' },
-          'Nothing here yet. Use the buttons above to create a topic / canvas / etc. — it\'ll auto-link to this project. Or open an existing page and add ',
-          h('code', null, '[[' + projectId + ']]'),
-          ' to its mentions to bring it in.'));
+          'Nothing here yet. Pick a kind above and it lands in this project’s folder, already linked. ',
+          'To bring an existing page in, open it and add ',
+          h('code', null, '[[' + (page.title || projectId) + ']]'),
+          ' to its mentions.'));
         return;
       }
 
@@ -3886,10 +3421,10 @@ function V2PageView(pageId, onChange, onDeleted) {
         const m = KIND_META[k] || {};
         const section = h('div', { className: 'pj-group' },
           h('div', { className: 'pj-group-hd' },
-            h('span', { style: { color: m.color || 'inherit' } }, m.glyph || '·'),
-            ' ',
-            (m.label || k).toUpperCase(),
-            h('span', { className: 'pj-group-ct' }, ' · ', String(groups[k].length))),
+            h('span', { className: 'pj-group-icon', style: { color: m.color || 'inherit' } },
+              kindIcon(k)),
+            h('span', null, m.label || k),
+            h('span', { className: 'pj-group-ct' }, String(groups[k].length))),
           h('div', { className: 'pj-group-grid' },
             groups[k].map(pageCard)));
         insideCard.appendChild(section);
@@ -3898,171 +3433,19 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     loadInside();
 
-    wrap.appendChild(headerCard);
+    // Order follows the questions you actually ask: what is this, then the
+    // facts about it, then what is in it. The old order led with a card that
+    // only restated the title.
+    wrap.appendChild(summary);
+    wrap.appendChild(descCard);
     wrap.appendChild(metaCard);
-    wrap.appendChild(readme);
     wrap.appendChild(insideCard);
     return wrap;
   }
 
   // ── Side renderers ────────────────────────────────────────────────────
-  // Real per-page chat. Conversation lives in page.meta.thread and is sent as
-  // history on every turn. The send itself goes through sendPageChat() which
-  // owns persistence + notifications, so chat survives navigation.
-  function renderPageChat(open) {
-    if (!page.meta.thread || !Array.isArray(page.meta.thread)) page.meta.thread = [];
-    const pageId = page.id;
-
-    // Restore last-used chat width from localStorage (per kind so canvas/inspo
-    // can have a wider default than topic).
-    const widthKey = 'sb-chat-w-' + page.kind;
-    const savedW = parseInt(localStorage.getItem(widthKey) || '0', 10);
-    const defaultW = page.kind === 'canvas' || page.kind === 'inspo' ? 420 : 340;
-    const initialW = savedW > 280 ? savedW : defaultW;
-
-    const aside = h('aside', { className: 'page-chat' + (open ? '' : ' collapsed') });
-
-    // Apply the initial width to the page-grid parent (CSS var → grid column).
-    // We can't set it now because aside isn't mounted yet, so defer with a
-    // microtask. The .page-grid uses `grid-template-columns: 1fr var(--chat-w)`.
-    function applyWidth(w) {
-      const clamped = Math.max(280, Math.min(800, w));
-      const grid = aside.closest('.page-grid');
-      if (grid) grid.style.setProperty('--chat-w', clamped + 'px');
-      return clamped;
-    }
-    queueMicrotask(() => applyWidth(initialW));
-
-    // Drag handle on the left edge for resizing the chat column
-    const resizer = h('div', { className: 'page-chat-resizer', title: 'drag to resize' });
-    let dragging = false;
-    let startX = 0, startW = 0;
-    resizer.addEventListener('mousedown', (e) => {
-      dragging = true; startX = e.clientX;
-      // Read current width from CSS var (fall back to aside offset if unset)
-      const grid = aside.closest('.page-grid');
-      const cssW = grid && parseInt(getComputedStyle(grid).getPropertyValue('--chat-w'), 10);
-      startW = cssW || aside.offsetWidth || initialW;
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    });
-    const onMouseMove = (e) => {
-      if (!dragging) return;
-      applyWidth(startW + (startX - e.clientX));
-    };
-    const onMouseUp = () => {
-      if (!dragging) return;
-      dragging = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      // Persist the new width per-kind
-      const w = aside.offsetWidth;
-      if (w) { try { localStorage.setItem(widthKey, String(w)); } catch (_) {} }
-    };
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    onBodyTeardown(() => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    });
-
-    const threadList = h('div', { className: 'page-chat-thread' });
-    const input = h('textarea', {
-      className: 'page-chat-input',
-      placeholder: 'message… (⏎ to send, ⇧⏎ for newline)',
-      onKeyDown: (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-      },
-    });
-
-    // Pull the thread from the page cache (the source of truth — sendPageChat
-    // patches the cached page on every state change). Fallback to the closure
-    // page if nothing's cached yet.
-    function getThread() {
-      const cached = cacheGetPage(pageId);
-      return (cached && cached.meta && Array.isArray(cached.meta.thread))
-        ? cached.meta.thread
-        : (page.meta.thread || []);
-    }
-
-    function renderThread() {
-      const thread = getThread();
-      clear(threadList);
-      if (!thread.length) {
-        threadList.appendChild(h('div', { className: 'page-chat-empty' },
-          'Talk about this ', KIND_META[page.kind]?.label?.toLowerCase() || 'page', '.',
-          h('br'),
-          'The AI sees About Me + this page + everything you attach.'));
-        return;
-      }
-      thread.forEach((m) => {
-        const c = h('div', { className: 'page-chat-msg-c md-body' });
-        // User messages render as plain text (their bullets/asterisks are
-        // probably literal). Assistant messages get full markdown treatment.
-        if (m.role === 'assistant') {
-          renderMarkdown(m.content).forEach((node) => c.appendChild(node));
-        } else {
-          c.textContent = m.content;
-        }
-        threadList.appendChild(h('div', { className: 'page-chat-msg page-chat-msg-' + m.role },
-          h('div', { className: 'page-chat-msg-r' }, m.role === 'user' ? 'you' : m.role),
-          c));
-      });
-      threadList.scrollTop = threadList.scrollHeight;
-    }
-
-    function send() {
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      // Mirror the optimistic state in the closure page so renderThread shows
-      // it immediately even before the cache emit lands.
-      page.meta.thread = getThread();
-      sendPageChat(pageId, text);
-    }
-
-    // Re-render when sendPageChat reports a thread update for this page
-    const unsubscribe = onChatThreadChange((changedId) => {
-      if (changedId === pageId) {
-        // Keep closure thread mirror in sync, so re-renders elsewhere see fresh data
-        const t = getThread();
-        page.meta.thread = t;
-        renderThread();
-      }
-    });
-    onBodyTeardown(unsubscribe);
-
-    const clearBtn = h('button', { className: 'page-chat-clear',
-      onClick: async () => {
-        if (!confirm('Clear all messages in this thread?')) return;
-        const cached = cacheGetPage(pageId) || page;
-        cached.meta = cached.meta || {};
-        cached.meta.thread = [];
-        cacheSetPage(cached);
-        page.meta.thread = [];
-        await SB.data().updatePage(pageId, { meta: cached.meta }).catch(() => {});
-        emitChatThreadChange(pageId);
-        layout();
-      } }, 'clear');
-    aside.appendChild(resizer);
-    aside.appendChild(h('div', { className: 'page-chat-hd' },
-      h('span', null, 'chat · this page'),
-      getThread().length ? clearBtn : null,
-      h('button', { className: 'sb-twk-x', onClick: () => aside.classList.toggle('collapsed') }, '─')));
-    aside.appendChild(h('div', { className: 'page-chat-body' },
-      threadList,
-      h('div', { className: 'page-chat-input-row' }, input,
-        h('button', { className: 'btn-primary page-chat-send', onClick: send }, 'send'))));
-
-    renderThread();
-    return aside;
-  }
-  // Alias kept for any older callers that still reach for the placeholder name.
-  const renderChatPlaceholder = renderPageChat;
-
   function renderTopicSide() {
-    const aside = h('aside', { className: 'page-chat topic-side' });
+    const aside = h('aside', { className: 'topic-side' });
 
     // PARENT (if any)
     const parentId = page.meta && page.meta.parent;
@@ -4085,22 +3468,22 @@ function V2PageView(pageId, onChange, onDeleted) {
       h('span', { className: 'side-row-l' }, l),
       h('span', { className: 'side-row-v' }, v));
     aside.appendChild(h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'METADATA'),
+      h('div', { className: 'side-card-hd' }, 'Metadata'),
       h('div', { className: 'side-card-body' },
         sRow('ID',       page.id.slice(0, 8) + '…'),
-        sRow('SLUG',     page.slug),
-        sRow('KIND',     KIND_META[page.kind].label),
-        sRow('CREATED',  fmtDate(page.created)),
-        sRow('UPDATED',  fmtDate(page.updated)),
-        sRow('TAGS',     String(page.tags.length)),
-        sRow('MENTIONS', String(page.mentions.length)))));
+        sRow('Slug',     page.slug),
+        sRow('Kind',     KIND_META[page.kind].label),
+        sRow('Created',  fmtDate(page.created)),
+        sRow('Updated',  fmtDate(page.updated)),
+        sRow('Tags',     String(page.tags.length)),
+        sRow('Mentions', String(page.mentions.length)))));
 
     // BACKLINKS — fetched live (pages that mention this one)
-    const backHd = h('div', { className: 'side-card-hd' }, 'BACKLINKS · …');
+    const backHd = h('div', { className: 'side-card-hd' }, 'Backlinks');
     const backBody = h('div', { className: 'side-card-body side-card-empty' }, 'loading…');
     aside.appendChild(h('div', { className: 'side-card' }, backHd, backBody));
     Promise.resolve(SB.data().backlinks(page.id)).then(({ items }) => {
-      backHd.textContent = 'BACKLINKS · ' + (items ? items.length : 0);
+      backHd.textContent = 'Backlinks · ' + (items ? items.length : 0);
       clear(backBody);
       if (!items || !items.length) {
         backBody.className = 'side-card-body side-card-empty';
@@ -4114,10 +3497,10 @@ function V2PageView(pageId, onChange, onDeleted) {
         onClick: () => { app.openPageId = b.id; app.route = 'page'; render(); },
       },
         h('span', { className: 'side-link-title' }, b.title),
-        h('span', { className: 'side-link-meta' }, (KIND_META[b.kind] || {}).label || b.kind))));
+        h('span', { className: 'side-link-meta' }, metaForPage(b).label || b.kind))));
       backBody.appendChild(list);
     }).catch(() => {
-      backHd.textContent = 'BACKLINKS · 0';
+      backHd.textContent = 'Backlinks · 0';
       clear(backBody); backBody.appendChild(document.createTextNode('—'));
     });
 
@@ -4125,11 +3508,11 @@ function V2PageView(pageId, onChange, onDeleted) {
     const children = (page.meta && Array.isArray(page.meta.children)) ? page.meta.children : [];
     const childList = h('div', { className: 'side-children' });
     const subCard = h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'SUB-PAGES · ' + children.length),
+      h('div', { className: 'side-card-hd' }, 'Sub-pages · ' + children.length),
       h('div', { className: 'side-card-body' },
         childList,
         h('button', { className: 'side-action',
-          onClick: createSubpage }, '+ add sub-page')));
+          onClick: createSubpage }, icon('plus'), 'Add sub-page')));
     aside.appendChild(subCard);
 
     if (children.length) {
@@ -4142,14 +3525,14 @@ function V2PageView(pageId, onChange, onDeleted) {
             onClick: () => { app.openPageId = cp.id; app.route = 'page'; render(); },
           },
             h('span', { className: 'side-link-title' }, cp.title || '(untitled)'),
-            h('span', { className: 'side-link-meta' }, KIND_META[cp.kind].label)));
+            h('span', { className: 'side-link-meta' }, metaForPage(cp).label)));
         });
       });
     }
 
     // ACTIONS
     aside.appendChild(h('div', { className: 'side-card' },
-      h('div', { className: 'side-card-hd' }, 'ACTIONS'),
+      h('div', { className: 'side-card-hd' }, 'Actions'),
       h('div', { className: 'side-card-body' },
         h('button', { className: 'side-action',
           onClick: async () => {
@@ -4162,21 +3545,56 @@ function V2PageView(pageId, onChange, onDeleted) {
               a.click();
               URL.revokeObjectURL(a.href);
             } catch (e) { alert('Export failed: ' + e.message); }
-          } }, '↓ export .md'),
-        h('a', { className: 'side-action', href: '/api/v2/pages/' + page.id, target: '_blank' },
-          '≡ open raw json'),
+          } }, icon('download'), 'Export .md'),
+        /* The other half of the write safety. Every overwrite has snapshotted
+           to `.history/` since 5.19 and the app never said so, so the app
+           looked more dangerous than it actually is. Restoring writes through
+           the normal save path, which means the restore is itself snapshotted
+           — you can undo the undo. */
+        h('button', { className: 'side-action',
+          onClick: async () => {
+            let snaps = [];
+            try { snaps = await SB.data().pageHistory(page.id); } catch (_) {}
+            if (!snaps.length) { toast('No earlier versions of this page yet'); return; }
+            const pick = await historyDialog(snaps, page.title || 'this page');
+            if (!pick) return;
+            const r = await SB.data().readSnapshot(pick.path);
+            if (!r || !r.ok) { toast('Could not read that version', { tone: 'error' }); return; }
+            page.body = r.body != null ? r.body : r.text;
+            queueSave();
+            layout();
+            toast('Restored the version from ' + pick.stamp);
+          } }, icon('history'), 'Version history'),
         h('button', { className: 'side-action side-action-warn',
           onClick: async () => {
             if (!await confirmDialog({
               title: 'Delete this page?',
-              body: 'This removes "' + (page.title || 'this page') + '" from your vault. Any backlinks to it will become dead.',
-              confirmLabel: '× delete',
+              body: 'This moves "' + (page.title || 'this page') + '" to .trash/ in your vault. '
+                  + 'You can undo it, and the file stays on disk either way.',
+              confirmLabel: 'Delete',
               danger: true,
             })) return;
-            await SB.data().deletePage(page.id);
+            const title = page.title || 'Page';
+            const receipt = await SB.data().deletePage(page.id);
             cacheInvalidatePage(page.id);
             onDeleted && onDeleted();
-          } }, '× forget this'))));
+            // The file went to .trash/ rather than away. Say so, and offer
+            // the way back — a safety nobody is told about is not a safety.
+            toast(title + ' deleted', {
+              actionLabel: 'Undo',
+              onAction: async () => {
+                const r = await SB.data().restorePage(receipt);
+                if (r && r.ok) {
+                  invalidatePageIndex();
+                  await refreshCounts();
+                  if (r.id) openPage(r.id); else render();
+                  toast(title + ' restored');
+                } else {
+                  toast('Could not restore — ' + ((r && r.reason) || 'unknown'), { tone: 'error' });
+                }
+              },
+            });
+          } }, icon('trash-2'), 'Forget this'))));
 
     return aside;
 
@@ -4222,7 +3640,7 @@ function V2PageView(pageId, onChange, onDeleted) {
   const layout = () => {
     runBodyTeardowns();
     clear(wrap);
-    const m = KIND_META[page.kind] || KIND_META.snippet;
+    const m = metaForPage(page);
 
     // Ancestor breadcrumb (parent → grandparent) — only shown if page has a parent.
     // We fill it asynchronously so layout stays sync.
@@ -4256,8 +3674,14 @@ function V2PageView(pageId, onChange, onDeleted) {
     const header = h('div', { className: 'page-hd' },
       ancestorBar,
       h('div', { className: 'page-hd-row' },
+        /* `metaForPage` already picks a page's CHROME from its content — a
+           note with a url gets the bookmark layout. It now picks the LABEL
+           too. The nav facet said "Bookmark" and the page pill said "Note",
+           which is the derived-facet model (kind === note && url) leaking
+           into the interface; the user does not know or care that bookmark
+           is not a stored kind. */
         h('span', { className: 'page-kind-pill', style: { '--k-c': m.color }, title: m.hint },
-          h('span', { className: 'kind-chip-g' }, m.glyph),
+          h('span', { className: 'kind-chip-g' }, icon(m.icon || 'file-text')),
           h('span', { className: 'page-kind-label' }, m.label)),
         h('input', {
           className: 'page-title-input',
@@ -4266,23 +3690,21 @@ function V2PageView(pageId, onChange, onDeleted) {
           onInput: (e) => { page.title = e.target.value; queueSave(); },
         }),
         h('div', { className: 'page-meta-side' },
+          // Sits before the timestamp so the eye finds "did that land?" in
+          // the same place it already looks for "when did this change".
+          h('span', { className: 'save-state', 'data-state': 'idle', role: 'status', 'aria-live': 'polite' }),
           h('span', { className: 'page-meta-when' }, 'updated ', fmtDate(page.updated)),
           obsidianUrl(page.path) ? h('a', {
             className: 'page-meta-obs', href: obsidianUrl(page.path),
             title: 'open this file in Obsidian — deeper search, backlinks, canvas arranging',
           }, 'obsidian ↗') : null,
-          h('button', { className: 'page-meta-del',
-            onClick: async () => {
-              if (!await confirmDialog({
-                title: 'Delete this page?',
-                body: 'This removes "' + (page.title || 'this page') + '" from your vault. Any backlinks to it will become dead.',
-                confirmLabel: '× delete',
-                danger: true,
-              })) return;
-              await SB.data().deletePage(page.id);
-              cacheInvalidatePage(page.id);
-              onDeleted && onDeleted();
-            } }, 'delete'))),
+          /* The delete control lives in Actions, at the bottom of the
+             metadata rail, with the rest of the page-level operations. It
+             used to ALSO sit here as a bare "delete" link beside the
+             timestamp — a destructive verb rendered quieter than a date and
+             one slip away from "obsidian ↗". One of them had to go, and it
+             was not going to be the one in Actions. */
+        )),
       h('div', { className: 'page-chips-row' },
         h('div', { className: 'chip-strip' },
           h('span', { className: 'chip-strip-l' }, 'tags'),
@@ -4294,8 +3716,9 @@ function V2PageView(pageId, onChange, onDeleted) {
               setRoute('tag:' + t);
             },
           },
-            t,
-            h('button', { onClick: (e) => {
+            h('span', { className: 'tag-chip-h' }, '#'),
+            h('span', { className: 'tag-chip-t' }, t),
+            h('button', { title: 'Remove this tag', onClick: (e) => {
               e.stopPropagation();
               page.tags.splice(i, 1); queueSave(); layout();
             } }, '×'))),
@@ -4317,9 +3740,20 @@ function V2PageView(pageId, onChange, onDeleted) {
           })),
         h('div', { className: 'chip-strip' },
           h('span', { className: 'chip-strip-l' }, 'mentions'),
-          page.mentions.map((mn, i) => h('span', { className: 'mention-chip rm' },
-            mn,
-            h('button', { onClick: () => { page.mentions.splice(i, 1); queueSave(); layout(); } }, '×'))),
+          // A mention is a LINK to another page; a tag is a label you apply.
+          // They read as two different objects now — this one carries a link
+          // glyph and squared corners, the tag is a rounded #pill.
+          // A mention chip means "a link to another page". Two things were
+          // getting in that are neither: the page's OWN path (a board
+          // mentioning itself) and asset paths like attachments/foo.png,
+          // which rendered as five identical truncated chips. Both are
+          // filtered for display only — the underlying array is untouched,
+          // so nothing is dropped from the file.
+          visibleMentions().map(({ mn, i }) => h('span', { className: 'mention-chip rm' },
+            h('span', { className: 'mention-chip-i' }, icon('link-2')),
+            h('span', { className: 'mention-chip-t' }, mn),
+            h('button', { title: 'Remove this link',
+              onClick: () => { page.mentions.splice(i, 1); queueSave(); layout(); } }, '×'))),
           AutocompleteInput({
             placeholder: '+ mention (search title…)',
             allowCreate: false,
@@ -4334,18 +3768,17 @@ function V2PageView(pageId, onChange, onDeleted) {
               queueSave(); layout();
             },
           })),
-        // Content tags: #hashtags found in the body. Read-only (you edit them by
-        // typing #tag in the content). Distinct styling from page-level tags.
-        (() => {
-          const inline = extractInlineTags(page.body || '');
-          if (!inline.length) return null;
-          return h('div', { className: 'chip-strip' },
-            h('span', { className: 'chip-strip-l' }, 'in content'),
-            inline.map((t) => h('span', { className: 'hashtag' }, '#' + t)));
-        })()));
+        /* An "in content" strip used to list every #hashtag found in the
+           body. It restated information the reader can already see — the
+           tags are right there in the prose, styled as tags — and on an
+           inspo wall, where every item carries tags, it produced a third
+           consecutive row of near-identical lime pills before any image.
+           The tags are visible where they are written; the filter strip is
+           how you act on them. */
+        ));
 
     // Dispatch body + side per kind
-    let body, side, chat;
+    let body, side;
     let extraClass = '';
     // A project's folder note IS the project screen. Detected by path — the
     // file says `kind: note` (SPEC: project is a folder, not a kind), so
@@ -4358,9 +3791,11 @@ function V2PageView(pageId, onChange, onDeleted) {
       side = null;
       extraClass = ' project-grid';
     } else if (page.kind === 'canvas') {
-      // One kind, two file formats — same pattern as `note` chrome. A
-      // `.excalidraw.md` mounts the drawing editor; a `.canvas` board keeps
-      // the read-only board view.
+      // One kind, two file formats, and the split decides who owns the scene:
+      // a `.excalidraw.md` is ours, so it mounts the editor and writes; a
+      // `.canvas` is Obsidian's, so it renders and never writes. The pill above
+      // says which (see `metaForPage`), because "can I edit this?" should be
+      // answerable from the page rather than by trying it.
       if (page.meta && page.meta.excalidraw) {
         body = renderExcalidrawBody();
       } else {
@@ -4399,10 +3834,8 @@ function V2PageView(pageId, onChange, onDeleted) {
       }
       side = renderTopicSide();
     } else if (page.kind === 'topic') {
-      const tb = renderTopicBody();
-      body = tb.body;                // left: attached materials + description
-      chat = tb.chatSec;             // centre: existing topic chat section
-      side = renderTopicSide();      // right: metadata / backlinks / cards
+      body = renderTopicBody().body;   // attached materials + the writing surface
+      side = renderTopicSide();        // metadata / backlinks / sub-pages / actions
       extraClass = ' topic-grid';
     } else if (page.kind === 'markdown') {
       body = renderMarkdownBody();
@@ -4425,9 +3858,8 @@ function V2PageView(pageId, onChange, onDeleted) {
       side = null;   // 6.13: no per-page chat composer (SPEC §16)
     }
 
-    wrap.appendChild(h('div', { className: 'page-grid' + (side || chat ? '' : ' no-chat') + extraClass },
+    wrap.appendChild(h('div', { className: 'page-grid' + (side ? '' : ' no-chat') + extraClass },
       h('div', { className: 'page-main' }, header, body),
-      chat,   // middle column (topic only; null/undefined = skipped)
       side)); // right column
   };
 
@@ -4466,12 +3898,12 @@ function V2PageView(pageId, onChange, onDeleted) {
 // helpers (which flatten) — wrap.appendChild on an array would throw.
 function TagsIndexScreen() {
   const wrap = h('div', { className: 'screen' });
-  append(wrap, PageHeader('tags', null,
+  append(wrap, PageHeader('Tags', null,
     'Every tag used across your pages. Click any to see the pages using it.', null));
   wrap.appendChild(h('div', { className: 'loading-stub' }, 'loading…'));
   Promise.resolve(SB.data().tags()).then(({ tags }) => {
     clear(wrap);
-    append(wrap, PageHeader('tags', null,
+    append(wrap, PageHeader('Tags', null,
       (tags || []).length + ' tags in the vault. Click any to filter.', null));
     if (!tags || !tags.length) {
       wrap.appendChild(EmptyState('No tags yet.', 'Add tags to your pages — they\'ll show up here.'));
@@ -4695,9 +4127,9 @@ function AboutMeScreen() {
         h('div', { className: 'page-hd' },
           h('div', { className: 'page-hd-row' },
             h('span', { className: 'page-kind-pill', style: { '--k-c': 'var(--k-self)' } },
-              h('span', { className: 'kind-chip-g' }, '☉'),
-              h('span', null, 'ABOUT ME')),
-            h('span', { className: 'page-title-static' }, 'who I am'),
+              h('span', { className: 'kind-chip-g' }, icon('circle-user')),
+              h('span', null, 'About me')),
+            h('span', { className: 'page-title-static' }, 'About me'),
             h('div', { className: 'page-meta-side' },
               h('span', { className: 'page-meta-when' }, me.updated ? 'updated ' + fmtDate(me.updated) : '')))),
         h('div', { className: 'am-grid' },
@@ -4721,7 +4153,7 @@ function AboutMeScreen() {
           ])),
 
         // ── Resume sections (stored in about_me.extras) ──────────────────
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'EXPERIENCE'),
+        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Experience'),
         entryList('experience', [
           ['role',     'Role',     {}],
           ['org',      'Organization', {}],
@@ -4731,14 +4163,14 @@ function AboutMeScreen() {
           ['summary',  'Summary — what you shipped / impact', { long: true }],
         ], 'experience'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'SKILLS'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Skills'),
         entryList('skills', [
           ['name',  'Skill name', {}],
           ['area',  'Area (Code / Design / Product / …)', {}],
           ['level', 'Level (expert / proficient / learning)', {}],
         ], 'skill'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'EDUCATION'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Education'),
         entryList('education', [
           ['school', 'School / institution', {}],
           ['degree', 'Degree', {}],
@@ -4747,7 +4179,7 @@ function AboutMeScreen() {
           ['end',    'End', {}],
         ], 'education'),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'HIGHLIGHTS'),
+        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Highlights'),
         highlightList(),
 
         h('div', { className: 'sb-row', style: { marginTop: '16px' } },
@@ -4755,7 +4187,7 @@ function AboutMeScreen() {
           h('button', { className: 'sb-secondary', onClick: critiqueResume }, '⚡ critique with AI')),
         critiqueBox,
 
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'NOTES'),
+        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Notes'),
         h('textarea', {
           className: 'page-body-ta', placeholder: 'freeform reflective writing…',
           value: me.body,
@@ -4817,6 +4249,86 @@ function _inlineMarkdown(text) {
   html = html.replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>');
   return html;
 }
+/* ── ProseEditor ────────────────────────────────────────────────────────
+   ONE writing surface, used by every kind that holds prose.
+
+   There were six. Three kinds (topic, markdown, project) had each grown
+   their own view/edit toggle — same idea, three code paths, three different
+   labels ("edit"/"done", "✎ edit", "Edit"/"Done") and three layouts. The
+   other three (note default, snippet, bookmark context, about-me) had no
+   rendered view at all: they were permanent mono textareas, so a bookmark's
+   context — the user's own prose — sat in JetBrains Mono forever, breaking
+   the system's one typographic rule that mono means machine text.
+
+   The split that matters is preserved: the EDITOR is mono, because you are
+   editing raw markdown and `##`, `-` and `[[…]]` are structure you need to
+   see as characters. The VIEW is proportional, because it is prose. Toggling
+   between them is the same gesture on every kind. */
+function ProseEditor(opts) {
+  const {
+    getValue, setValue, placeholder = 'Write…',
+    label = null, minHeight = 240, measure = true,
+  } = opts;
+
+  const wrap = h('div', { className: 'prose-editor' });
+  const view = h('div', { className: 'md-rendered' + (measure ? '' : ' md-wide') });
+  const ta = h('textarea', {
+    className: 'page-body-ta md-edit-ta',
+    placeholder,
+    value: getValue() || '',
+    style: { minHeight: minHeight + 'px' },
+    onInput: (e) => { setValue(e.target.value); schedule(); },
+  });
+
+  let mode = (getValue() || '').trim() ? 'view' : 'edit';
+  let timer = null;
+  const schedule = () => { clearTimeout(timer); timer = setTimeout(paint, 350); };
+
+  async function paint() {
+    const body = (getValue() || '').trim();
+    clear(view);
+    if (!body) {
+      view.appendChild(h('div', { className: 'prose-empty' },
+        'Nothing written yet.'));
+      return;
+    }
+    try {
+      const r = SB.data().renderHtml(body);
+      const rendered = h('div', { html: r.html });
+      await getPageIndex();
+      decorateMentions(rendered);
+      decorateHashtags(rendered);
+      view.appendChild(rendered);
+    } catch (e) {
+      view.appendChild(h('div', { className: 'prose-empty' },
+        'Could not render: ' + (e.message || e)));
+    }
+  }
+
+  const toggle = h('button', {
+    className: 'md-mode-btn',
+    onClick: () => { mode = mode === 'view' ? 'edit' : 'view'; apply(); },
+  });
+
+  function apply() {
+    const editing = mode === 'edit';
+    wrap.classList.toggle('is-editing', editing);
+    clear(toggle);
+    toggle.appendChild(icon(editing ? 'check' : 'pen-line'));
+    toggle.appendChild(document.createTextNode(editing ? 'Done' : 'Edit'));
+    toggle.setAttribute('title', editing ? 'Finish editing' : 'Edit this text');
+    if (!editing) paint(); else setTimeout(() => ta.focus(), 0);
+  }
+
+  wrap.appendChild(h('div', { className: 'prose-editor-hd' },
+    label ? h('span', { className: 'prose-editor-l' }, label) : h('span'),
+    toggle));
+  wrap.appendChild(view);
+  wrap.appendChild(ta);
+  apply();
+  return wrap;
+}
+
 function renderMarkdown(text) {
   if (text == null) return [];
   const raw = String(text);
@@ -4918,29 +4430,53 @@ function ProjectsScreen() {
     layout();
   }
 
-  async function newProject() {
-    const title = (prompt('Project name') || '').trim();
-    if (!title) return;
-    try {
-      // Writes projects/<Title>/<Title>.md. The old call asked createPage for
-      // kind 'project', which is not one, and landed a page with a bogus kind
-      // in notes/.
-      const p = await SB.data().createProject(title);
-      if (p && p.ok === false) { alert('Create failed: ' + (p.message || p.reason)); return; }
-      invalidatePageIndex();
-      cacheSetPage(p);
-      const t = activeTab();
-      if (t) { t.parentRoute = 'projects'; persistTabs(); }
-      openPage(p.id);
-    } catch (e) {
-      alert('Create failed: ' + e.message);
-    }
+  /* Opens the app's own picker, pre-stepped to the project-name field, rather
+     than a browser prompt(). prompt() cannot be themed, cannot be styled, and
+     drops the user into an OS dialog in the middle of an app that has spent
+     some effort looking like itself. */
+  function newProject() {
+    app.createOpen = 'project';
+    render();
+  }
+
+  /* Status order is the hierarchy. A project list exists to answer "what am I
+     actually working on", and a flat alphabetical grid answers it worst —
+     a shipped project from last year sat at the same weight as the live one. */
+  const PJ_STATUS = [
+    ['active',   'Active'],
+    ['planning', 'Planning'],
+    ['paused',   'Paused'],
+    ['',         'No status'],
+    ['shipped',  'Shipped'],
+    ['archived', 'Archived'],
+  ];
+
+  // The excerpt is raw markdown, so `**Where it is:**` was leaking into the
+  // card. This is a summary, not a document — strip the syntax rather than
+  // render it.
+  function plainExcerpt(md, max) {
+    return String(md || '')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/!?\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, '$1')
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+      .replace(/[*_`>]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, max);
   }
 
   function projectCard(p) {
     const meta = p.meta || {};
+    const status = String(meta.status || '');
+    const when = (meta.start_date || meta.end_date)
+      ? (meta.start_date ? 'Started ' + meta.start_date : 'Ends ' + meta.end_date)
+        + (meta.start_date && !meta.end_date ? ' · ongoing' : '')
+        + (meta.end_date && meta.start_date ? ' · ended ' + meta.end_date : '')
+      : null;
+    const desc = plainExcerpt(p.excerpt, 150);
     return h('div', {
-      className: 'project-card',
+      className: 'project-card' + (status ? ' pj-is-' + status : ''),
       onClick: (e) => {
         if (e.metaKey || e.ctrlKey) { newTab('page', p.id, { switchTo: true }); return; }
         const t = activeTab();
@@ -4949,18 +4485,31 @@ function ProjectsScreen() {
       },
     },
       h('div', { className: 'project-card-hd' },
-        h('span', { className: 'project-card-glyph' }, '⚐'),
+        h('span', { className: 'project-card-glyph' }, icon('folder')),
         h('div', { className: 'project-card-name' }, p.title || p.slug || 'Untitled project'),
-        meta.status ? h('span', { className: 'project-card-status project-card-status-' + meta.status }, meta.status) : null),
-      p.excerpt
-        ? h('div', { className: 'project-card-desc' }, firstLineOf(p.excerpt, 140))
-        : h('div', { className: 'project-card-desc dim' }, 'no description yet'),
+        status
+          ? h('span', { className: 'pj-status pj-status-' + status },
+              h('span', { className: 'pj-status-dot' }), status)
+          : null),
+      h('div', { className: 'project-card-desc' + (desc ? '' : ' dim') },
+        desc || 'No description yet.'),
       h('div', { className: 'project-card-meta' },
         h('span', { 'data-pjcount': p.id },
-          counts[p.id] != null ? (counts[p.id] + ' pages inside') : 'counting…'),
-        (meta.start_date || meta.end_date)
-          ? h('span', null, (meta.start_date || '?'), ' → ', (meta.end_date || 'ongoing'))
-          : null));
+          counts[p.id] != null
+            ? (counts[p.id] + (counts[p.id] === 1 ? ' page inside' : ' pages inside'))
+            : 'counting…'),
+        when ? h('span', { className: 'project-card-when' }, when) : null));
+  }
+
+  function projectGroups(items) {
+    const by = {};
+    items.forEach((p) => {
+      const k = String((p.meta || {}).status || '');
+      (by[k] = by[k] || []).push(p);
+    });
+    return PJ_STATUS
+      .filter(([k]) => by[k] && by[k].length)
+      .map(([k, label]) => ({ key: k, label, items: by[k] }));
   }
 
   function layout() {
@@ -4982,7 +4531,15 @@ function ProjectsScreen() {
         : (projects.length === 0
             ? EmptyState('No projects yet.',
                 'Click "+ new project" to create one. Inside it you can attach topics, canvases — anything.')
-            : h('div', { className: 'projects-grid' }, projects.map(projectCard))),
+            : h('div', { className: 'projects-groups' },
+                projectGroups(projects).map((g, _i, all) => h('div', { className: 'pj-group-sec' },
+                  // With one group the header is noise — and a one-project
+                  // vault opened to a heading reading "No status", which
+                  // lands as nagging rather than as structure.
+                  all.length > 1 ? h('div', { className: 'sect-hd' },
+                    h('span', null, g.label),
+                    h('span', { className: 'sect-hd-c' }, String(g.items.length))) : null,
+                  h('div', { className: 'projects-grid' }, g.items.map(projectCard)))))),
     ]);
   }
 
@@ -5007,7 +4564,7 @@ function SettingsPanel(t, setTweak, route, setRoute, onClose) {
   }
   return h('div', { className: 'sb-tweaks' },
     h('div', { className: 'sb-twk-hd' },
-      h('b', null, 'SETTINGS'),
+      h('b', null, 'Settings'),
       h('button', { className: 'sb-twk-x', onClick: onClose }, '✕')),
     h('div', { className: 'sb-twk-body' },
       h('div', { className: 'sb-twk-sect' }, 'Look'),
@@ -5015,26 +4572,32 @@ function SettingsPanel(t, setTweak, route, setRoute, onClose) {
         { value: 'compact', label: 'compact' }, { value: 'cozy', label: 'cozy' },
         { value: 'comfortable', label: 'comfy' },
       ], (v) => setTweak('density', v)),
-      h('div', { className: 'sb-twk-sect' }, 'Panes'),
-      h('div', { className: 'sb-twk-row sb-twk-row-h' },
-        h('div', { className: 'sb-twk-lbl' }, 'Show AI activity log'),
-        h('button', {
-          className: 'sb-toggle', 'data-on': t.showLog ? '1' : '0', role: 'switch',
-          onClick: () => setTweak('showLog', !t.showLog),
-        }, h('i'))),
-      h('div', { className: 'sb-twk-sect' }, 'Jump to'),
-      h('div', { className: 'sb-jump' },
-        [['home', 'home'], ['pages', 'all pages'], ['ask', 'ask'],
-         ['graph', 'graph'], ['about-me', 'about me'], ['mention-tags', 'mention tags']]
-          .map(([id, lbl]) => h('span', {
-            className: 'sb-jump-chip',
-            'aria-current': route === id ? 'true' : 'false',
-            onClick: () => setRoute(id),
-          }, lbl)))));
+      /* Two things used to live below this, and both were lying.
+
+         "Show AI activity log" toggled a rail fed by `ActivityLog([], …)` —
+         a hardcoded empty array. It could never show anything. A labelled
+         switch that does nothing is worse than no switch, because the user
+         concludes the feature is broken rather than absent.
+
+         "Jump to" listed six routes, three of which (ask, graph,
+         mention-tags) were deleted by the migration and navigated nowhere.
+         The other three duplicate the sidebar two inches to the left.
+
+         What is left is the one genuine quick tweak, plus a way through to
+         everything else. Colour mode is in the sidebar footer. */
+      h('div', { className: 'sb-twk-sect' }, 'More'),
+      h('button', {
+        className: 'sb-twk-link',
+        onClick: () => { onClose(); setRoute('settings'); },
+      }, icon('settings'), h('span', null, 'All settings'))));
 }
 
 /* ── app root (v2) ────────────────────────────────────────────────────── */
-const TWEAK_DEFAULTS = { theme: 'dark', density: 'compact', showLog: false };
+// Light is the default, not System. System is the more fashionable default,
+// but it means anyone whose OS is dark never sees the theme this app was
+// designed around — and light IS the design here. System stays one click away
+// for people who want it.
+const TWEAK_DEFAULTS = { theme: 'light', density: 'cozy' };
 function _newTabId() {
   return 'tab-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -5059,23 +4622,109 @@ const app = {
   settingsOpen: false,
   createOpen: false,
   lastSynced: '',               // surfaced in sidebar footer
-  logW: (() => { try { return Number(localStorage.getItem('sb.logW')) || 340; } catch (_) { return 340; } })(),
+  navW: (() => { try { return Number(localStorage.getItem('sb.navW')) || 244; } catch (_) { return 244; } })(),
+  navCollapsed: (() => { try { return localStorage.getItem('sb.navCollapsed') === '1'; } catch (_) { return false; } })(),
 };
 let currentMain = null;
 const root = document.getElementById('root');
 
-function applyLogW() {
-  document.documentElement.style.setProperty('--log-w', (app.logW || 340) + 'px');
+// The sidebar width is a live CSS variable rather than a constant baked into
+// the grid templates, so dragging it costs one custom-property write and no
+// re-render. Collapsing is a separate attribute: it swaps to an icon rail
+// rather than animating the width to zero, because a 0px column would take
+// the nav's borders and focus targets with it.
+function applyNavW() {
+  document.documentElement.style.setProperty('--nav-w', (app.navW || 244) + 'px');
 }
+function setNavCollapsed(v) {
+  app.navCollapsed = !!v;
+  try { localStorage.setItem('sb.navCollapsed', app.navCollapsed ? '1' : '0'); } catch (_) {}
+  const el = document.querySelector('.app');
+  if (el) el.setAttribute('data-nav', app.navCollapsed ? 'collapsed' : 'open');
+}
+function startNavResize(e, handle) {
+  e.preventDefault();
+  if (app.navCollapsed) return;
+  const min = 190;
+  const max = Math.min(420, Math.round(window.innerWidth * 0.4));
+  handle.classList.add('dragging');
+  document.body.classList.add('col-resizing');
+  const onMove = (ev) => {
+    app.navW = Math.max(min, Math.min(max, ev.clientX));
+    applyNavW();
+  };
+  const onUp = () => {
+    handle.classList.remove('dragging');
+    document.body.classList.remove('col-resizing');
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    try { localStorage.setItem('sb.navW', String(app.navW)); } catch (_) {}
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+}
+/* The single writer for look-and-feel preferences.
+   There used to be two: this one, which updated `app.t` in memory, and the
+   Settings screen, which wrote localStorage. So a mode chosen from the
+   sidebar looked applied and then vanished on reload, while the same choice
+   made two clicks away in Settings stuck. Both now go through here, and
+   `sb.prefs` is the one store. */
 function setTweak(key, val) {
   app.t = { ...app.t, [key]: val };
-  if (key === 'theme' || key === 'density') applyHtmlAttrs();
+  if (key === 'theme' || key === 'density') {
+    applyHtmlAttrs();
+    try {
+      const p = loadPrefs();
+      p[key] = val;
+      savePrefs(p);
+    } catch (_) { /* private mode / quota — the choice still applies for the session */ }
+  }
   render();
 }
-// Switch workspace mode and jump to that mode's home. One click apart.
+/* ── Colour modes ───────────────────────────────────────────────────────
+   Four palettes across two families, plus System. `swatch` is the pair the
+   picker paints — page colour and ink — so the control shows you the actual
+   mode rather than naming it and hoping.
+
+   Adding a fifth is six CSS lines and one row here; see DESIGN.md. */
+const THEMES = [
+  { id: 'system',   label: 'System',   family: null,   swatch: null },
+  { id: 'light',    label: 'Light',    family: 'light', swatch: ['#faf9f8', '#1c1917'] },
+  { id: 'sepia',    label: 'Sepia',    family: 'light', swatch: ['#f2e9d8', '#1f1a12'] },
+  { id: 'dark',     label: 'Dark',     family: 'dark',  swatch: ['#09090b', '#fafafa'] },
+  { id: 'midnight', label: 'Midnight', family: 'dark',  swatch: ['#0b1020', '#f5f7fa'] },
+];
+const THEME_IDS = THEMES.map((t) => t.id);
+
+/* "System" is a preference, not a theme — it has to resolve to a real one at
+   paint time, and re-resolve when the OS flips while the app is open. */
+function prefersDark() {
+  try { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
+  catch (_) { return false; }
+}
+function resolveTheme(pref) {
+  if (pref === 'system' || !pref) return prefersDark() ? 'dark' : 'light';
+  return THEME_IDS.includes(pref) ? pref : 'light';
+}
+try {
+  window.matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => { if (app.t.theme === 'system') applyHtmlAttrs(); });
+} catch (_) {}
+
 function applyHtmlAttrs() {
-  document.documentElement.setAttribute('data-theme', app.t.theme || 'dark');
-  document.documentElement.setAttribute('data-density', app.t.density || 'compact');
+  const resolved = resolveTheme(app.t.theme);
+  document.documentElement.setAttribute('data-theme', resolved);
+  document.documentElement.setAttribute('data-density', app.t.density || 'cozy');
+  // Keep the browser chrome in step with the mode — otherwise the address bar
+  // stays light while the app is midnight.
+  const meta = THEMES.find((t) => t.id === resolved);
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+  if (meta && meta.swatch) {
+    const m = document.createElement('meta');
+    m.setAttribute('name', 'theme-color');
+    m.setAttribute('content', meta.swatch[0]);
+    document.head.appendChild(m);
+  }
 }
 /* ── Hash-based routing ─────────────────────────────────────────────
    URL format:
@@ -5297,12 +4946,19 @@ async function refreshRecent() {
   } catch (_) {}
 }
 
-async function createPage(kind) {
+async function createPage(kind, name) {
   app.createOpen = false;
   try {
-    const p = await SB.data().createPage({ kind, title: '', body: '' });
-    if (!p || !p.id) throw new Error('server returned no page id — ' + JSON.stringify(p).slice(0, 180));
+    // A project is a folder, not a kind, so it takes a different call — but
+    // that is the data layer's business, not the picker's. From the user's
+    // side it is one more thing you can create.
+    const p = kind === 'project'
+      ? await SB.data().createProject(name)
+      : await SB.data().createPage({ kind, title: '', body: '' });
+    if (p && p.ok === false) throw new Error(p.message || p.reason || 'refused');
+    if (!p || !p.id) throw new Error('no page id came back — ' + JSON.stringify(p).slice(0, 180));
     invalidatePageIndex();
+    cacheSetPage(p);
     await refreshCounts();
     openPage(p.id);
   } catch (e) {
@@ -5418,8 +5074,8 @@ function crumbsFor(route) {
    should have to read this app's UI state. */
 const SB_PREFS_KEY = 'sb.prefs';
 const SB_PREF_DEFAULTS = {
-  theme: 'dark',
-  density: 'compact',
+  theme: 'light',
+  density: 'cozy',
   historyKeep: 10,
   obsidianVault: '',       // blank = derive from the picked folder
   thumbCacheOn: true,
@@ -5466,7 +5122,7 @@ function SettingsScreen() {
   const vaultName = window.SB_VAULT_NAME || '(not connected)';
 
   wrap.appendChild(h('div', { className: 'screen-hd' },
-    h('h1', null, 'settings'),
+    h('h1', null, 'Settings'),
     h('div', { className: 'screen-sub' },
       'Local preferences only. Nothing here is written into your vault.')));
 
@@ -5489,8 +5145,9 @@ function SettingsScreen() {
       }))));
 
   wrap.appendChild(section('Appearance', null,
-    row('Theme', null, select('theme', ['dark', 'light'])),
-    row('Density', null, select('density', ['compact', 'comfortable']))));
+    row('Colour mode', 'Also in the sidebar footer, as swatches.',
+      select('theme', THEME_IDS)),
+    row('Density', null, select('density', ['compact', 'cozy', 'comfortable']))));
 
   wrap.appendChild(section('Write safety', 'how much undo the app keeps for you',
     row('History snapshots per page',
@@ -5575,9 +5232,12 @@ function buildMain() {
 
 function render() {
   if (currentMain && currentMain.__teardown) currentMain.__teardown();
-  applyLogW();
+  applyNavW();
   clear(root);
-  const appEl = h('div', { className: 'app app-tabs', 'data-log': app.t.showLog ? 'visible' : 'hidden' });
+  markSettled();
+  const appEl = h('div', { className: 'app app-tabs',
+    'data-log': 'hidden',
+    'data-nav': app.navCollapsed ? 'collapsed' : 'open' });
   const toggleSettings = () => { app.settingsOpen = !app.settingsOpen; render(); };
   const openSearch = () => { app.searchOpen = true; render(); };
   const closeSearch = () => { app.searchOpen = false; render(); };
@@ -5602,10 +5262,9 @@ function render() {
 
   currentMain = buildMain();
   appEl.appendChild(h('div', { className: 'main' }, currentMain));
-  if (app.t.showLog) appEl.appendChild(ActivityLog([], false, app.offline));
 
   if (app.settingsOpen) appEl.appendChild(SettingsPanel(app.t, setTweak, app.route, setRoute, toggleSettings));
-  if (app.createOpen) appEl.appendChild(CreateModal(true, createPage, () => { app.createOpen = false; render(); }));
+  if (app.createOpen) appEl.appendChild(CreateModal(app.createOpen, createPage, () => { app.createOpen = false; render(); }));
   if (app.searchOpen) appEl.appendChild(SearchPanel(closeSearch));
   root.appendChild(appEl);
 }
@@ -5625,6 +5284,28 @@ function _syncCanvasFullscreen() {
 }
 document.addEventListener('fullscreenchange', _syncCanvasFullscreen);
 document.addEventListener('webkitfullscreenchange', _syncCanvasFullscreen);
+
+/* Arrow-key movement within a list.
+   Every row is focusable now, but walking a fifty-row table by Tab is a
+   chore — Tab is for moving between regions, arrows are for moving within
+   one. This deliberately does NOT reintroduce single-letter navigation
+   (removed because it hijacked typing): arrows only act when focus is
+   already on a row, and never inside a field. */
+const ROW_SEL = '.pages-row, .list-row, .board-card, .bento-tile, .project-card, .obs-member, .side-link';
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const act = document.activeElement;
+  if (!act || !act.matches || !act.matches(ROW_SEL)) return;
+  const rows = [...document.querySelectorAll(ROW_SEL)].filter((n) => n.offsetParent);
+  const i = rows.indexOf(act);
+  if (i < 0) return;
+  const next = rows[i + (e.key === 'ArrowDown' ? 1 : -1)];
+  if (!next) return;
+  e.preventDefault();
+  next.focus();
+  next.scrollIntoView({ block: 'nearest' });
+}, true);
 
 window.addEventListener('keydown', (e) => {
   // ⌘K / Ctrl-K focuses the always-visible search in the top bar.
@@ -5646,6 +5327,15 @@ window.addEventListener('keydown', (e) => {
     closeTab(app.activeTabId);
     return;
   }
+  // ⌘N / Ctrl-N opens the create picker. Capture is the one primary action in
+  // the app, and reaching it meant travelling to the sidebar every time —
+  // which is a long way to go for the thing you do most.
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
+    e.preventDefault();
+    app.createOpen = true;
+    render();
+    return;
+  }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === 'Escape' && app.searchOpen) { app.searchOpen = false; render(); return; }
   if (e.key === 'Escape' && app.createOpen) { app.createOpen = false; render(); return; }
@@ -5655,9 +5345,23 @@ window.addEventListener('keydown', (e) => {
 });
 
 
+/* The entrance stagger is a first-impression device. After the first screen
+   has painted it becomes a tax on every navigation, so it retires itself. */
+function markSettled() {
+  if (document.body.classList.contains('cv-settled')) return;
+  setTimeout(() => document.body.classList.add('cv-settled'), 900);
+}
+
 async function boot() {
+  // Seed the in-memory tweaks from the persisted store before first paint,
+  // otherwise the app flashes the default mode and then corrects itself.
+  try {
+    const p = loadPrefs();
+    if (p.theme) app.t.theme = p.theme;
+    if (p.density) app.t.density = p.density;
+  } catch (_) {}
   applyHtmlAttrs();
-  applyLogW();
+  applyNavW();
   // 1) Restore persisted tabs (best-effort).
   const hadTabs = loadTabs();
   // 2) Hash takes precedence — direct links / refresh on a deep URL should

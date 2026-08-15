@@ -29,17 +29,51 @@ content lives outside the repo entirely. Seed a fictional demo vault instead.
 Four kinds — `note`, `topic`, `canvas`, `inspo` — selected by `kind:` in
 frontmatter, not by folder. A project is a folder, not a kind.
 
-**The file format is not defined here.** It lives in the vault's
-`CONVENTION.md`, which is the single authority; restating it in two places is
-how the two drift apart. What the code needs to know:
+**The file format is defined in [brain/CONVENTION.md](brain/CONVENTION.md)** —
+the single authority, and public because a spec that only exists in someone's
+private vault cannot be the contract other clients implement.
 
-- `KIND_ORDER` in [app/app.js](app/app.js) must match those four.
+The app has no build step, so it cannot read that file at runtime; the text is
+mirrored into `app/vault/brain-text.js` by `node scripts/sync-convention.mjs`.
+**Edit the markdown, never the mirror.** `app/test/convention.test.js` fails on
+drift, so the duplicate cannot rot silently.
+
+What the code needs to know:
+
 - Wikilinks resolve **basename → aliases → path, case-insensitive**
   ([app/vault/links.js](app/vault/links.js)). Obsidian never reads a `title:`
   field, so any code that assumes otherwise produces dead links. This is the
-  single most important invariant in the codebase.
+  single most important invariant in the codebase. Links inside code fences and
+  code spans are masked out before scanning, because Obsidian does not linkify
+  them either.
+- **A filename is addressing, not decoration** — it follows from the invariant
+  above. So a new page takes a name free across the *whole* vault (not just its
+  folder), a blank one is `Note <date>` rather than `Untitled`, and the file is
+  renamed when the title settles — `renamePlan` in
+  [app/vault/data.js](app/vault/data.js), `Vault.rename` in
+  [app/vault/vault.js](app/vault/vault.js). A file the user named deliberately
+  is never moved, and an inbound link to the old name is kept alive as an alias
+  rather than by rewriting somebody else's file.
+- `KIND_ORDER` in [app/app.js](app/app.js) is the *by-kind nav*, not the set of
+  kinds: it carries `bookmark` as a derived facet (`data.js` filters
+  `kind === "note" && url != null`). The four real kinds are the ones above.
 - `note` chrome is chosen from frontmatter, not kind — which is why bookmark,
   snippet and markdown collapsed into one.
+- `canvas` is **one kind over two formats with two different owners**, so the
+  chrome is chosen from the path: `metaForPage` in [app/app.js](app/app.js)
+  labels a `.excalidraw.md` "Drawing" and a `.canvas` "Board". That label is the
+  only thing telling a user whether their edits will be kept, so it is decided
+  in one place and never re-derived at a call site.
+  - **Board** → `renderCanvasBody`, read-only: pan, pinch, zoom, fit, and the
+    nodes and edges from the `.canvas`. No handler in it can write. The editing
+    half was deleted, not disabled — see the note on the function.
+  - **Drawing** → `renderExcalidrawBody`, the vendored Excalidraw editor,
+    dynamically imported so a vault with no drawings never loads its ~8MB.
+  - **Inspo is not a canvas.** It shares CSS class names and nothing else: a
+    bento wall whose order lives in the markdown body, with no geometry at all.
+- `CONVENTION_VERSION` in `app/vault/scaffold.js` is written to `.canon-vault`
+  in every new vault. A breaking format change bumps it and needs a story for
+  reading the old form.
 
 ---
 
@@ -50,18 +84,44 @@ app/                 the whole product — no framework, no bundler, no build st
   index.html         bump the ?v= cache-bust when shipping JS/CSS
   boot.js            feature-detects showDirectoryPicker; explainer or app
   app.js             screens and rendering
-  styles.css         the shadcn/zinc design system — one `:root` block (DESIGN.md)
+  styles.css         the design system — light-first, two ramps flip per theme (DESIGN.md)
   vault/             the data layer — everything below is testable in Node
     mdfile.js        the file format contract: frontmatter + body, serialize/parse
     vault.js         the data interface over two backends (File System Access, memory)
     data.js          what the old REST endpoints computed, done locally
     links.js         wikilink resolution
     dashboard.js     the landing screen
+    scaffold.js      first run: scaffold an empty folder, adopt a full one
+    clip.js          what a web capture becomes: wall item, bookmark, quotation
+    brain-text.js    GENERATED mirror of brain/*.md — never edit by hand
+    demo-vault.js    GENERATED mirror of demo/ — dynamically imported, never edit
     bridge.js        stands the vault up, exposes window.SB_DATA, loads app.js
   vendor/            js dependencies, vendored — markdown-it, Inter, JetBrains Mono
   test/              node --test, no npm install
+extension/           the Chrome clipper — MV3, loaded unpacked, NOT deployed
+  background.js      menus, shortcuts, and the queue → vault pump
+  injected.js        the three functions that run inside a page
+  store.js           the capture queue (IndexedDB), the handle, the settings
+  writer.js          the handle, its permission, standing the Vault up
+  vault/             MIRROR of app/vault — never edit; sync-extension.mjs owns it
+brain/               the rules and the agent prompts — the non-code half
+  CONVENTION.md      the file format: the single authority
+  AGENTS.md          the standing contract, copied into every vault
+  SETUP-PROMPT.md    one-shot vault bootstrap for any agent
+  RECIPES.md         ongoing agent tasks: ingest, lint, dedupe, merge
+demo/                the "Try a demo vault" content — INVENTED, never real
+docs/
+  WHY.md             the argument for every constraint, and what this is bad at
+  deploy.md          local run + Vercel + any static host
+  connect/           obsidian.md, agents.md, sync.md
 scripts/
   verify-vault.mjs   the VERIFY check: byte-identical round-trip + invariants
+  sync-convention.mjs  regenerates app/vault/brain-text.js from brain/*.md
+  sync-demo.mjs        regenerates app/vault/demo-vault.js from demo/
+  sync-extension.mjs   mirrors app/vault/ into extension/vault/ — byte-exact,
+                       enforced by app/test/extension.test.js. Run it after
+                       ANY change under app/vault/.
+  serve.mjs            dependency-free dev server; see "Running it"
 bin/                 macOS capture scripts that write straight into the vault
 ```
 
@@ -74,8 +134,14 @@ has zero dependencies and must never gain any.
 ## Running it
 
 ```sh
-python3 -m http.server 8091 --directory app
+node scripts/serve.mjs 8091 app      # preferred
+python3 -m http.server 8091 --directory app   # works, with one caveat
 ```
+
+`serve.mjs` is a dependency-free Node static server. Prefer it: it sends
+`cache-control: no-cache` rather than nothing, so the service worker precache
+actually populates locally — with a `no-store` (or absent) policy the Cache API
+declines to store and offline silently never works in development.
 
 Then open `http://localhost:8091`. `localhost` is a secure context, so the File
 System Access API works. There is nothing else to start.
@@ -85,7 +151,17 @@ Tests and the vault check:
 ```sh
 node --test 'app/test/**/*.test.js'
 node scripts/verify-vault.mjs --vault <path-to-a-vault>
+node scripts/sync-convention.mjs           # after editing brain/*.md
+node scripts/sync-demo.mjs                 # after editing demo/
+node scripts/sync-extension.mjs            # after editing app/vault/*.js
+node scripts/sync-convention.mjs --check    # what CI runs
+node scripts/sync-demo.mjs --check
+node scripts/sync-extension.mjs --check
 ```
+
+The clipper is loaded unpacked from `extension/` (`chrome://extensions` →
+Developer mode → Load unpacked). It is **not** deployed — `vercel.json` serves
+`app/` and nothing else.
 
 ---
 
@@ -114,18 +190,39 @@ Three headers matter and are set in `vercel.json`:
 
 - **No server, no Python, no database.** If a feature seems to need one, it is
   the wrong feature. `fetch()` to a URL appears zero times in `app.js`; keep it
-  that way.
+  that way. The clipper is the one place that fetches — the image the user
+  clicked on, never an endpoint. No literal URL may appear in `extension/*.js`,
+  and `app/test/extension.test.js` enforces it.
+- **The clipper writes through the app's data layer, and never scaffolds.**
+  `extension/vault/` is a byte-exact mirror of `app/vault/` so a clip gets the
+  same serializer, `.history` snapshot and conflict gate as any other write.
+  `scaffold.js` is deliberately absent: a folder picked by mistake must not
+  quietly become a vault.
 - **Chromium only.** `showDirectoryPicker` does not exist in Safari or Firefox.
   Non-Chromium visitors get an explainer, never a blank page.
 - **Never write on adoption.** A file with no `id:`/`kind:` is displayed but
   left untouched on disk. Stamping happens on the first edit through the app.
-- **The app never writes canvas geometry.** Arranging happens in Obsidian.
+- **One owner per spatial scene.** A `.canvas` board is Obsidian's — the app
+  renders it and never writes it. A `.excalidraw.md` drawing is the app's — it
+  is edited and saved here. Anything spatial the app writes is a drawing; there
+  is no third engine. **Never ship editing a surface cannot save:** a hidden
+  toolbar over live handlers is how a stylus stroke came to overwrite a board.
+  If a surface cannot write, it must not accept the gesture.
 - **No hardcoded paths or vault names.** Every path derives from the folder the
   user picked.
 - **No in-app language-model features.** The agent has the whole vault already.
 - **Write safety is not optional:** deletes move to `.trash/`, overwrites
   snapshot to `.history/` first, and a page changed on disk refuses to be
-  written over.
+  written over. **And it must be visible** — `Vault.untrash()` / the Undo
+  toast exist because safety the user cannot see does not reassure anyone. A
+  refused save shows "Not saved" with the reason; it must never fail silently.
+- **The data layer carries no cache-bust.** `boot.js` passes `?v=` to
+  `bridge.js`, which passes it to `app.js` — but bridge's own static imports
+  (`vault.js`, `data.js`, `links.js`, …) are bare specifiers a static import
+  cannot version, and there is no build step to rewrite them. `sw.js` serves
+  `/vault/*.js` **network-first** for that reason. Do not "optimise" it back
+  to cache-first: a returning user would keep last deploy's data layer while
+  the UI updated around it.
 
 ## Defaults & taste
 

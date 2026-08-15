@@ -9,8 +9,8 @@
 //   * CACHE_VERSION versions the *cache itself*. `activate` deletes every cache
 //     that is not the current one, so caches.keys() is always exactly 1 and no
 //     deploy leaves orphans. Bump it when this file changes.
-const CACHE_VERSION = "v24";
-const CACHE = `second-brain-${CACHE_VERSION}`;
+const CACHE_VERSION = "v74";
+const CACHE = `canon-vault-${CACHE_VERSION}`;
 
 const SHELL = [
   ".", "index.html", "styles.css", "boot.js", "app.js",
@@ -32,6 +32,7 @@ const SHELL = [
   // with no drawings must not pay for it. The fetch handler caches it on first
   // use, so it is offline-available from the moment a drawing is opened once.
   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png",
+  "icons/favicon.svg", "icons/mark.svg", "icons/wordmark.svg",
 ];
 
 self.addEventListener("install", (e) => {
@@ -61,18 +62,39 @@ self.addEventListener("fetch", (e) => {
     || url.pathname === "/" || url.pathname.endsWith("/")
     || url.pathname.endsWith(".html");
 
+  /* The data layer is network-first for the same reason the document is:
+     it carries no `?v=`.
+
+     boot.js reads its own `?v=NN` and passes it to bridge.js, and bridge.js
+     passes it on to app.js and demo-vault.js. But bridge.js's own STATIC
+     imports — vault.js, data.js, links.js, mdfile.js, scaffold.js,
+     excalidraw.js, inspo.js — are bare `./x.js` specifiers. A static import
+     cannot interpolate a variable, and there is no build step to rewrite
+     them, so those seven files are requested at a constant URL forever.
+     Cache-first on a constant URL means a returning user keeps last deploy's
+     data layer no matter how many versions are bumped — the bug that hides
+     best, because the UI updates and the logic under it does not.
+
+     They are a few KB each. Correctness is worth the round trip, and the
+     cache still answers when the network is gone. */
+  const isDataLayer = url.pathname.startsWith("/vault/") && url.pathname.endsWith(".js");
+
   e.respondWith((async () => {
     const save = async (res) => {
       if (res.ok) (await caches.open(CACHE)).put(e.request, res.clone());
       return res;
     };
 
-    if (isDoc) {
+    if (isDoc || isDataLayer) {
       try { return await save(await fetch(e.request)); }         // network-first
       catch {
-        return (await caches.match(e.request, { ignoreSearch: true }))
-            || (await caches.match("index.html"))
-            || Response.error();
+        const hit = await caches.match(e.request, { ignoreSearch: true });
+        if (hit) return hit;
+        // Falling back to index.html is right for a navigation and wrong for
+        // a module — an HTML body served as JS is a syntax error, and the
+        // whole app fails to boot rather than degrading.
+        return isDoc ? (await caches.match("index.html")) || Response.error()
+                     : Response.error();
       }
     }
 

@@ -6,6 +6,25 @@
 //   2. Register the service worker, so offline works.
 window.SB_VERSION = "v3";
 
+// Apply the saved colour mode SYNCHRONOUSLY, before anything paints.
+// index.html ships data-theme="light", and app.js only loads once a vault is
+// open — so without this the first-run screen ignored your mode entirely, and
+// the app flashed light before correcting itself on boot. This has to be
+// cheap, synchronous, and never throw: a broken read must fall back, not
+// leave the page unstyled.
+(function () {
+  var THEMES = ["light", "sepia", "dark", "midnight"];
+  try {
+    var pref = (JSON.parse(localStorage.getItem("sb.prefs") || "{}") || {}).theme || "light";
+    if (pref === "system") {
+      pref = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark" : "light";
+    }
+    if (THEMES.indexOf(pref) < 0) pref = "light";
+    document.documentElement.setAttribute("data-theme", pref);
+  } catch (_) { /* keep the markup default */ }
+})();
+
 (function () {
   var supported = typeof window.showDirectoryPicker === "function";
 

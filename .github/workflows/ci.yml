@@ -1,0 +1,65 @@
+name: CI
+
+# No install step, because there are no dependencies. If this workflow ever
+# grows an `npm ci`, something has gone wrong in the repo, not in the workflow.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tests
+        run: node --test 'app/test/**/*.test.js'
+
+      - name: brain/*.md and app/vault/brain-text.js are in sync
+        run: node scripts/sync-convention.mjs --check
+
+      - name: demo/ and app/vault/demo-vault.js are in sync
+        run: node scripts/sync-demo.mjs --check
+
+      - name: app/vault and extension/vault are in sync
+        run: node scripts/sync-extension.mjs --check
+
+      - name: The demo vault passes the validator
+        run: node scripts/verify-vault.mjs --vault demo
+
+      - name: A freshly scaffolded vault passes its own validator
+        run: |
+          node --input-type=module -e '
+            import { MemoryBackend } from "./app/vault/vault.js";
+            import { scaffold } from "./app/vault/scaffold.js";
+            import { mkdirSync, writeFileSync } from "node:fs";
+            import { dirname, join } from "node:path";
+            const out = "/tmp/scaffolded-vault";
+            const be = new MemoryBackend();
+            const r = await scaffold(be);
+            for (const p of r.written) {
+              const f = join(out, p);
+              mkdirSync(dirname(f), { recursive: true });
+              writeFileSync(f, await be.readText(p));
+            }
+            for (const d of r.dirs) mkdirSync(join(out, d), { recursive: true });
+          '
+          node scripts/verify-vault.mjs --vault /tmp/scaffolded-vault
+
+      - name: No dependencies crept into app/package.json
+        run: |
+          node -e '
+            const p = require("./app/package.json");
+            for (const k of ["dependencies", "devDependencies", "peerDependencies"]) {
+              if (p[k] && Object.keys(p[k]).length) {
+                console.error(`✗ app/package.json gained ${k} — see CONTRIBUTING.md`);
+                process.exit(1);
+              }
+            }
+            console.log("✓ app/package.json has zero dependencies");
+          '

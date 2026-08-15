@@ -121,8 +121,29 @@ for (const c of canvases) {
   }
 }
 
+// Filenames that two pages share. Obsidian resolves `[[Name]]` by basename, so
+// a shared one makes every link to that name ambiguous — but an existing vault
+// accumulates them honestly (Obsidian's own `Untitled.canvas`, a note and a
+// board named alike), so this reports rather than fails. A `.canvas` beside its
+// own `.md` is the one legitimate pair: one page in two files, not two pages.
+const mdSet = new Set(md);
+const pages = [...md, ...canvases.filter((c) => !mdSet.has(c.replace(/\.canvas$/, ".md")))].sort();
+const byBase = new Map();
+const ambiguous = [];
+for (const p of pages) {
+  const rel = relative(V, p);
+  const base = rel.split("/").pop().replace(/\.(md|canvas)$/i, "");
+  const k = base.toLowerCase();
+  if (byBase.has(k)) ambiguous.push(`[[${base}]] → ${byBase.get(k)} and ${rel}`);
+  else byBase.set(k, rel);
+}
+
 console.log(`round-trip: ${checked} file(s) byte-identical, ${excused.length} excused`);
 for (const e of excused) console.log(`  excused: ${e}`);
+if (ambiguous.length) {
+  console.log(`\n! ${ambiguous.length} ambiguous link target(s) — two files share one filename:`);
+  for (const a of ambiguous) console.log(`  - ${a}`);
+}
 if (failures.length) {
   console.log(`\n✗ ${failures.length} failure(s):`);
   for (const f of failures) console.log(`  - ${f}`);

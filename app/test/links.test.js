@@ -86,3 +86,41 @@ test("basenameOf strips folders and the extension", () => {
   assert.equal(basenameOf("projects/Bindery/Bindery.md"), "Bindery");
   assert.equal(basenameOf("canvas/Pressed Leaf.canvas"), "Pressed Leaf");
 });
+
+// Obsidian does not linkify inside code, and CONVENTION.md — which now ships
+// into every scaffolded vault — carries seven [[example]]s inside code blocks.
+// Without masking, every new vault opens with seven dead links in its graph.
+
+test("a wikilink inside a fenced code block is not a link", () => {
+  const text = "See [[Real Page]].\n\n```markdown\n[[Not A Link]]\n![[nope.canvas]]\n```\n\nAnd [[Also Real]].\n";
+  assert.deepEqual(findWikilinks(text).map((l) => l.target), ["Real Page", "Also Real"]);
+});
+
+test("a wikilink inside an inline code span is not a link", () => {
+  const text = 'Write `parent: "[[X]]"` and it embeds with `![[board.canvas]]`, unlike [[Real]].\n';
+  assert.deepEqual(findWikilinks(text).map((l) => l.target), ["Real"]);
+});
+
+test("tilde fences and long fences close correctly", () => {
+  const text = "~~~\n[[a]]\n~~~\n[[b]]\n````\n[[c]]\n```\nstill code [[d]]\n````\n[[e]]\n";
+  assert.deepEqual(findWikilinks(text).map((l) => l.target), ["b", "e"]);
+});
+
+test("an unclosed fence swallows the rest of the file, as markdown does", () => {
+  assert.deepEqual(findWikilinks("[[before]]\n```\n[[after]]\n").map((l) => l.target), ["before"]);
+});
+
+test("offsets still index the original text after masking", () => {
+  const text = "`[[skipped]]` then [[Kept]] here\n";
+  const [link] = findWikilinks(text);
+  assert.equal(link.target, "Kept");
+  assert.equal(text.slice(link.start, link.end), "[[Kept]]");
+});
+
+test("the shipped CONVENTION.md has no wikilinks outside code except index and log", async () => {
+  const { CONVENTION_MD } = await import("../vault/brain-text.js");
+  assert.deepEqual(
+    [...new Set(findWikilinks(CONVENTION_MD).map((l) => l.target))].sort(),
+    ["index", "log"],
+  );
+});

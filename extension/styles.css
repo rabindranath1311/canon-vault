@@ -1,0 +1,168 @@
+/* The clipper's chrome. The app's palette (DESIGN.md — warm neutrals, not
+   zinc), reduced to the dozen tokens two small surfaces actually need. The app
+   ships its own copy of this system; the extension is a different origin and
+   cannot share a stylesheet, so this is a deliberate small restatement rather
+   than a fork of styles.css. */
+
+:root {
+  color-scheme: light;
+  --s-page: #faf9f8;
+  --s-raised: #ffffff;
+  --s-sunken: #f2f1ef;
+  --i-1: #e9e7e4;
+  --i-2: #d4d0cb;
+  --i-3: #736d65;
+  --i-4: #635d57;
+  --i-6: #322e2b;
+  --i-7: #1c1917;
+  --ok: #15803d;
+  --warn: #b45309;
+  --bad: #b91c1c;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --s-page: #09090b;
+    --s-raised: #18181b;
+    --s-sunken: #111113;
+    --i-1: #27272a;
+    --i-2: #3f3f46;
+    --i-3: #a1a1aa;
+    --i-4: #d4d4d8;
+    --i-6: #e4e4e7;
+    --i-7: #fafafa;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--s-page);
+  color: var(--i-7);
+  font: 13px/1.5 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h1 { font-size: 15px; }
+h2 { font-size: 13px; }
+p { margin: 0; }
+a { color: inherit; }
+
+.muted { color: var(--i-3); }
+.tiny { font-size: 11px; }
+.mono { font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, monospace; }
+.row { display: flex; align-items: center; gap: 8px; }
+.between { justify-content: space-between; }
+.grow { flex: 1; min-width: 0; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.hidden { display: none !important; }
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: var(--s-raised);
+  border-bottom: 1px solid var(--i-1);
+}
+.mark { width: 20px; height: 14px; color: var(--i-7); flex: none; }
+.chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 999px;
+  background: var(--s-sunken); color: var(--i-4); border: 1px solid var(--i-1);
+  cursor: pointer; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip.warn { color: var(--warn); border-color: var(--warn); }
+.chip.bad { color: var(--bad); border-color: var(--bad); }
+
+/* ── body ───────────────────────────────────────────────────────────────── */
+
+.pad { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  background: var(--s-raised);
+  border: 1px solid var(--i-1);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-pad { padding: 10px; }
+
+.preview { display: flex; gap: 10px; padding: 10px; }
+.preview img {
+  width: 72px; height: 54px; object-fit: cover; border-radius: 6px;
+  background: var(--s-sunken); flex: none;
+}
+
+label.field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--i-3); }
+
+input[type="text"], input[type="search"], select, textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--i-7);
+  background: var(--s-sunken);
+  border: 1px solid var(--i-1);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--i-2); outline-offset: -1px; }
+
+button {
+  font: inherit;
+  font-weight: 500;
+  color: var(--i-7);
+  background: var(--s-raised);
+  border: 1px solid var(--i-2);
+  border-radius: 8px;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+button:hover { background: var(--s-sunken); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--i-7); color: var(--s-raised); border-color: var(--i-7); }
+button.primary:hover { opacity: 0.9; background: var(--i-7); }
+button.ghost { border-color: transparent; background: transparent; color: var(--i-3); }
+button.ghost:hover { color: var(--i-7); background: var(--s-sunken); }
+button.tiny { padding: 3px 7px; font-size: 11px; }
+
+.seg { display: inline-flex; border: 1px solid var(--i-2); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 5px 10px; font-size: 11px; background: transparent; }
+.seg button.on { background: var(--i-7); color: var(--s-raised); }
+
+.actions { display: flex; gap: 8px; }
+.actions button { flex: 1; }
+
+.list { display: flex; flex-direction: column; }
+.list > * + * { border-top: 1px solid var(--i-1); }
+.item { display: flex; gap: 8px; align-items: center; padding: 8px 10px; font-size: 12px; }
+.item .err { color: var(--bad); font-size: 11px; }
+.item .ok { color: var(--ok); }
+
+.note { font-size: 11px; color: var(--i-3); line-height: 1.5; }
+.status { font-size: 12px; min-height: 18px; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--bad); }
+.status.warn { color: var(--warn); }
+
+/* ── the setup page ─────────────────────────────────────────────────────── */
+
+.page { max-width: 680px; margin: 0 auto; padding: 32px 20px 64px; display: flex;
+        flex-direction: column; gap: 20px; }
+.page .mark { width: 28px; height: 20px; }
+.hero h1 { font-size: 20px; }
+.section { display: flex; flex-direction: column; gap: 10px; }
+.section > h2 { color: var(--i-4); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
+.check input { margin-top: 2px; }
+kbd {
+  font: 11px/1 ui-monospace, monospace; padding: 3px 5px; border-radius: 5px;
+  background: var(--s-sunken); border: 1px solid var(--i-1);
+}

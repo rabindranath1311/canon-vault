@@ -137,6 +137,38 @@ test("5.15 a bare .canvas is a page; no .md is created until an edit", async () 
   assert.match(await v.be.readText("canvas/board.md"), /!\[\[board\.canvas\]\]/);
 });
 
+// The case above hands put() the `.md` path itself, so it never covered what
+// the editor actually sends: updatePage forwards `cur.path`, which for a bare
+// board is the `.canvas`. That write serialized frontmatter straight over the
+// JSON — one keystroke in the title field replaced a board's nodes and edges
+// with a YAML header, and the geometry that triggered the save was dropped too.
+test("5.15 a write aimed at a bare .canvas lands on the .md, never over the JSON", async () => {
+  const json = '{"nodes":[{"id":"n1","type":"text","text":"real work"}],"edges":[]}';
+  const v = vault({ "canvas/Board.canvas": json });
+  await v.buildIndex();
+  const entry = v.list()[0];
+  assert.equal(entry.id, "canvas:canvas/Board.canvas");
+
+  const r = await v.put({ id: entry.id, path: entry.path, title: "Board", body: "" });
+  assert.ok(r.ok);
+  assert.equal(r.path, "canvas/Board.md", "the write must be redirected to the sibling");
+  assert.equal(r.adopted, "canvas/Board.canvas");
+
+  assert.equal(await v.be.readText("canvas/Board.canvas"), json, "the JSON Canvas is untouched");
+  assert.ok(await v.be.exists("canvas/Board.md"));
+
+  // The synthetic `canvas:` id is index bookkeeping, not an identifier — a real
+  // ULID has to reach disk, the same rule `path:` already follows.
+  assert.doesNotMatch(await v.be.readText("canvas/Board.md"), /^id: canvas:/m);
+  assert.match(r.id, /^01[0-9A-Z]+$/);
+
+  // And the pair still reads back as one page with its geometry attached.
+  await v.buildIndex();
+  const got = await v.get(r.id);
+  assert.equal(got.path, "canvas/Board.md");
+  assert.equal(got.canvas, json);
+});
+
 test("5.12 duplicate id warns naming both paths and resolves deterministically", async () => {
   const v = vault({ "notes/A.md": md(page({ title: "A" })), "topics/B.md": md(page({ title: "B" })) });
   await v.buildIndex();

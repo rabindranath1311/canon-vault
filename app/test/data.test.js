@@ -98,11 +98,15 @@ test("create, update and delete round-trip through the vault", async () => {
   assert.equal(made.path, "notes/Zeta.md");
   const edited = await d.updatePage(made.id, { body: "changed", title: "Zeta II" });
   assert.equal(edited.title, "Zeta II");
+  // The file follows the title, so `[[Zeta II]]` resolves and the old name is
+  // freed rather than kept forever.
+  assert.equal(edited.path, "notes/Zeta II.md");
+  assert.equal(await d.v.be.exists("notes/Zeta.md"), false);
   assert.equal((await d.page(made.id)).body, "changed");
   const gone = await d.deletePage(made.id);
   assert.ok(gone.ok);
   assert.equal(await d.page(made.id), null);
-  assert.ok(await d.v.be.exists(".trash/notes/Zeta.md"));
+  assert.ok(await d.v.be.exists(".trash/notes/Zeta II.md"));
 });
 
 test("about-me reads context/about-me.md", async () => {
@@ -223,6 +227,24 @@ test("layoutFromCanvas inverts the migration's node mapping", () => {
 test("a malformed .canvas yields an empty board, never a crash", () => {
   assert.deepEqual(layoutFromCanvas("{not json"), []);
   assert.deepEqual(layoutFromCanvas("{}"), []);
+});
+
+test("a group keeps its label, and an unknown node type keeps its name", () => {
+  const canvas = JSON.stringify({
+    nodes: [
+      { id: "g1", type: "group", label: "Rigging", x: -40, y: -40, width: 400, height: 300 },
+      { id: "g2", type: "group", x: 0, y: 0, width: 100, height: 100 },
+      { id: "x1", type: "portal", x: 0, y: 0, width: 100, height: 100 },
+    ],
+    edges: [],
+  });
+  const l = layoutFromCanvas(canvas);
+  // Without the label a group is an anonymous rectangle drawn over its members.
+  assert.equal(l[0].label, "Rigging");
+  assert.equal(l[1].label, "", "a group with no label must still be a group");
+  assert.deepEqual(l.map((i) => i.type), ["group", "group", "portal"]);
+  // Negative coordinates are ordinary in JSON Canvas and must survive intact.
+  assert.deepEqual([l[0].x, l[0].y], [-40, -40]);
 });
 
 // ── Edges ────────────────────────────────────────────────────────────────

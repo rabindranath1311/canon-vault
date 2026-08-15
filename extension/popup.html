@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Canon Clip</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>body { width: 344px; }</style>
+</head>
+<body>
+  <header class="head">
+    <svg class="mark" viewBox="0 0 144 100" fill="currentColor" aria-hidden="true">
+      <path d="M49.6426 11.3103C58.0084 10.2422 66.4938 11.9487 73.7959 16.1687C79.489 19.4587 84.2172 24.1354 87.5654 29.7243C89.1394 32.3521 87.7727 35.6274 84.9463 36.8083C82.1207 37.9888 78.9145 36.6121 77.1885 34.0827C72.2514 26.8472 63.9417 22.0965 54.5215 22.0964C39.3753 22.0964 27.0967 34.375 27.0967 49.5212C27.0967 64.6673 39.3753 76.946 54.5215 76.946C61.1452 76.9459 67.2197 74.5962 71.959 70.6862C74.3225 68.7365 77.7872 68.3119 80.1709 70.237C82.5557 72.1631 82.9517 75.6935 80.7031 77.7771C75.9253 82.2042 70.0782 85.3689 63.6933 86.9343C55.5022 88.9424 46.8782 88.2067 39.1455 84.8405C31.4128 81.4742 24.998 75.6632 20.8867 68.2995C16.7755 60.9358 15.1949 52.4258 16.3867 44.0769C17.5787 35.7279 21.4779 28.0009 27.4853 22.0817C33.4929 16.1626 41.2768 12.3784 49.6426 11.3103ZM118.446 34.2038C120.06 31.4092 123.681 30.5291 126.397 32.2712C128.903 33.8786 129.734 37.1532 128.297 39.7605L104.945 82.1384C102.861 85.9205 97.4132 85.8849 95.3789 82.0759L82.4726 57.9099C80.797 54.7724 77.4572 52.8875 73.9053 53.0749L64.3369 53.5788C62.7427 57.431 58.9497 60.1421 54.5215 60.1423C48.6556 60.1423 43.9004 55.387 43.9004 49.5212C43.9004 43.6553 48.6556 38.9001 54.5215 38.9001C59.1359 38.9003 63.0619 41.8435 64.5273 45.9548H82.7578C86.0319 45.9549 89.0572 47.7014 90.6943 50.5368L99.8555 66.404L118.446 34.2038Z"/>
+    </svg>
+    <h1 class="grow">Canon Clip</h1>
+    <button id="vault-chip" class="chip" title="Vault settings">…</button>
+  </header>
+
+  <main class="pad">
+    <section class="card">
+      <div class="preview">
+        <img id="thumb" alt="" hidden>
+        <div class="grow stack">
+          <div id="page-title" class="truncate" style="font-weight:600"></div>
+          <div id="page-host" class="tiny muted truncate"></div>
+        </div>
+      </div>
+      <div class="card-pad stack" style="border-top:1px solid var(--i-1)">
+        <label class="field">Caption
+          <input id="caption" type="text" placeholder="what caught your eye…">
+        </label>
+        <label class="field">Tags
+          <input id="tags" type="text" placeholder="#ui #navigation">
+        </label>
+        <label class="field">Wall
+          <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
+        </label>
+        <datalist id="walls"></datalist>
+      </div>
+    </section>
+
+    <div class="row between">
+      <span class="tiny muted">A page or a link becomes</span>
+      <span class="seg" id="target">
+        <button data-target="bookmark">a bookmark</button>
+        <button data-target="wall">a wall card</button>
+      </span>
+    </div>
+
+    <div class="actions">
+      <button id="clip-page" class="primary">Clip page</button>
+      <button id="clip-region">Region</button>
+      <button id="clip-screen">Screen</button>
+    </div>
+    <div class="actions">
+      <button id="clip-selection" class="ghost tiny">Clip selection</button>
+      <button id="clip-og" class="ghost tiny">Clip page image</button>
+    </div>
+
+    <p id="status" class="status" role="status"></p>
+
+    <section id="queue-box" class="card hidden">
+      <div class="card-pad row between">
+        <h2 id="queue-title">Waiting</h2>
+        <button id="flush" class="tiny">Save now</button>
+      </div>
+      <div id="queue" class="list"></div>
+    </section>
+
+    <section id="recent-box" class="card hidden">
+      <div class="card-pad"><h2>Just saved</h2></div>
+      <div id="recent" class="list"></div>
+    </section>
+  </main>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -38,13 +38,20 @@ test("10.2 scaffolding an empty folder produces the full skeleton", async () => 
   const r = await scaffold(be, opts);
   assert.ok(r.ok);
   const entries = expectedEntries();
-  // 9 directories + CONVENTION.md + CLAUDE.md + 3 context templates
-  assert.equal(VAULT_DIRS.length, 9);
-  assert.equal(entries.length, 14, "9 dirs + 2 root docs + 3 templates = 14");
+  // 11 dirs + .canon-vault + 5 root docs + 3 context templates
+  assert.equal(VAULT_DIRS.length, 11);
+  assert.equal(entries.length, 20, "11 dirs + marker + 5 root docs + 3 templates = 20");
   assert.deepEqual(r.written.sort(), [
-    "CLAUDE.md", "CONVENTION.md",
+    ".canon-vault", "AGENTS.md", "CLAUDE.md", "CONVENTION.md",
     "context/about-me.md", "context/anti-ai-writing-style.md", "context/my-company.md",
+    "index.md", "log.md",
   ]);
+});
+
+test("the scaffolded vault records which convention it was built against", async () => {
+  const be = new MemoryBackend();
+  await scaffold(be, opts);
+  assert.deepEqual(JSON.parse(await be.readText(".canon-vault")), { convention: 1 });
 });
 
 test("10.2 every scaffolded page is valid per the convention it ships", async () => {
@@ -60,7 +67,8 @@ test("10.2 every scaffolded page is valid per the convention it ships", async ()
     assert.ok(fm.aliases.includes(fm.title), `${p} needs its title in aliases`);
   }
   assert.match(await be.readText("CONVENTION.md"), /the filename is the title/i);
-  assert.match(await be.readText("CLAUDE.md"), /Never invent a/i);
+  assert.match(await be.readText("AGENTS.md"), /Never invent a link target/i);
+  assert.match(await be.readText("CLAUDE.md"), /AGENTS\.md/);
 });
 
 test("10.7 adoption writes ZERO bytes — all 20 files unchanged", async () => {
@@ -118,7 +126,7 @@ test("10.2 a freshly scaffolded vault passes the vault's OWN validator", async (
 test("10.2 the scaffolded root docs are pages, with frontmatter", async () => {
   const be = new MemoryBackend();
   await scaffold(be, opts);
-  for (const p of ["CONVENTION.md", "CLAUDE.md"]) {
+  for (const p of ["CONVENTION.md", "AGENTS.md", "CLAUDE.md", "index.md", "log.md"]) {
     assert.ok((await be.readText(p)).startsWith("---\n"), `${p} needs frontmatter`);
   }
 });
