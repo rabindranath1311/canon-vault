@@ -177,33 +177,144 @@ export class FSABackend {
 
 // ── writer election (5.10 / 5.23) ───────────────────────────────────────────
 
+export const HEARTBEAT_MS = 1500;
+export const PEER_TTL_MS = 4000;
+
+/**
+ * A peer that never says goodbye must be forgotten, or the lock outlives its
+ * owner. The first version had neither half: `release()` was written but no
+ * caller ever invoked it, and `peers` stored a timestamp that nothing read. A
+ * peer id, once heard, was permanent for the life of the document — so a tab
+ * that reloaded while the outgoing document was still alive to answer its
+ * `hello` inherited a dead peer, and if that corpse's random id sorted lower
+ * this tab was read-only forever. Every save came back `not-writer` with no
+ * other tab open, and only a reload with a long enough gap — long enough that
+ * nothing answered the `hello` — cleared it.
+ *
+ * So liveness is now proven continuously, two independent ways:
+ *
+ *   - `bye` on `pagehide`, so an orderly close or reload is instant; and
+ *   - a heartbeat, so a crash, a discarded tab or a lost `bye` still expires.
+ *
+ * The probe direction matters. The heartbeat is a `ping` *this* tab sends, to
+ * which every live tab replies `here` from its message handler — liveness is
+ * never inferred from a peer's own timer. Chrome throttles timers in hidden
+ * tabs to about one tick a minute but keeps delivering channel messages, so a
+ * peer-driven heartbeat would have let a foreground reader evict a background
+ * writer and give two tabs the lock at once. A tab whose timer is throttled
+ * does not sweep either, which is exactly the safe failure.
+ *
+ * The sweep runs at the top of a tick, evicting against the *previous* ping's
+ * replies: a live peer answers within milliseconds, so eviction needs roughly
+ * two missed rounds and cannot flap the writer bit under ordinary jitter.
+ */
 export class WriterElection {
-  constructor(channel, id = Math.random().toString(36).slice(2)) {
+  constructor(channel, id = Math.random().toString(36).slice(2), opts = {}) {
     this.id = id;
     this.peers = new Map();
     this.isWriter = true;
     this.ch = channel;
+    this.onChange = opts.onChange ?? null;
+    this.now = opts.now ?? (() => Date.now());
+    this.heartbeatMs = opts.heartbeatMs ?? HEARTBEAT_MS;
+    this.ttlMs = opts.ttlMs ?? PEER_TTL_MS;
+    this._setInterval = opts.setInterval ?? ((f, ms) => setInterval(f, ms));
+    this._clearInterval = opts.clearInterval ?? ((t) => clearInterval(t));
+    // Injected so the unload path is reachable in a test rather than only by
+    // closing a real tab. Null in Node, where there is no window.
+    this._target = opts.target ?? (typeof window !== "undefined" ? window : null);
+    this._timer = null;
+    this.released = false;
     if (this.ch) {
       this.ch.onmessage = (e) => this.#onMessage(e.data);
-      this.ch.postMessage({ type: "hello", id: this.id });
+      this.#start();
+      if (this._target && this._target.addEventListener) {
+        // `pagehide` fires where `beforeunload` does and also where it does
+        // not — a discarded or bfcached document — and unlike `beforeunload`
+        // it does not make this tab ineligible for the bfcache.
+        this._target.addEventListener("pagehide", () => this.release());
+        // Restored from the bfcache: the document is live again after having
+        // announced its own death, so it has to re-introduce itself.
+        this._target.addEventListener("pageshow", (e) => { if (e && e.persisted) this.resume(); });
+      }
     }
   }
+
+  #start() {
+    this.released = false;
+    this.#say("hello");
+    if (this._timer != null || !this.heartbeatMs) return;
+    this._timer = this._setInterval(() => this.tick(), this.heartbeatMs);
+    // Node's timers keep the process alive; a test must not hang on one.
+    if (this._timer && typeof this._timer.unref === "function") this._timer.unref();
+  }
+
+  #say(type) {
+    if (this.ch) this.ch.postMessage({ type, id: this.id });
+  }
+
   #onMessage(msg) {
-    if (msg.id === this.id) return;
-    if (msg.type === "hello") {
-      this.peers.set(msg.id, Date.now());
-      this.ch.postMessage({ type: "here", id: this.id });
-    } else if (msg.type === "here") {
-      this.peers.set(msg.id, Date.now());
-    } else if (msg.type === "bye") {
-      this.peers.delete(msg.id);
-    }
-    // Lowest id wins — deterministic, no negotiation round trips.
-    const ids = [this.id, ...this.peers.keys()].sort();
-    this.isWriter = ids[0] === this.id;
+    if (!msg || msg.id === this.id || this.released) return;
+    const reply = msg.type === "hello" || msg.type === "ping";
+    if (reply || msg.type === "here") this.peers.set(msg.id, this.now());
+    else if (msg.type === "bye") this.peers.delete(msg.id);
+    // Elect before answering, never after: the reply is what tells a returning
+    // tab it may take the lock, so this tab must already have let go of it.
+    this.#elect();
+    if (reply) this.#say("here");
   }
+
+  /** One heartbeat: forget the peers that missed the last rounds, then probe. */
+  tick() {
+    if (this.released) return;
+    const cutoff = this.now() - this.ttlMs;
+    for (const [id, seen] of this.peers) if (seen < cutoff) this.peers.delete(id);
+    this.#elect();
+    this.#say("ping");
+  }
+
+  /** Lowest id wins — deterministic, no negotiation round trips. */
+  #elect() {
+    const was = this.isWriter;
+    let lowest = this.id;
+    for (const id of this.peers.keys()) if (id < lowest) lowest = id;
+    this.isWriter = lowest === this.id;
+    if (this.isWriter !== was && this.onChange) this.onChange(this.isWriter);
+  }
+
+  /**
+   * Give up the claim: tell the other tabs, and stop pretending to be live.
+   *
+   * `onChange` deliberately does not fire. This runs during `pagehide`, when
+   * the document is either about to die — nobody is left to read a banner — or
+   * about to be frozen, where the mutation would be painted on restore.
+   */
   release() {
-    if (this.ch) this.ch.postMessage({ type: "bye", id: this.id });
+    if (this.released) return;
+    this.released = true;
+    this.isWriter = false;
+    this.#say("bye");
+    if (this._timer != null) { this._clearInterval(this._timer); this._timer = null; }
+  }
+
+  /**
+   * Come back after a `release()` that turned out not to be the end.
+   *
+   * The peers are kept, not cleared: dropping them would hand this tab the
+   * lock optimistically for the millisecond before a live peer answered the
+   * `hello`. Their clocks are only reset so a freeze does not read as death —
+   * one that really is dead still expires on the ordinary schedule.
+   *
+   * Nor does it elect. Whoever took the lock while this tab was frozen holds
+   * it legitimately; the `hello` this sends demotes them first, and the claim
+   * comes back on the next heartbeat. Waiting one beat costs nothing next to
+   * two tabs briefly believing they may both write.
+   */
+  resume() {
+    if (!this.released || !this.ch) return;
+    const t = this.now();
+    for (const id of this.peers.keys()) this.peers.set(id, t);
+    this.#start();
   }
 }
 

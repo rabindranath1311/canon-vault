@@ -355,15 +355,38 @@ test("a rename yields one entry, not two", async () => {
   assert.equal(v.list()[0].path, "notes/New.md");
 });
 
-test("5.10 / 5.23 exactly one of two tabs is writer, and put() enforces it", async () => {
+/**
+ * A fake BroadcastChannel bus, a fake clock and a fake `window`, so the whole
+ * lifecycle — unload, crash, bfcache restore — is reachable here rather than
+ * only by closing real tabs. `heartbeatMs: 0` leaves no timer running: the
+ * tests call `tick()` themselves and control exactly when time passes.
+ */
+function tabs() {
   const bus = new Set();
-  const chan = () => {
-    const c = { onmessage: null, postMessage: (m) => bus.forEach((o) => o !== c && o.onmessage?.({ data: m })) };
+  let clock = 1_000_000;
+  const open = (id, opts = {}) => {
+    const target = {
+      on: new Map(),
+      addEventListener: (t, f) => target.on.set(t, [...(target.on.get(t) || []), f]),
+      fire: (t, e) => (target.on.get(t) || []).forEach((f) => f(e)),
+    };
+    const c = {
+      onmessage: null, gone: false,
+      postMessage: (m) => [...bus].forEach((o) => { if (o !== c && !o.gone) o.onmessage?.({ data: m }); }),
+    };
     bus.add(c);
-    return c;
+    const el = new WriterElection(c, id, { now: () => clock, heartbeatMs: 0, target, ...opts });
+    el.tab = target;
+    el.kill = () => { c.gone = true; };   // crash: no bye, no replies, ever
+    return el;
   };
-  const a = new WriterElection(chan(), "aaa");
-  const b = new WriterElection(chan(), "bbb");
+  return { open, advance: (ms) => { clock += ms; } };
+}
+
+test("5.10 / 5.23 exactly one of two tabs is writer, and put() enforces it", async () => {
+  const t = tabs();
+  const a = t.open("aaa");
+  const b = t.open("bbb");
   assert.equal([a.isWriter, b.isWriter].filter(Boolean).length, 1, "exactly one writer");
   assert.ok(a.isWriter && !b.isWriter, "lowest id wins");
 
@@ -375,6 +398,88 @@ test("5.10 / 5.23 exactly one of two tabs is writer, and put() enforces it", asy
   assert.equal(r.ok, false);
   assert.equal(r.reason, "not-writer");
   assert.doesNotMatch(await va.be.readText("notes/A.md"), /non-writer/);
+});
+
+// The reported bug: reload the only tab a few times and every save comes back
+// `not-writer`, with no second tab anywhere. The outgoing document was still
+// alive to answer the new one's `hello`, and its id — never expired, never
+// withdrawn — outlived it.
+test("a reloading tab hands the lock straight to its replacement", () => {
+  const t = tabs();
+  const old = t.open("aaa");            // the document being navigated away from
+  const fresh = t.open("bbb");          // the reload, which arrives while it lives
+  assert.equal(fresh.isWriter, false, "the outgoing tab still holds it, correctly");
+
+  old.tab.fire("pagehide", { persisted: false });
+  assert.ok(fresh.isWriter, "and lets go of it the moment it goes away");
+  assert.equal(old.isWriter, false, "a released tab claims nothing");
+
+  // A gone tab must stay gone: no answering pings from beyond the grave.
+  fresh.tick();
+  assert.ok(fresh.isWriter);
+});
+
+test("a tab that dies without a bye expires, and the survivor takes over", () => {
+  const t = tabs();
+  const a = t.open("aaa");
+  const b = t.open("bbb");
+  a.kill();                             // crash / discard: no pagehide, no bye
+
+  b.tick();
+  assert.equal(b.isWriter, false, "not yet — one missed beat is not death");
+  t.advance(5000);
+  b.tick();
+  assert.ok(b.isWriter, "a lock whose owner is gone expires quickly");
+});
+
+test("the sweep probes rather than trusting a peer's own timer", () => {
+  const t = tabs();
+  const a = t.open("aaa");              // never ticks: a throttled background tab
+  const b = t.open("bbb");
+  t.advance(60_000);
+  b.tick();
+  b.tick();
+  assert.equal(b.isWriter, false, "a live tab answers the ping and keeps the lock");
+  assert.ok(a.isWriter);
+});
+
+test("a bfcached tab reclaims only after the holder has let go", () => {
+  const t = tabs();
+  let a = null, watching = false;
+  // What the holder saw of the restored tab at the instant it stood down.
+  const handoff = [];
+  const b = t.open("bbb", { onChange: (w) => { if (!w && watching) handoff.push(a.isWriter); } });
+  a = t.open("aaa");
+  assert.ok(a.isWriter && !b.isWriter);
+
+  a.tab.fire("pagehide", { persisted: true });
+  assert.ok(b.isWriter, "the holder is frozen, so the other tab may write");
+
+  watching = true;
+  a.tab.fire("pageshow", { persisted: true });
+  assert.ok(a.isWriter, "the lower id takes it back");
+  assert.equal(b.isWriter, false);
+  assert.deepEqual(handoff, [false],
+    "and never before the holder had stood down — two writers at once, never");
+});
+
+test("a lone tab that is restored from the bfcache gets its claim back", () => {
+  const t = tabs();
+  const only = t.open("aaa");
+  only.tab.fire("pagehide", { persisted: true });
+  only.tab.fire("pageshow", { persisted: true });
+  only.tick();
+  assert.ok(only.isWriter, "nobody to hear a hello is not a reason to stay read-only");
+});
+
+test("the writer bit reports itself, so a stale read-only banner cannot linger", () => {
+  const t = tabs();
+  const seen = [];
+  const a = t.open("aaa");
+  const b = t.open("bbb", { onChange: (w) => seen.push(w) });
+  assert.deepEqual(seen, [false], "lost it to the older tab");
+  a.tab.fire("pagehide", { persisted: false });
+  assert.deepEqual(seen, [false, true], "and got it back when that tab closed");
 });
 
 test("5.22 scale: 2,000 notes index without holding bodies", async () => {
