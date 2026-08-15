@@ -6163,3 +6163,18 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 @media (prefers-reduced-motion: reduce) {
   .lightbox-x, .lightbox-nav { transition: none; }
 }
+
+
+/* First-run folder list: the folders ARE the kinds, so each line wears its
+   kind's colour as a dot. Salvaged from uncommitted work in the main
+   checkout, re-expressed against the current tokens. */
+.first-run-list li { position: relative; padding-left: 14px; }
+.first-run-list li::before {
+  content: ''; position: absolute; left: 0; top: 0.52em;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--frk, var(--i-2));
+}
+.first-run-list .frk-note   { --frk: var(--k-mdwn); }
+.first-run-list .frk-topic  { --frk: var(--k-topic); }
+.first-run-list .frk-canvas { --frk: var(--k-canvas); }
+.first-run-list .frk-inspo  { --frk: var(--k-desg); }

@@ -144,11 +144,13 @@ function FirstRunPanel(onCreate) {
       h('b', null, 'Already have notes? '),
       'Drop markdown files into the folder — the app indexes them as they are and ',
       'never rewrites a file it did not create.'),
+    // Per-kind colour dots, salvaged from uncommitted work in the main
+    // checkout: the folder list is the kinds, so it wears the kinds' colours.
     h('ul', { className: 'first-run-list' },
-      h('li', null, h('b', null, 'notes/'), ' anything read as prose'),
-      h('li', null, h('b', null, 'topics/'), ' a hub you keep coming back to'),
-      h('li', null, h('b', null, 'canvas/'), ' a board, arranged in Obsidian'),
-      h('li', null, h('b', null, 'inspo/'), ' visual reference')));
+      h('li', { className: 'frk-note' }, h('b', null, 'notes/'), ' anything read as prose'),
+      h('li', { className: 'frk-topic' }, h('b', null, 'topics/'), ' a hub you keep coming back to'),
+      h('li', { className: 'frk-canvas' }, h('b', null, 'canvas/'), ' a board, arranged in Obsidian'),
+      h('li', { className: 'frk-inspo' }, h('b', null, 'inspo/'), ' visual reference')));
 }
 
 /* An empty state is the first thing a new vault shows on most screens, so it
