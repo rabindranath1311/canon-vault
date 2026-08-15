@@ -3438,17 +3438,38 @@ img.canvas-item-image {
 ::-webkit-scrollbar-thumb:hover { background: var(--color-steel); }
 
 /* — Non-Chromium explainer (8.3 / 8.7). Deliberately self-contained: it must
-     render correctly even though app.js never runs. */
-.sb-explainer { max-width: 34rem; margin: 12vh auto; padding: 0 2rem;
-  font-family: var(--font-sans); color: var(--text); }
-.sb-explainer h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: var(--track-title); margin: 0 0 1rem; }
-.sb-explainer p { line-height: 1.6; color: var(--text-dim); margin: 0 0 1.25rem; }
-.sb-explainer ul { list-style: none; padding: 0; margin: 0 0 1.5rem;
-  display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.sb-explainer li a { display: inline-block; padding: 0.45rem 0.9rem; border-radius: 6px;
-  border: 1px solid var(--border); color: var(--text); text-decoration: none; }
-.sb-explainer li a:hover { border-color: var(--cta); }
-.sb-explainer-note { font-size: 0.9rem; }
+     render correctly even though app.js never runs. It reuses .sb-connect
+     wholesale, because it is answering the same question ("is this worth it?")
+     for the one visitor who cannot be shown the answer. Only the differences
+     live here. */
+.sb-explainer .sb-actions { gap: var(--sp-2); }
+.sb-explainer .sb-connect-demo { text-decoration: none; }
+/* Says what is wrong before the headline does, so the reason is the first
+   thing read rather than the last. */
+.sb-flag {
+  display: inline-block; margin: 0 0 var(--sp-3);
+  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
+  text-transform: uppercase; color: var(--lime-ink);
+  background: var(--lime-bg); border: 1px solid var(--lime-line);
+  border-radius: var(--radius-pill); padding: 3px 10px;
+}
+/* The lockup from icons/*.svg through a mask rather than a third inline copy
+   of the paths — a mask takes currentColor, so it still flips with the mode. */
+.brand-masked .brand-mark,
+.brand-masked .brand-word {
+  display: block; background: currentColor;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: contain; mask-size: contain;
+}
+.brand-masked .brand-mark {
+  width: 52px; height: 36px;
+  -webkit-mask-image: url('icons/mark.svg'); mask-image: url('icons/mark.svg');
+}
+.brand-masked .brand-word {
+  width: 240px; height: 13px;
+  -webkit-mask-image: url('icons/wordmark.svg'); mask-image: url('icons/wordmark.svg');
+}
 
 /* — Vault connect + reconnect banner (6.1 / 6.4). Self-contained: the connect
      screen renders before app.js has loaded. */
