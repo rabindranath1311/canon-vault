@@ -439,6 +439,28 @@ they anchored were most of the header's height. A hairline seam separates the
 families when both are present; the add-affordances sit at the end of each
 group, quiet until used.
 
+## The inspo wall is a place things land
+
+**Adding is not a mode.** To put an image on the wall you used to have to
+discover that "Arrange" existed, click it, and find "+ image" in a toolbar
+that had just changed shape. Three ways in now, all available while simply
+looking: the toolbar buttons (+ Image, + Link), **paste** (an image from the
+clipboard becomes a card; a bare URL becomes a link card), and **drag-drop**
+of image files straight onto the wall — a dashed ring says the wall heard the
+drag. Paste never fires while a field has focus or a dialog is open, and the
+listener dies with the page. Arrange keeps what belongs to arranging: fields,
+groups, moving, removing.
+
+**Click an image and it fills the screen.** A wall you cannot view large is a
+wall of thumbnails. The lightbox is near-black in every mode — the subject is
+a picture, and any paper tone would tint it — with the caption, tags, source
+and count on one bar, ← → walking the wall in render order, Esc or the scrim
+closing. Small images show at natural size (upscaling a 200px crop is just
+blur) inside a floored frame, so the chrome never huddles around a thumbnail.
+
+**The empty wall teaches the ways in**, because none of them are visible:
+nothing about an empty page says it accepts a drop or a paste.
+
 ## The inspo wall names its tiles
 
 Each tile on the Inspo wall is a whole **page**, not an image — so it has a

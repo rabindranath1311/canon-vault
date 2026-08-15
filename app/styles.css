@@ -6064,3 +6064,102 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .project-card-peek-more { color: var(--faint); }
 .project-card-peek-more::before { background: transparent; }
 .project-card-peek-empty { font-size: var(--fz-mini); color: var(--faint); font-style: italic; }
+
+
+/* ── Inspo: the wall as a place things land ────────────────────────────
+   Three ways in, none of them a mode: the toolbar buttons, a paste, and
+   files dropped straight onto the wall. The ring is the wall saying it
+   heard the drag. */
+.inspo-bento.is-drop {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 3%, transparent);
+}
+.bento-imgbox-zoom { cursor: zoom-in; }
+.bento-actions .btn-secondary { display: inline-flex; align-items: center; gap: 5px; }
+.bento-actions .btn-secondary svg { width: 13px; height: 13px; }
+
+/* The empty wall teaches the ways in — nothing about an empty page says it
+   accepts a drop or a paste, so it has to be said. */
+.bento-dropzone {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-5);
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+.bento-dropzone-g { color: var(--faint); }
+.bento-dropzone-g svg { width: 28px; height: 28px; }
+.bento-dropzone-t { font-size: var(--fz-h3); font-weight: 600; letter-spacing: var(--track-title); }
+.bento-dropzone-d { font-size: var(--fz-mini); color: var(--muted); max-width: 44ch; line-height: 1.6; }
+.bento-dropzone-d b { font-weight: 550; color: var(--fg); }
+
+/* ── The lightbox ──────────────────────────────────────────────────────
+   Near-black in every mode, because the subject is a picture and any paper
+   tone would tint it. The one deliberately single-look surface. */
+.lightbox-bg {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(9, 9, 11, 0.92);
+}
+.lightbox-frame {
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  max-width: min(92vw, 1400px); max-height: 92vh;
+  /* A floor, because a small image is shown at natural size (upscaling a
+     200px crop to fill a monitor is just blur) — without it the frame
+     shrank to hug a tiny image and the caption bar floated in the dark. */
+  min-width: min(560px, 90vw);
+}
+.lightbox-stage { display: grid; place-items: center; min-height: 180px; }
+.lightbox-img {
+  max-width: min(90vw, 1400px); max-height: 78vh;
+  width: auto; height: auto; object-fit: contain;
+  border-radius: var(--radius-badge);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.lightbox-bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--sp-4); min-height: 22px;
+}
+.lightbox-cap {
+  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+  color: #fafafa; font-size: var(--fz-mini); min-width: 0;
+}
+.lightbox-tags { display: inline-flex; gap: 4px; }
+.lightbox-meta {
+  display: inline-flex; align-items: baseline; gap: var(--sp-4); flex: none;
+  color: rgba(250,250,250,0.6); font-size: var(--fz-micro);
+  font-variant-numeric: tabular-nums;
+}
+.lightbox-src {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: rgba(250,250,250,0.8); text-decoration: none;
+}
+.lightbox-src:hover { color: #fff; }
+.lightbox-src svg { width: 12px; height: 12px; }
+.lightbox-x {
+  position: fixed; top: 18px; right: 22px;
+  appearance: none; cursor: pointer;
+  width: 36px; height: 36px; border-radius: var(--radius-pill);
+  border: 1px solid rgba(250,250,250,0.25);
+  background: rgba(9,9,11,0.5); color: #fafafa;
+  font-size: var(--fz-body); line-height: 1;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.lightbox-x:hover { background: rgba(250,250,250,0.15); }
+.lightbox-nav {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  appearance: none; cursor: pointer;
+  width: 44px; height: 44px; border-radius: var(--radius-pill);
+  border: 1px solid rgba(250,250,250,0.25);
+  background: rgba(9,9,11,0.5); color: #fafafa;
+  display: grid; place-items: center;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.lightbox-nav:hover { background: rgba(250,250,250,0.15); }
+.lightbox-nav svg { width: 20px; height: 20px; }
+.lightbox-prev { left: 22px; }
+.lightbox-next { right: 22px; }
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-x, .lightbox-nav { transition: none; }
+}

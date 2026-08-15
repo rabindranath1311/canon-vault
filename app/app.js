@@ -594,6 +594,7 @@ const LUCIDE = {
   'panel-left-open':  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
   'link-2':      '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+  'chevron-left':  '<path d="m15 18-6-6 6-6"/>',
   'chevron-down':  '<path d="m6 9 6 6 6-6"/>',
   'history':     '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   'check':       '<path d="M20 6 9 17l-5-5"/>',
@@ -3186,6 +3187,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     const model = I.parse(page.body || '');
     let activeTag = null;
     let editing = false;   // the wall opens in view mode; see card()
+    let gallery = [];      // the visible image items, in render order — the lightbox walks this
 
     const wrap = h('div', { className: 'page-body inspo-bento' });
     const toolbar = h('div', { className: 'bento-toolbar' });
@@ -3200,6 +3202,68 @@ function V2PageView(pageId, onChange, onDeleted) {
     function allGroupNames() {
       return model.groups.map((g) => g.name);
     }
+
+    /* ── The three ways in ─────────────────────────────────────────────
+       Adding is NOT a mode. It used to be: to put an image on the wall you
+       had to discover that "Arrange" existed, click it, and find "+ image"
+       in a toolbar that had just changed shape. The most common thing done
+       to an inspiration wall is adding to it, so it works from anywhere —
+       the buttons, a paste, or files dropped straight onto the wall.
+       Arrange keeps what belongs to arranging: fields, groups, moving,
+       removing. */
+    async function addImageFiles(files) {
+      const imgs = [...(files || [])].filter((f) => /^image\//.test(f.type || ''));
+      if (!imgs.length) return;
+      let added = 0;
+      for (const f of imgs) {
+        try {
+          const { path } = await uploadAsset(f);
+          model.groups[0].items.unshift({ image: path, caption: '', tags: [], url: null });
+          added++;
+        } catch (e) { toast('Upload failed — ' + e.message, { tone: 'error' }); }
+      }
+      if (!added) return;
+      save(); paint();
+      toast(nOf(added, 'image') + ' added to the wall');
+    }
+
+    function addLink(url) {
+      model.groups[0].items.unshift({ image: null, caption: '', tags: [], url });
+      save(); paint();
+      toast('Link added to the wall');
+    }
+
+    // Paste, anywhere on the page: an image from the clipboard becomes a
+    // card, a bare URL becomes a link card. Never while typing in a field,
+    // and never under an open dialog — both would hijack an ordinary paste.
+    const onPaste = (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (document.querySelector('.modal-bg')) return;
+      const files = [...((e.clipboardData && e.clipboardData.files) || [])]
+        .filter((f) => /^image\//.test(f.type || ''));
+      if (files.length) { e.preventDefault(); addImageFiles(files); return; }
+      const text = ((e.clipboardData && e.clipboardData.getData('text')) || '').trim();
+      if (/^https?:\/\/\S+$/.test(text)) { e.preventDefault(); addLink(text); }
+    };
+    document.addEventListener('paste', onPaste);
+    onBodyTeardown(() => document.removeEventListener('paste', onPaste));
+
+    // Drop image files onto the wall. The ring says the wall heard you.
+    wrap.addEventListener('dragover', (e) => {
+      const items = [...((e.dataTransfer && e.dataTransfer.items) || [])];
+      if (!items.some((i) => i.kind === 'file')) return;
+      e.preventDefault();
+      wrap.classList.add('is-drop');
+    });
+    wrap.addEventListener('dragleave', (e) => {
+      if (!wrap.contains(e.relatedTarget)) wrap.classList.remove('is-drop');
+    });
+    wrap.addEventListener('drop', (e) => {
+      e.preventDefault();
+      wrap.classList.remove('is-drop');
+      addImageFiles(e.dataTransfer && e.dataTransfer.files);
+    });
 
     function renderToolbar() {
       clear(toolbar);
@@ -3227,41 +3291,52 @@ function V2PageView(pageId, onChange, onDeleted) {
       }
       const actions = h('div', { className: 'bento-actions' });
 
-      /* The mode switch. In view mode the wall is images and captions and
-         nothing else — the add-controls belong to editing too, because you
-         do not accidentally need "+ group" while looking at references. */
+      const fileIn = h('input', {
+        type: 'file', accept: 'image/*', multiple: true, style: { display: 'none' },
+        'aria-hidden': 'true', tabIndex: -1,
+      });
+      fileIn.addEventListener('change', () => { addImageFiles(fileIn.files); fileIn.value = ''; });
+      actions.appendChild(fileIn);
+      actions.appendChild(h('button', {
+        className: 'btn-secondary', onClick: () => fileIn.click(),
+      }, icon('plus'), 'Image'));
+      actions.appendChild(h('button', {
+        className: 'btn-secondary',
+        onClick: () => {
+          // Inline, not prompt() — an OS dialog in the middle of a themed app.
+          const inp = h('input', {
+            className: 'set-input bento-newgroup', placeholder: 'Paste a URL…',
+            autocomplete: 'off',
+          });
+          const commit = () => {
+            let v = (inp.value || '').trim();
+            if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
+            if (/^https?:\/\/\S+$/.test(v)) { addLink(v); return; }
+            paint();
+          };
+          inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { e.preventDefault(); paint(); }
+          });
+          inp.addEventListener('blur', commit);
+          actions.replaceChildren(inp);
+          inp.focus();
+        },
+      }, icon('link-2'), 'Link'));
+
+      /* The mode switch. Arranging — fields, groups, moving, removing — is
+         a deliberate state; adding is not (see above). */
       actions.appendChild(h('button', {
         className: 'btn bento-mode' + (editing ? ' on' : ''),
-        title: editing ? 'Finish arranging' : 'Arrange this wall',
+        title: editing ? 'Finish arranging' : 'Rearrange, retag, regroup, remove',
         onClick: () => { editing = !editing; paint(); },
       }, icon(editing ? 'check' : 'pen-line'), editing ? 'Done' : 'Arrange'));
 
       if (!editing) { toolbar.appendChild(actions); return; }
 
-      // Add an image: file picker → attachments/, then a fresh card.
-      const fileIn = h('input', { type: 'file', accept: 'image/*', style: { display: 'none' } });
-      fileIn.addEventListener('change', async () => {
-        const f = fileIn.files && fileIn.files[0];
-        if (!f) return;
-        try {
-          const { path } = await uploadAsset(f);
-          model.groups[0].items.unshift({ image: path, caption: '', tags: [], url: null });
-          save(); paint();
-        } catch (e) { toast('Upload failed — ' + e.message, { tone: 'error' }); }
-      });
-      actions.appendChild(fileIn);
-      actions.appendChild(h('button', { className: 'btn-secondary', onClick: () => fileIn.click() }, '+ image'));
       actions.appendChild(h('button', {
         className: 'btn-secondary',
         onClick: () => {
-          model.groups[0].items.unshift({ image: null, caption: '', tags: [], url: 'https://' });
-          save(); paint();
-        } }, '+ link'));
-      actions.appendChild(h('button', {
-        className: 'btn-secondary',
-        onClick: () => {
-          // Inline, not prompt() — same reason the project picker stopped
-          // using it: an OS dialog in the middle of a themed app.
           const name = h('input', { className: 'set-input bento-newgroup',
             placeholder: 'Group name', autocomplete: 'off' });
           const commit = () => {
@@ -3276,7 +3351,7 @@ function V2PageView(pageId, onChange, onDeleted) {
           name.addEventListener('blur', commit);
           actions.replaceChildren(name);
           name.focus();
-        } }, '+ group'));
+        } }, icon('plus'), 'Group'));
 
       // One-click migration for boards made under the old canvas model. An
       // explicit button, not an adoption-write: nothing touches the file until
@@ -3294,6 +3369,61 @@ function V2PageView(pageId, onChange, onDeleted) {
       toolbar.appendChild(actions);
     }
 
+    /* ── The lightbox ──────────────────────────────────────────────────
+       A wall you cannot view large is a wall of thumbnails. Click an image
+       and it fills the screen, with its caption and source under it; ← →
+       walk the wall in render order, Esc or the scrim closes, and focus
+       goes back to the card that opened it (asDialog owns that). */
+    function openLightbox(item) {
+      let idx = Math.max(0, gallery.indexOf(item));
+      const stage = h('div', { className: 'lightbox-stage' });
+      const capBar = h('div', { className: 'lightbox-bar' });
+      const close = () => {
+        document.removeEventListener('keydown', onKey, true);
+        bg.remove();
+      };
+      const onKey = (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); show(idx + 1); }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); show(idx - 1); }
+      };
+      function show(n) {
+        idx = (n + gallery.length) % gallery.length;
+        const it = gallery[idx];
+        clear(stage);
+        stage.appendChild(vaultImage(it.image, { alt: it.caption || '', className: 'lightbox-img' }));
+        clear(capBar);
+        capBar.appendChild(h('div', { className: 'lightbox-cap' },
+          it.caption || '',
+          (it.tags || []).length
+            ? h('span', { className: 'lightbox-tags' },
+                it.tags.map((t) => h('span', { className: 'tag-chip' }, t)))
+            : null));
+        capBar.appendChild(h('div', { className: 'lightbox-meta' },
+          it.url ? h('a', { className: 'lightbox-src', href: it.url, target: '_blank',
+            rel: 'noopener' }, icon('link-2'), 'Source') : null,
+          gallery.length > 1
+            ? h('span', { className: 'lightbox-count' }, (idx + 1) + ' / ' + gallery.length)
+            : null));
+      }
+      const bg = h('div', {
+        className: 'modal-bg lightbox-bg',
+        onClick: (e) => { if (e.target === bg) close(); },
+      },
+        h('button', { className: 'lightbox-x', 'aria-label': 'Close', title: 'Close',
+          onClick: close }, '✕'),
+        gallery.length > 1 ? h('button', {
+          className: 'lightbox-nav lightbox-prev', 'aria-label': 'Previous image',
+          onClick: () => show(idx - 1) }, icon('chevron-left')) : null,
+        h('div', { className: 'lightbox-frame' }, stage, capBar),
+        gallery.length > 1 ? h('button', {
+          className: 'lightbox-nav lightbox-next', 'aria-label': 'Next image',
+          onClick: () => show(idx + 1) }, icon('chevron-right')) : null);
+      show(idx);
+      document.body.appendChild(bg);
+      document.addEventListener('keydown', onKey, true);
+      asDialog(bg, { onEscape: close, label: 'Image viewer' });
+    }
+
     /* A wall has two states, and it used to only have one.
 
        Every tile carried a caption input, a #tags input, a source-url input,
@@ -3309,7 +3439,13 @@ function V2PageView(pageId, onChange, onDeleted) {
       const el = h('div', { className: 'bento-card' });
 
       if (item.image) {
-        el.appendChild(h('div', { className: 'bento-imgbox' }, vaultImage(item.image)));
+        el.appendChild(!editing
+          ? h('div', {
+              className: 'bento-imgbox bento-imgbox-zoom',
+              'aria-label': 'View larger',
+              onClick: () => openLightbox(item),
+            }, vaultImage(item.image))
+          : h('div', { className: 'bento-imgbox' }, vaultImage(item.image)));
       } else if (item.url) {
         const domain = (item.url.replace(/^https?:\/\//, '').split('/')[0] || '').slice(0, 40);
         el.appendChild(h('a', {
@@ -3415,8 +3551,10 @@ function V2PageView(pageId, onChange, onDeleted) {
     function paint() {
       renderToolbar();
       clear(gridWrap);
+      gallery = [];
       for (const g of model.groups) {
         const visible = g.items.filter((it) => !activeTag || (it.tags || []).includes(activeTag));
+        gallery.push(...visible.filter((it) => it.image));
         if (!g.items.length && !g.name) continue;         // hide an empty unnamed group
         const sec = h('section', { className: 'bento-group' });
         if (g.name) sec.appendChild(h('h3', { className: 'bento-group-h' }, g.name,
@@ -3431,8 +3569,16 @@ function V2PageView(pageId, onChange, onDeleted) {
         gridWrap.appendChild(sec);
       }
       if (!model.groups.some((g) => g.items.length)) {
-        gridWrap.appendChild(h('div', { className: 'bento-empty bento-empty-page' },
-          'A reference wall. Add an image, paste a link, group what belongs together.'));
+        /* The empty wall teaches the ways in, because all three are
+           invisible: nothing about an empty page says it accepts a drop or
+           a paste. */
+        gridWrap.appendChild(h('div', { className: 'bento-dropzone' },
+          h('span', { className: 'bento-dropzone-g' }, icon('image')),
+          h('div', { className: 'bento-dropzone-t' }, 'Drop images here'),
+          h('div', { className: 'bento-dropzone-d' },
+            'Or paste one from the clipboard, paste a URL, or use ',
+            h('b', null, '+ Image'), ' and ', h('b', null, '+ Link'), ' above. ',
+            'The clipper sends things here too, straight from any page.')));
       }
     }
 
