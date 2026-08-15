@@ -998,8 +998,34 @@ function TabBarSearch() {
         // "canvas" for a drawing. One resolver, sentence case like everywhere.
         h('span', { className: 'tab-search-kind' },
           icon(metaForPage(p).icon || 'file-text'), ' ', metaForPage(p).label),
-        h('span', { className: 'tab-search-title' }, p.title || p.slug || '(untitled)'),
-        h('span', { className: 'tab-search-snippet' }, firstLineOf(p.body, 80))));
+        // Marked in the title too: plenty of results match there and nowhere
+        // else, and those showed no highlight at all.
+        h('span', { className: 'tab-search-title' },
+          markedText(p.title || p.slug || '(untitled)', input.value)),
+        /* A window around the match, with the match marked — the snippet used
+           to be the head of the page, so a result could show you nothing of
+           why it was a result. Where the hit is a tag or an alias and not the
+           text, the snippet says so, because otherwise the row looks like a
+           mistake: `pages()` matches title, tags, aliases and excerpt, and
+           two of those four were invisible. */
+        (() => {
+          const q = (input.value || '').trim().toLowerCase();
+          const [b, m, a] = snippetAround(p.body, input.value, 80);
+          if (!m && q && !String(p.title || '').toLowerCase().includes(q)) {
+            const tag = (p.tags || []).find((t) => String(t).toLowerCase().includes(q));
+            const alias = (p.aliases || []).find((x) => String(x).toLowerCase().includes(q));
+            if (tag) {
+              return h('span', { className: 'tab-search-snippet' },
+                'tagged ', h('span', { className: 'tag-chip' }, markedText(tag, input.value)));
+            }
+            if (alias) {
+              return h('span', { className: 'tab-search-snippet' },
+                'also called ', markedText(alias, input.value));
+            }
+          }
+          return h('span', { className: 'tab-search-snippet' },
+            b, m ? h('mark', null, m) : null, a);
+        })()));
     });
   };
 
@@ -1633,6 +1659,60 @@ function firstLineOf(body, max = 140) {
   if (!body) return '';
   const line = String(body).trim().split('\n').find((l) => l.trim()) || '';
   return line.length > max ? line.slice(0, max) + '…' : line;
+}
+
+/* Markdown flattened to the words it renders as.
+   A search result is a preview of a page, not a look at its source, and the
+   panel was showing "## Shortlist for the Bindery run ![[attachments/
+   endpaper-01.svg]]" — three quarters punctuation. Deliberately lossy: it is
+   a one-line preview, not a renderer. */
+function plainOf(md) {
+  return String(md || '')
+    .replace(/```[\s\S]*?```/g, ' ')            // fenced code
+    .replace(/!\[\[[^\]]*\]\]/g, ' ')           // embeds — a filename is not prose
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')  // aliased wikilink → its label
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')      // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')    // links → their text
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')         // heading markers
+    /* Again, unanchored: an excerpt arrives with its newlines already
+       collapsed to spaces, so "## notes" sits mid-string and the line-start
+       pass above never sees it. Safe against #tags — a tag has no space
+       after its hashes, and this requires one. */
+    .replace(/(^|\s)#{1,6}\s+/g, '$1')
+    .replace(/^\s{0,3}>\s?/gm, '')              // quote markers
+    .replace(/^\s{0,3}[-*+]\s+/gm, '')          // bullets
+    .replace(/`([^`]*)`/g, '$1')                // code spans
+    .replace(/\*\*|__|\*|_|~~/g, '')            // emphasis
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* `text` with the first occurrence of `q` wrapped in a <mark>, as nodes. */
+function markedText(text, q) {
+  const s = String(text || '');
+  const needle = String(q || '').trim();
+  if (!needle) return [s];
+  const at = s.toLowerCase().indexOf(needle.toLowerCase());
+  if (at < 0) return [s];
+  return [s.slice(0, at), h('mark', null, s.slice(at, at + needle.length)),
+          s.slice(at + needle.length)];
+}
+
+/* A window of `body` around where `q` matches, as [before, match, after].
+   Showing the head of a page and hoping the match is in it is how "About me"
+   answered a search for "bind" with its first sentence. */
+function snippetAround(body, q, max = 90) {
+  const text = plainOf(body);
+  const needle = String(q || '').trim();
+  if (!needle) return [text.slice(0, max) + (text.length > max ? '…' : ''), '', ''];
+  const at = text.toLowerCase().indexOf(needle.toLowerCase());
+  if (at < 0) return [text.slice(0, max) + (text.length > max ? '…' : ''), '', ''];
+  const lead = Math.max(0, at - Math.floor((max - needle.length) / 3));
+  const before = (lead > 0 ? '…' : '') + text.slice(lead, at);
+  const match = text.slice(at, at + needle.length);
+  const tail = text.slice(at + needle.length, lead + max);
+  return [before, match, tail + (lead + max < text.length ? '…' : '')];
 }
 /* Returns {url} for a remote asset or {asset} for one in the vault — never a
    `'/' + path` string, which only resolved when a server was serving them. */

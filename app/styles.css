@@ -5687,3 +5687,14 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   font-family: var(--font-mono); font-size: var(--fz-micro);
   line-height: 1.45; word-break: break-word;
 }
+
+/* Search-result highlight. The browser default is a yellow that belongs to no
+   mode here, so it takes the brand accent's tint and the page's own ink. */
+.tab-search-result mark {
+  background: var(--lime-bg);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+/* A tag page has no body, so its snippet was an empty line holding space. */
+.tab-search-snippet:empty { display: none; }
