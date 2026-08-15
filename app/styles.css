@@ -4630,15 +4630,16 @@ code, pre, kbd, samp {
    Each chip paints its own mode's page and ink, so the control previews the
    answer instead of naming it.
    ═══════════════════════════════════════════════════════════════════════ */
+/* The picker now sits in a Settings row rather than the sidebar footer, so
+   it no longer needs a divider to hold itself apart from the status lines —
+   the row it lives in does that. It is also the row's primary control, which
+   means it can be a comfortable size instead of a footer-sized afterthought. */
 .theme-picker {
   display: flex; align-items: center; gap: var(--sp-2);
-  padding-bottom: var(--sp-2);
-  margin-bottom: var(--sp-1);
-  border-bottom: 1px solid var(--line);
 }
 .theme-chip {
   appearance: none; cursor: pointer; padding: 0;
-  width: 18px; height: 18px; flex: none;
+  width: 26px; height: 26px; flex: none;
   border-radius: var(--radius-pill);
   background: var(--chip-bg, var(--paper));
   /* The ring is the border, so selection does not change the chip's size and
@@ -4650,12 +4651,12 @@ code, pre, kbd, samp {
               border-color var(--dur-1) var(--ease-out);
   position: relative;
 }
-/* The ink dot: without it a chip is just a grey circle and Light and Sepia
-   are nearly indistinguishable at 18px. */
+/* The ink dot: without it a chip is just a coloured circle and Light and
+   Sepia are nearly indistinguishable. */
 .theme-chip::after {
   content: '';
   position: absolute; inset: 0; margin: auto;
-  width: 6px; height: 6px; border-radius: 50%;
+  width: 9px; height: 9px; border-radius: 50%;
   background: var(--chip-ink, var(--fg));
 }
 .theme-chip:hover { transform: scale(1.12); border-color: var(--i-3); }
@@ -4670,14 +4671,6 @@ code, pre, kbd, samp {
 }
 .theme-chip-system::after {
   background: linear-gradient(105deg, #1c1917 0 50%, #fafafa 50% 100%);
-}
-
-/* Collapsed rail: the row wraps to a 2-up grid so the chips stay reachable
-   instead of overflowing a 56px column. */
-.app[data-nav="collapsed"] .theme-picker {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 5px; justify-items: center;
-  padding: 0 0 var(--sp-2);
 }
 
 /* ── Settings: onto the shared scale ───────────────────────────────────

@@ -1170,28 +1170,23 @@ function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
             it.href ? h('span', { className: 'ct' }, '↗') : h('span', { className: 'ct' }, c != null ? String(c) : ''));
         })))),
 
-    // ── bottom: colour mode + status + settings ─────────────────────────
-    // The mode picker lives HERE, not behind the gear. Appearance is the one
-    // setting people change on a whim — by time of day, by room light — and
-    // burying a whim behind two clicks means it never gets used. Swatches
-    // rather than a labelled list, because the swatch IS the answer to the
-    // question you are asking: what will this look like.
+    /* ── bottom: is the vault there, and is my work on disk ──────────────
+       Nothing else. The colour-mode swatches used to sit here, on the theory
+       that appearance is a whim and a whim buried two clicks deep never gets
+       used. It is a preference, and preferences live in Settings — where the
+       swatches went, unchanged, because a swatch is still a better answer to
+       "what will this look like" than the word "midnight" is.
+
+       No gear either: "Settings" already sits in the SYSTEM group four rows
+       up, and the popover it opened had been reduced to one control plus a
+       link to the very screen that nav row goes to. */
     h('div', { className: 'nav-foot' },
-      ThemePicker(),
       h('div', { className: 'nav-status-row' },
         h('span', { className: 'dot', style: offline ? { background: 'var(--signal-alert)' } : null }),
         h('span', { className: 'nav-status-label' }, offline ? 'vault unavailable' : 'vault ready')),
       h('div', { className: 'nav-status-row' },
         h('span', { className: 'nav-status-label nav-status-sync' },
-          offline ? 'not saved' : ('saved ' + (lastSynced || 'just now')))),
-      /* No gear here. "Settings" already sits in the SYSTEM group four rows
-         up, and the popover it opened had been reduced to one control plus a
-         link to the very screen that nav row goes to. Two doors to the same
-         room, one of them a worse room.
-
-         What genuinely belongs at the bottom is the picker above: colour mode
-         is the setting people change on a whim, and it is one click here. */
-      ));
+          offline ? 'not saved' : ('saved ' + (lastSynced || 'just now'))))));
 }
 
 /* A row of real colour chips. Each paints its own page + ink, so the control
@@ -5180,19 +5175,26 @@ function SettingsScreen() {
   // to know that from a sibling <div>. The hint becomes the description.
   const row = (label, hint, control) => {
     const native = control && /^(INPUT|SELECT|TEXTAREA)$/.test(control.tagName || '');
-    if (native && !control.id) control.id = 'set-' + (++row._n);
+    // A radiogroup cannot be the target of `for`; it takes aria-labelledby.
+    const group = !native && control && control.getAttribute
+      && control.getAttribute('role') === 'radiogroup';
+    if ((native || group) && !control.id) control.id = 'set-' + (++row._n);
     const hintEl = hint ? h('div', { className: 'set-row-hint' }, hint) : null;
-    if (native && hintEl) {
+    if ((native || group) && hintEl) {
       hintEl.id = control.id + '-hint';
       control.setAttribute('aria-describedby', hintEl.id);
     }
+    const labelEl = h(native ? 'label' : 'div',
+      native ? { className: 'set-row-label', for: control.id }
+             : { className: 'set-row-label' },
+      label);
+    if (group) {
+      labelEl.id = control.id + '-label';
+      control.setAttribute('aria-labelledby', labelEl.id);
+      control.removeAttribute('aria-label');   // the visible label is the name
+    }
     return h('div', { className: 'set-row' },
-      h('div', { className: 'set-row-l' },
-        h(native ? 'label' : 'div',
-          native ? { className: 'set-row-label', for: control.id }
-                 : { className: 'set-row-label' },
-          label),
-        hintEl),
+      h('div', { className: 'set-row-l' }, labelEl, hintEl),
       h('div', { className: 'set-row-c' }, control));
   };
   row._n = 0;
@@ -5238,9 +5240,10 @@ function SettingsScreen() {
       }))));
 
   wrap.appendChild(section('Appearance', null,
-    row('Colour mode', 'Also in the sidebar footer, as swatches.',
-      // THEMES already carries the labels the swatch row uses.
-      select('theme', THEMES.map((t) => [t.id, t.label]))),
+    // The swatch row, not a dropdown: the chip paints the mode's own page and
+    // ink, so the control answers "what will this look like" instead of
+    // naming it and hoping. System is the split chip.
+    row('Colour mode', 'System follows your operating system.', ThemePicker()),
     row('Density', null, select('density',
       [['compact', 'Compact'], ['cozy', 'Cozy'], ['comfortable', 'Comfortable']]))));
 

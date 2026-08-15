@@ -15,11 +15,18 @@ Light is the default rather than System. System is the more fashionable
 default, but it means anyone whose OS is dark never sees the theme this app is
 designed around — and light *is* the design here. System stays one click away.
 
-The picker lives in the **sidebar footer**, not behind the gear: appearance is
-the one setting people change on a whim — by time of day, by room light — and a
-whim does not survive two clicks. It is a row of colour chips, each painting
-its own mode's page and ink, because the swatch *is* the answer to the question
-you are asking. The full labelled list stays in Settings.
+The picker lives in **Settings → Appearance**, and nowhere else. It is a row of
+colour chips, each painting its own mode's page and ink, because the swatch *is*
+the answer to the question you are asking — a dropdown offers you the word
+"midnight" and makes you go and find out. System is a split chip, half light and
+half dark.
+
+It used to sit in the sidebar footer on the argument that appearance is a whim
+and a whim does not survive two clicks. That is true of a whim and untrue of
+this: it is a preference, it is set once, and a permanent five-chip strip under
+the navigation spends standing screen space on a decision nobody revisits. The
+footer says what the footer is for — whether the vault is there, and whether
+your work is on disk.
 
 `boot.js` applies the saved mode **synchronously, before first paint**. Without
 that the first-run screen ignored the choice entirely (app.js only loads once a
