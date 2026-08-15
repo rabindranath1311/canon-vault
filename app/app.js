@@ -306,6 +306,46 @@ function historyDialog(snaps, title) {
   });
 }
 
+/* The shape of what is coming, instead of the word "loading".
+ *
+ * Seven screens printed a centred grey "loading…" — which tells you the app
+ * is not broken and nothing else. A skeleton says how much is coming and in
+ * what arrangement, so the layout does not jump when it lands, and the wait
+ * reads as the page assembling rather than as the page being absent.
+ *
+ * Rows for a table, cards for a grid, lines for prose. The widths are varied
+ * on purpose: a stack of identical bars reads as a loading graphic, and a
+ * ragged right edge reads as text that has not arrived yet.
+ */
+const _SKEL_W = [92, 74, 86, 61, 80, 70, 88, 66];
+function Skeleton(shape = 'rows', n = 6) {
+  const wrap = h('div', { className: 'skel skel-' + shape, 'aria-hidden': 'true' });
+  for (let i = 0; i < n; i++) {
+    const cell = h('div', { className: 'skel-cell' });
+    cell.style.setProperty('--i', String(i));
+    if (shape === 'rows') {
+      cell.appendChild(h('span', { className: 'skel-bar skel-mark' }));
+      const t = h('span', { className: 'skel-bar skel-title' });
+      t.style.width = _SKEL_W[i % _SKEL_W.length] + '%';
+      cell.appendChild(t);
+      cell.appendChild(h('span', { className: 'skel-bar skel-when' }));
+    } else if (shape === 'cards') {
+      cell.appendChild(h('span', { className: 'skel-bar skel-card-t' }));
+      const l = h('span', { className: 'skel-bar skel-card-l' });
+      l.style.width = _SKEL_W[(i + 3) % _SKEL_W.length] + '%';
+      cell.appendChild(l);
+    } else {
+      const l = h('span', { className: 'skel-bar' });
+      l.style.width = _SKEL_W[i % _SKEL_W.length] + '%';
+      cell.appendChild(l);
+    }
+    wrap.appendChild(cell);
+  }
+  // A screen reader gets a word; the eye gets the shape.
+  wrap.appendChild(h('span', { className: 'sr-only', role: 'status' }, 'Loading…'));
+  return wrap;
+}
+
 function EmptyState(msg, sub, action) {
   return h('div', { className: 'empty-state' },
     h('span', { className: 'empty-state-mark' }, brandMark()),
@@ -1335,6 +1375,89 @@ function ThemePicker() {
     }));
 }
 
+/* The other half of onboarding.
+ *
+ * The front door explains the decision; this is what happens after it. A
+ * vault opens on a dashboard, and on the first run that dashboard is either
+ * empty (a folder we just scaffolded) or full of files the app has never
+ * shown anyone (a folder we just adopted) — and in both cases the app had
+ * nothing to say about what to do next, or about the two other programs that
+ * are now looking at the same folder.
+ *
+ * Shown once, dismissible, and never in the demo: the demo's own banner
+ * already says what it is, and "make your first page" is a poor invitation
+ * when the page will not survive a reload.
+ */
+function WelcomeCard(onCreate) {
+  const prefs = loadPrefs();
+  if (prefs.welcomeSeen || window.SB_DEMO) return null;
+
+  const dismiss = () => {
+    const p = loadPrefs(); p.welcomeSeen = true; savePrefs(p);
+    card.style.height = card.offsetHeight + 'px';
+    requestAnimationFrame(() => { card.classList.add('welcome-out'); });
+    setTimeout(() => card.remove(), 320);
+  };
+
+  const step = (n, title, body, action) => h('li', { className: 'welcome-step' },
+    h('span', { className: 'welcome-n' }, String(n)),
+    h('div', { className: 'welcome-step-b' },
+      h('h3', { className: 'welcome-step-t' }, title),
+      h('p', { className: 'welcome-step-d' }, body),
+      action || null));
+
+  const steps = [step(1, 'Make something',
+    'Every kind is one picker away — a note, a bookmark, a topic, a board, a wall.',
+    h('button', { className: 'welcome-go', onClick: onCreate }, 'Create a page', icon('arrow-right')))];
+
+  // Only offered when we know the vault's name — otherwise the link is a guess.
+  const vault = window.SB_VAULT_NAME || '';
+  if (vault) {
+    steps.push(step(2, 'Open the same folder in Obsidian',
+      'Not an export. The very same files, live in both apps at once.',
+      h('a', {
+        className: 'welcome-go',
+        href: 'obsidian://open?vault=' + encodeURIComponent(vault),
+      }, 'Open in Obsidian', h('span', { className: 'welcome-ext' }, '↗'))));
+  }
+
+  // AGENTS.md exists in a vault this app scaffolded; an adopted one may not
+  // have it, and offering a link to a page that is not there is worse than
+  // saying the plain thing.
+  const agents = h('div', { className: 'welcome-step-slot' });
+  steps.push(step(vault ? 3 : 2, 'Hand the folder to your agent',
+    'The file convention is public, so a coding agent can read and write this vault the way you do.',
+    agents));
+  // A missing page RESOLVES null here rather than rejecting, so the fallback
+  // has to be in both branches — putting it only in .catch() left the step
+  // with no action line at all on any vault the app did not scaffold.
+  const noAgentsPage = () => agents.appendChild(h('span', { className: 'welcome-plain' },
+    'Point it at the folder. The rules go in CONVENTION.md beside your notes.'));
+  getPageCached('agents')
+    .then((p) => {
+      if (!p) { noAgentsPage(); return; }
+      agents.appendChild(h('button', {
+        className: 'welcome-go', onClick: () => openPage(p.id),
+      }, 'Read the agent contract', icon('arrow-right')));
+    })
+    .catch(noAgentsPage);
+
+  const card = h('section', { className: 'welcome' },
+    h('div', { className: 'welcome-hd' },
+      h('div', null,
+        h('h2', { className: 'welcome-t' }, 'Your vault is open.'),
+        h('p', { className: 'welcome-s' },
+          vault
+            ? ['Everything lives in ', h('code', null, vault), '. Three things worth knowing.']
+            : 'Three things worth knowing.')),
+      h('button', {
+        className: 'welcome-x', title: 'Dismiss', 'aria-label': 'Dismiss',
+        onClick: dismiss,
+      }, '✕')),
+    h('ol', { className: 'welcome-steps' }, steps));
+  return card;
+}
+
 function PageHeader(title, meta, sub, right) {
   return [
     h('div', { className: 'page-h' },
@@ -1488,6 +1611,10 @@ function V2Home(state, onOpen, onCreate, onKind) {
             'updated ', fmtDate(s.last_synced || ''))),
         h('button', { className: 'btn-primary dash-cta', onClick: onCreate }, '+ new page')),
 
+      // First run only, and it removes itself. Above everything, because on a
+      // vault the app has just scaffolded there is nothing below it yet.
+      WelcomeCard(onCreate),
+
       // ── Current obsessions ──
       h('div', { className: 'sect-hd' },
         h('span', null, 'Current obsessions'),
@@ -1621,13 +1748,18 @@ function V2Home(state, onOpen, onCreate, onKind) {
         h('span', null, b.footer_r || '')));
   }
 
-  // Initial paint with a minimal scaffold so the screen isn't blank during fetch.
+  /* Initial paint: the real header, and the shape of what is coming below it.
+     It used to be the header with "loading…" where the stats go and nothing
+     underneath, so the screen was three quarters empty and then everything
+     arrived at once and shoved the header up the page. */
   append(wrap, [
     h('div', { className: 'dash-hd' },
       h('h1', { className: 'dash-title' }, 'Dashboard',
-        h('span', { className: 'dash-title-c' },  h('span', { className: 'dim' }, 'loading…'))),
-      h('div', { className: 'dash-sub' }, ' '),
+        h('span', { className: 'dash-title-c' }, h('span', { className: 'dim' }, "what's in the air"))),
+      h('div', { className: 'dash-sub' }, h('span', { className: 'skel-bar skel-inline' })),
       h('button', { className: 'btn-primary dash-cta', onClick: onCreate }, '+ new page')),
+    h('div', { className: 'sect-hd' }, h('span', null, 'Recent pages')),
+    Skeleton('rows', 6),
   ]);
 
   Promise.resolve(SB.data().dashboard()).then(paint).catch((e) => {
@@ -4220,7 +4352,7 @@ function TagsIndexScreen() {
   const wrap = h('div', { className: 'screen' });
   append(wrap, PageHeader('Tags', null,
     'Every tag used across your pages. Click any to see the pages using it.', null));
-  wrap.appendChild(h('div', { className: 'loading-stub' }, 'loading…'));
+  wrap.appendChild(Skeleton('cards', 8));
   Promise.resolve(SB.data().tags()).then(({ tags }) => {
     clear(wrap);
     append(wrap, PageHeader('Tags', null,
@@ -4261,7 +4393,7 @@ function TagFilterScreen(tag) {
   const backToTags = h('button', { className: 'side-action',
     onClick: () => setRoute('tags') }, '← all tags');
   append(wrap, PageHeader('#' + tag, null, 'Pages tagged ' + tag, backToTags));
-  wrap.appendChild(h('div', { className: 'loading-stub' }, 'loading…'));
+  wrap.appendChild(Skeleton('rows', 6));
   Promise.resolve(SB.data().pages({ tag, limit: 500 })).then(({ items }) => {
     (items || []).forEach((p) => cacheSetPage(p));
     clear(wrap);
@@ -4286,7 +4418,7 @@ function MentionFilterScreen(slug) {
   const backTo = () => h('button', { className: 'side-action',
     onClick: () => setRoute('mention-tags') }, '← all mention tags');
   append(wrap, PageHeader('@' + slug, null, 'Pages mentioning ' + slug, backTo()));
-  wrap.appendChild(h('div', { className: 'loading-stub' }, 'loading…'));
+  wrap.appendChild(Skeleton('rows', 6));
   Promise.resolve({ items: [], mention_tag: null }).then(({ items, mention_tag }) => {
     (items || []).forEach((p) => cacheSetPage(p));
     clear(wrap);
@@ -5370,6 +5502,7 @@ const SB_PREF_DEFAULTS = {
   historyKeep: 10,
   obsidianVault: '',       // blank = derive from the picked folder
   thumbCacheOn: true,
+  welcomeSeen: false,      // the first-run card on the dashboard
 };
 function loadPrefs() {
   try {
@@ -5507,7 +5640,7 @@ function buildMain() {
   if (r === 'pages' || r.startsWith('kind:')) {
     const kind = r.startsWith('kind:') ? r.slice(5) : null;
     const wrap = h('div', { className: 'screen' });
-    wrap.appendChild(h('div', { className: 'loading-stub' }, 'loading…'));
+    wrap.appendChild(Skeleton('rows', 6));
     const path = '/pages?limit=200' + (kind ? '&kind=' + encodeURIComponent(kind) : '');
     Promise.resolve(SB.data().pages(pathToQuery(path))).then(({ items }) => {
       // Seed the page cache — list_pages already returns full PageOut, so
