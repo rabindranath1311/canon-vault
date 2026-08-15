@@ -5695,3 +5695,12 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
    payload. */
 .bm-preview:empty { display: none; }
 .bm-link-card { gap: var(--sp-2); }
+
+/* The file path is the one value in the rail where the END matters most —
+   ellipsizing it hides the filename and keeps the folder. So it wraps, and it
+   is set in the mono face because it is a path, not prose. */
+.side-row-file .side-row-v {
+  white-space: normal; overflow: visible; text-overflow: clip;
+  font-family: var(--font-mono); font-size: var(--fz-micro);
+  line-height: 1.45; word-break: break-word;
+}

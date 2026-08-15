@@ -578,7 +578,12 @@ function metaForPage(p) {
      bookmark is a derived facet rather than a stored kind — a true fact
      about the data model that the user has no reason to know. The label
      follows the chrome, decided here, once. */
-  if (p && p.kind === 'note' && p.meta && p.meta.url) return KIND_META.bookmark;
+  /* `url` at the top level, not just `meta.url`: a full page object carries
+     it under meta, an index entry from `pages()` carries it hoisted — and
+     `data.js` derives the whole bookmark facet from the hoisted one. Reading
+     only meta.url meant every bookmark in every list was still a "Note". */
+  const url = p && (p.url != null ? p.url : (p.meta && p.meta.url));
+  if (p && p.kind === 'note' && url) return KIND_META.bookmark;
   return KIND_META[p && p.kind] || KIND_META.note;
 }
 // "by kind" capture types.
@@ -596,22 +601,29 @@ const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'inspo'];
    so the marker only has to say WHICH, and a coloured icon does that faster
    than a word does. `withLabel` is for the places that have no column header
    to lean on. */
-function KindChip(kind, opts = {}) {
-  const meta = KIND_META[kind] || { label: kind, color: 'var(--muted)' };
+/* Takes the PAGE, not its `kind` string. It used to take the string, and both
+   call sites had a page in hand and passed `p.kind` — so a bookmark wore the
+   note icon and announced itself as "Note", and a drawing wore the board icon
+   and said "Board", in the two tables where you meet most of your vault.
+   metaForPage is the one place that decides; this now asks it. */
+function KindChip(page, opts = {}) {
+  const p = (page && typeof page === 'object') ? page : { kind: page };
+  const meta = metaForPage(p) || { label: p.kind, color: 'var(--muted)' };
+  const glyph = icon(meta.icon || 'file-text');
   if (!opts.withLabel) {
     return h('span', {
       className: 'kind-mark' + (opts.large ? ' lg' : ''),
       style: { '--k-c': meta.color },
       title: meta.label,
       'aria-label': meta.label,
-    }, kindIcon(kind));
+    }, glyph);
   }
   return h('span', {
     className: 'kind-chip' + (opts.large ? ' lg' : ''),
     style: { '--k-c': meta.color },
     title: meta.hint,
   },
-    h('span', { className: 'kind-chip-g' }, kindIcon(kind)),
+    h('span', { className: 'kind-chip-g' }, glyph),
     h('span', null, meta.label));
 }
 
@@ -888,8 +900,10 @@ function TabBarSearch() {
         },
         onMouseEnter: () => { activeIdx = i; },
       },
+        // Was the raw `p.kind` — lowercase "note" beside a Note icon, and
+        // "canvas" for a drawing. One resolver, sentence case like everywhere.
         h('span', { className: 'tab-search-kind' },
-          kindIcon(p.kind), ' ', p.kind),
+          icon(metaForPage(p).icon || 'file-text'), ' ', metaForPage(p).label),
         h('span', { className: 'tab-search-title' }, p.title || p.slug || '(untitled)'),
         h('span', { className: 'tab-search-snippet' }, firstLineOf(p.body, 80))));
     });
@@ -1365,7 +1379,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
             recent.map((r) => h('div', {
               className: 'pages-row recent-row' + (showVia ? '' : ' recent-row-novia'), onClick: () => onOpen(r.id),
             },
-              h('span', null, KindChip(r.kind)),
+              h('span', null, KindChip(r)),
               h('span', { className: 'pages-title' }, r.title),
               showVia ? h('span', { className: 'recent-via' }, r.via) : null,
               h('span', { className: 'pages-tags' },
@@ -1426,8 +1440,8 @@ function V2Home(state, onOpen, onCreate, onKind) {
         (o.members || []).map((m) => h('button', {
           className: 'obs-member', onClick: () => onOpen(m.id),
         },
-          h('span', { className: 'obs-member-g', style: { color: (KIND_META[m.kind] || {}).color || 'var(--muted)' } },
-            kindIcon(m.kind)),
+          h('span', { className: 'obs-member-g', style: { color: metaForPage(m).color || 'var(--muted)' } },
+            icon(metaForPage(m).icon || 'file-text')),
           h('span', { className: 'obs-member-t' }, m.title),
           h('span', { className: 'obs-member-go' }, icon('arrow-right'))))));
   }
@@ -1620,7 +1634,7 @@ function ListView_Table(pages, onOpen) {
       h('span', null, 'Tags'),
       h('span', null, 'Updated')),
     pages.map((p) => h('div', { className: 'pages-row', onClick: () => onOpen(p.id) },
-      h('span', null, KindChip(p.kind)),
+      h('span', null, KindChip(p)),
       h('span', { className: 'pages-title' }, p.title || '(untitled)'),
       h('span', { className: 'pages-tags' },
         (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip' }, t))),
@@ -2696,7 +2710,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         el.setAttribute('title', item.file);
         el.appendChild(h('div', { className: 'canvas-item-file' },
           h('span', { className: 'canvas-item-file-glyph' },
-            kindIcon(hitPage ? hitPage.kind : 'note')),
+            icon(metaForPage(hitPage || { kind: 'note' }).icon || 'file-text')),
           h('span', { className: 'canvas-item-file-name' }, name || item.file)));
         el.classList.add('canvas-item-clickable');
         el.addEventListener('click', () => {
@@ -3323,7 +3337,9 @@ function V2PageView(pageId, onChange, onDeleted) {
         },
       },
         h('div', { className: 'pj-inside-card-hd' },
-          h('span', { className: 'pj-inside-glyph' }, kindIcon(p.kind)),
+          // `m` already resolved the kind; the glyph must come from it too,
+          // or the label says Drawing beside a board icon.
+          h('span', { className: 'pj-inside-glyph' }, icon(m.icon || 'file-text')),
           h('span', { className: 'pj-inside-kind' }, m.label || p.kind)),
         h('div', { className: 'pj-inside-title' }, p.title || p.slug || '(untitled)'),
         p.body
@@ -3472,16 +3488,27 @@ function V2PageView(pageId, onChange, onDeleted) {
     const sRow = (l, v) => h('div', { className: 'side-row' },
       h('span', { className: 'side-row-l' }, l),
       h('span', { className: 'side-row-v' }, v));
+    /* What this rail owes the reader is the facts the page itself does not
+       already show.
+         · Slug restated the H1 a centimetre above it, word for word.
+         · Tags and Mentions counted chips that are listed in the header row,
+           so the rail's answer was always visible before you looked.
+       Both are gone. In their place, the one fact this app is entirely about
+       and did not show anywhere: which file on disk you are looking at. */
+    const fileRow = sRow('File', page.path || '—');
+    fileRow.className = 'side-row side-row-file';
+    fileRow.querySelector('.side-row-v').title = page.path || '';
     aside.appendChild(h('div', { className: 'side-card' },
       h('div', { className: 'side-card-hd' }, 'Metadata'),
       h('div', { className: 'side-card-body' },
-        sRow('ID',       page.id.slice(0, 8) + '…'),
-        sRow('Slug',     page.slug),
-        sRow('Kind',     KIND_META[page.kind].label),
+        fileRow,
+        // metaForPage, not KIND_META[kind] — the header pill above this rail
+        // reads it that way, and a bookmark that calls itself "Note" one line
+        // below a badge saying "Bookmark" is the label being decided twice.
+        sRow('Kind',     metaForPage(page).label),
         sRow('Created',  fmtDate(page.created)),
         sRow('Updated',  fmtDate(page.updated)),
-        sRow('Tags',     String(page.tags.length)),
-        sRow('Mentions', String(page.mentions.length)))));
+        sRow('ID',       page.id.slice(0, 8) + '…'))));
 
     // BACKLINKS — fetched live (pages that mention this one)
     const backHd = h('div', { className: 'side-card-hd' }, 'Backlinks');
