@@ -1282,8 +1282,14 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
   font-size: var(--fz-micro); color: var(--faint);
 }
-.board-card-count { white-space: nowrap; }
-.board-card-tags { display: flex; gap: 4px; overflow: hidden; }
+/* One line of the board's own words, cut by the box rather than by a character
+   count — 60 characters is a different width in every card. The tags keep their
+   space (they are the filter handle); the excerpt is what gives way. */
+.board-card-line {
+  min-width: 0; flex: 1 1 auto;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.board-card-tags { display: flex; gap: 4px; overflow: hidden; flex: 0 0 auto; }
 
 /* ── topic list view ───────────────────────────────────────────── */
 .pages-list {
@@ -5647,3 +5653,28 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .topic-side > * { flex: none; }
 .side-card { flex: none; }
 .topic-side { overflow-y: auto; padding-bottom: var(--sp-4); }
+
+/* ── The page column scrolls ───────────────────────────────────────────
+   `.page-main` was `overflow: hidden`, on the assumption that whatever it
+   held managed its own height. About me does not: it puts its sections
+   straight into the column, 1275px of them in a 728px box. Experience,
+   Skills, Education, Highlights and Notes were all below the cut with no
+   way to reach them — the bottom half of the screen simply did not exist.
+
+   Kinds whose body already scrolls are unaffected: `.page-body` is
+   `flex: 1`, so it never pushes this column past its own height. */
+.page-main { overflow-y: auto; overflow-x: hidden; padding-bottom: var(--sp-5); }
+
+/* Truncation is fine; silent truncation is not. The project card clamps its
+   description to two lines, so the full text goes in the title. */
+.project-card-desc { cursor: default; }
+
+/* A board preview tile was overflowing its card by a few pixels. */
+.board-card-preview { min-width: 0; }
+.board-card-mini { min-width: 0; overflow: hidden; }
+
+/* An empty preview box still took its padding, so a link card carried ~50px
+   of nothing under the URL. It only exists when the clipper saved an og
+   payload. */
+.bm-preview:empty { display: none; }
+.bm-link-card { gap: var(--sp-2); }

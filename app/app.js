@@ -434,22 +434,6 @@ function AutocompleteInput(opts) {
   return wrap;
 }
 
-/* In-memory cache so we don't re-fetch the same URL multiple times in one session. */
-const _ogCache = new Map();
-async function fetchLinkPreview(url) {
-  url = (url || '').trim();
-  if (!url || !/^https?:\/\//i.test(url)) return null;
-  if (_ogCache.has(url)) return _ogCache.get(url);
-  try {
-    const res = await gone('link preview', 'a browser page cannot fetch arbitrary URLs; previews come from the clipper (SPEC §7)');
-    // Only cache successful previews. Errors are transient — caching them would
-    // mean a one-time network blip makes the preview disappear until reload.
-    if (res && !res.error) _ogCache.set(url, res);
-    return res;
-  } catch (e) {
-    return { url, error: String(e.message || e) };
-  }
-}
 
 /* ── Icons — inlined lucide (shadcn's icon set) ─────────────────────────
    Path markup vendored so the no-build rule holds. Rendered through a span
@@ -1529,7 +1513,10 @@ function ListView_Board(pages, onOpen) {
           h('div', { className: 'board-card-empty' },
             drawing ? '✎ drawing' : '▦ board')),
         h('div', { className: 'board-card-ft' },
-          h('span', { className: 'board-card-count' },
+          // Named for what it holds. It was `board-card-count` — a leftover from
+          // the node count above — and a `nowrap` excerpt under a count's
+          // styling ran 20px past the card it sits in.
+          h('span', { className: 'board-card-line' },
             firstLineOf(p.excerpt || '', 60) || (drawing ? 'Excalidraw' : 'JSON Canvas')),
           h('span', { className: 'board-card-tags' },
             (p.tags || []).slice(0, 3).map((t) => h('span', { className: 'tag-chip' }, t)))));
@@ -3100,37 +3087,20 @@ function V2PageView(pageId, onChange, onDeleted) {
     function renderLinks() {
       clear(linksWrap);
       page.meta.links.forEach((link, idx) => {
+        /* The preview machinery is gone. It rendered a box, said "fetching
+           preview…", and then failed — fetchLinkPreview() routes through
+           gone(), because a browser tab cannot read another origin. The
+           refresh button beside it could never do anything either.
+
+           A saved og payload still renders if the clipper captured one; the
+           app simply stops pretending it can go and get one itself. */
         const previewBox = h('div', { className: 'bm-preview' });
-        renderPreview(previewBox, link.og);
-        let urlTimer;
-        async function refetch() {
-          const url = (link.url || '').trim();
-          if (!url || !/^https?:\/\//i.test(url)) {
-            link.og = null;
-            clear(previewBox);
-            syncLegacy(); queueSave();
-            return;
-          }
-          clear(previewBox);
-          previewBox.appendChild(h('div', { className: 'bm-preview-loading' }, 'fetching preview…'));
-          const og = await fetchLinkPreview(url);
-          if (og && !og.error) {
-            link.og = og;
-            syncLegacy(); queueSave();
-          }
-          renderPreview(previewBox, og);
-        }
+        if (link.og) renderPreview(previewBox, link.og);
         const urlInput = h('input', {
           className: 'bm-url-input',
           placeholder: 'https://…',
           value: link.url || '',
-          onInput: (e) => {
-            link.url = e.target.value;
-            syncLegacy(); queueSave();
-            clearTimeout(urlTimer);
-            urlTimer = setTimeout(refetch, 500);
-          },
-          onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(urlTimer); refetch(); } },
+          onInput: (e) => { link.url = e.target.value; syncLegacy(); queueSave(); },
         });
         linksWrap.appendChild(h('div', { className: 'bm-link-card' },
           h('div', { className: 'bm-link-card-hd' },
@@ -3148,8 +3118,6 @@ function V2PageView(pageId, onChange, onDeleted) {
               } }, '×')),
           h('div', { className: 'bm-url-row' },
             urlInput,
-            h('button', { className: 'bm-refresh', title: 'Refresh the preview',
-              onClick: () => { clearTimeout(urlTimer); refetch(); } }, icon('arrow-down-up')),
             h('a', { className: 'bm-open', href: link.url || '#', target: '_blank',
               title: 'Open in a new tab',
               onClick: (e) => { if (!link.url) e.preventDefault(); } }, 'Open')),
@@ -4507,8 +4475,10 @@ function ProjectsScreen() {
           ? h('span', { className: 'pj-status pj-status-' + status },
               h('span', { className: 'pj-status-dot' }), status)
           : null),
-      h('div', { className: 'project-card-desc' + (desc ? '' : ' dim') },
-        desc || 'No description yet.'),
+      // Clamped to two lines, so the whole thing lives in the tooltip —
+      // truncation the reader cannot get past is just missing text.
+      h('div', { className: 'project-card-desc' + (desc ? '' : ' dim'),
+        title: desc || '' }, desc || 'No description yet.'),
       h('div', { className: 'project-card-meta' },
         h('span', { 'data-pjcount': p.id },
           counts[p.id] != null
