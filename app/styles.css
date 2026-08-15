@@ -2880,14 +2880,6 @@ img.canvas-item-image {
 .project-card-hd { display: flex; align-items: center; gap: 8px; }
 .project-card-glyph { color: var(--k-proj); font-size: var(--fz-h2); line-height: 1; }
 .project-card-name { font-weight: 600; font-size: var(--fz-h3); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-card-status {
-  font-size: var(--fz-micro); letter-spacing: var(--track-label);
-  background: var(--bg); border: 1px solid var(--line); padding: 1px 6px; border-radius: 999px;
-  color: var(--muted);
-}
-.project-card-status-active   { color: var(--k-proj); border-color: var(--k-proj); }
-.project-card-status-shipped  { color: var(--accent); border-color: var(--accent); }
-.project-card-status-paused   { color: var(--signal-warn); }
 .project-card-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: var(--fz-micro); margin-top: 4px; }
 
 /* Project page body — header card, meta, README, inside section */
@@ -2899,14 +2891,6 @@ img.canvas-item-image {
 .pj-header { border-left: 3px solid var(--k-proj); }
 .pj-name { font-size: var(--fz-h1); font-weight: 600; }
 .pj-meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.pj-status, .pj-dates {
-  display: inline-block; font-size: var(--fz-micro);
-  background: var(--bg); border: 1px solid var(--line); padding: 1px 8px; border-radius: 999px;
-  color: var(--muted);
-}
-.pj-status-active   { color: var(--k-proj); border-color: var(--k-proj); }
-.pj-status-shipped  { color: var(--accent); border-color: var(--accent); }
-.pj-status-paused   { color: var(--signal-warn); }
 .pj-card-hd {
   font-size: var(--fz-micro); letter-spacing: var(--track-caps); text-transform: uppercase;
   color: var(--muted); margin-bottom: 8px;
@@ -4387,31 +4371,6 @@ code, pre, kbd, samp {
 
 .project-body { display: flex; flex-direction: column; gap: var(--sp-4); }
 
-/* Summary strip — replaces a card that only restated the page title. */
-.pj-summary {
-  display: flex; align-items: center; flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-3);
-  padding-bottom: var(--sp-1);
-}
-.pj-status {
-  display: inline-flex; align-items: center; gap: var(--sp-2);
-  padding: 3px var(--sp-2) 3px var(--sp-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--paper);
-  font-size: var(--fz-mini); font-weight: 500;
-  color: var(--muted);
-}
-.pj-status-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: currentColor; flex: none;
-}
-.pj-status-planning { color: var(--muted); }
-.pj-status-active   { color: var(--k-proj);      border-color: currentColor; }
-.pj-status-paused   { color: var(--signal-warn); border-color: currentColor; }
-.pj-status-shipped  { color: var(--fg);          border-color: currentColor; }
-.pj-status-archived { color: var(--faint); }
-.pj-dates { font-size: var(--fz-mini); color: var(--muted); }
 
 /* Cards */
 .pj-card {
@@ -4428,52 +4387,6 @@ code, pre, kbd, samp {
 }
 .pj-card-hd-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .pj-card-body { padding: var(--sp-4); }
-.pj-card-note {
-  margin: var(--sp-4) 0 0;
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--line);
-  font-size: var(--fz-mini);
-  color: var(--faint);
-  line-height: 1.55;
-}
-
-/* Description — rendered by default, textarea only while editing. */
-.pj-desc-editing .md-rendered { display: none; }
-.pj-desc-editing .md-edit-ta  { display: block; }
-
-/* Details — a label column and a control column, on the shared rhythm. */
-.pj-field-row {
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: var(--sp-3);
-  align-items: center;
-  padding: var(--sp-2) 0;
-}
-.pj-field-row + .pj-field-row { border-top: 1px solid var(--line-very-soft); }
-.pj-field-l {
-  font-size: var(--fz-micro);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  font-weight: 550;
-  color: var(--faint);
-}
-.pj-field {
-  appearance: none;
-  max-width: 260px; width: 100%;
-  padding: 6px var(--sp-2);
-  background: var(--input-bg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-input);
-  color: var(--fg);
-  font: inherit; font-size: var(--fz-mini);
-}
-.pj-field:disabled { color: var(--faint); background: var(--bg); }
-.pj-field-pair { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.pj-check {
-  display: inline-flex; align-items: center; gap: var(--sp-2);
-  font-size: var(--fz-mini); color: var(--muted); cursor: pointer;
-  white-space: nowrap;
-}
 
 /* ── The create picker ─────────────────────────────────────────────────
    Was six 10px glyph buttons on one line. Now the same shape as the global
@@ -5103,9 +5016,6 @@ input[type="checkbox"], input[type="radio"] {
    actually working on" and a flat grid answers it worst — a project shipped
    last year sat at the same weight as the live one. Order is Active first,
    Shipped and Archived last. */
-.projects-groups { display: flex; flex-direction: column; gap: var(--sp-3); }
-.pj-group-sec > .sect-hd { margin-top: var(--sp-5); }
-.pj-group-sec:first-child > .sect-hd { margin-top: var(--sp-4); }
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
@@ -5130,8 +5040,6 @@ input[type="checkbox"], input[type="radio"] {
 .project-card:hover { transform: translate3d(0,-2px,0); box-shadow: var(--shadow-raised); }
 .project-card:active { transform: none; transition-duration: 40ms; }
 /* Shipped and archived read back a step — present, clearly not current. */
-.project-card.pj-is-shipped, .project-card.pj-is-archived { opacity: 0.78; border-left-color: var(--i-2); }
-.project-card.pj-is-shipped:hover, .project-card.pj-is-archived:hover { opacity: 1; }
 
 .project-card-hd { display: flex; align-items: center; gap: var(--sp-2); }
 .project-card-glyph { display: inline-flex; color: var(--k-proj); font-size: var(--fz-h3); }

@@ -3574,39 +3574,23 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (!page.meta) page.meta = {};
     const wrap = h('div', { className: 'page-body project-body' });
 
-    const STATUSES = [
-      ['planning', 'Planning'], ['active', 'Active'], ['paused', 'Paused'],
-      ['shipped', 'Shipped'],   ['archived', 'Archived'],
-    ];
+    /* No status, and no dates.
 
-    // ── Summary strip ───────────────────────────────────────────────────
-    // The old header card restated the title, which the page header above it
-    // already shows in an editable field. What was actually useful in it was
-    // the status + timeline at a glance, so that is all that survives.
-    const summary = h('div', { className: 'pj-summary' });
-    function refreshSummary() {
-      clear(summary);
-      const meta = page.meta || {};
-      const label = (STATUSES.find((s) => s[0] === meta.status) || [])[1];
-      if (label) {
-        summary.appendChild(h('span', { className: 'pj-status pj-status-' + meta.status },
-          h('span', { className: 'pj-status-dot' }), label));
-      }
-      // Read as a sentence, not as "2026-07-02 → ?". A project with a start
-      // and no end is ongoing; that is the common case and it should say so.
-      if (meta.start_date || meta.end_date) {
-        const parts = [];
-        if (meta.start_date) parts.push('Started ' + meta.start_date);
-        parts.push(meta.end_date ? 'ended ' + meta.end_date : 'ongoing');
-        summary.appendChild(h('span', { className: 'pj-dates' }, parts.join(' · ')));
-      }
-      /* Nothing set means nothing to say. It used to print "No status or
-         dates set yet." as the first line of the page — a sentence whose only
-         content is the absence of a summary, sitting above the contents and
-         two cards above the form that sets it. */
-      summary.style.display = summary.children.length ? '' : 'none';
-    }
-    refreshSummary();
+       They were four controls for two facts, and neither fact ever reached
+       the disk. `updatePage` writes `status` out of `patch.status` while the
+       editor only ever sent `patch.meta.status`; `start_date` and `end_date`
+       are not in its write list at all; and `page(id)` surfaces canvas,
+       excalidraw and bookmark keys into `meta` and nothing else — so on
+       reload the form was blank again whatever you had typed into it. It has
+       never once worked, in either direction.
+
+       Making it work was the other option, and CONVENTION.md decides against
+       it: `end_date` is not part of the format, and the convention already
+       answers how state is marked — "Native tags are workflow ... tags:
+       [draft, current] mark state — status, lifecycle, review marks." A
+       project is a folder; the pages inside it carry their own tags. Whatever
+       is already in someone's frontmatter stays there, untouched and readable
+       in Obsidian. Nothing is lost that was ever gained. */
 
     /* ── The folder note ─────────────────────────────────────────────────
        A project is a folder. It has no description, no tags and no mentions —
@@ -3645,59 +3629,6 @@ function V2PageView(pageId, onChange, onDeleted) {
       }
     }
     paintNote();
-
-    // ── Details ─────────────────────────────────────────────────────────
-    // Was "Project meta": three always-editable inputs with YYYY-MM-DD
-    // placeholders and a "—" status, which read as an empty form rather than
-    // as facts about the project. Now: real date pickers (the native control
-    // already speaks YYYY-MM-DD, so nothing is converted), a status list with
-    // no meaningless blank, and a line saying where the values actually go —
-    // because writing them changes the file Obsidian and your agent read.
-    const endInput = h('input', {
-      // The "Ends" label points here; without the id it named nothing.
-      id: 'pj-end',
-      className: 'pj-field', type: 'date', value: String(page.meta.end_date || ''),
-      onInput: (e) => { page.meta.end_date = e.target.value || null; queueSave(); refreshSummary(); syncOngoing(); },
-    });
-    const ongoing = h('input', {
-      type: 'checkbox', checked: !page.meta.end_date,
-      onChange: (e) => {
-        if (e.target.checked) { page.meta.end_date = null; endInput.value = ''; }
-        endInput.disabled = e.target.checked;
-        queueSave(); refreshSummary();
-      },
-    });
-    function syncOngoing() {
-      ongoing.checked = !page.meta.end_date;
-      endInput.disabled = ongoing.checked;
-    }
-    const metaCard = h('div', { className: 'pj-card' },
-      h('div', { className: 'pj-card-hd' }, 'Details'),
-      h('div', { className: 'pj-card-body' },
-        h('div', { className: 'pj-field-row' },
-          h('label', { className: 'pj-field-l', for: 'pj-status' }, 'Status'),
-          h('select', {
-            id: 'pj-status', className: 'pj-field',
-            value: String(page.meta.status || ''),
-            onChange: (e) => { page.meta.status = e.target.value || null; queueSave(); refreshSummary(); },
-          },
-            h('option', { value: '' }, 'Not set'),
-            ...STATUSES.map(([v, l]) => h('option', { value: v }, l)))),
-        h('div', { className: 'pj-field-row' },
-          h('label', { className: 'pj-field-l', for: 'pj-start' }, 'Started'),
-          h('input', {
-            id: 'pj-start', className: 'pj-field', type: 'date',
-            value: String(page.meta.start_date || ''),
-            onInput: (e) => { page.meta.start_date = e.target.value || null; queueSave(); refreshSummary(); },
-          })),
-        h('div', { className: 'pj-field-row' },
-          h('label', { className: 'pj-field-l', for: 'pj-end' }, 'Ends'),
-          h('div', { className: 'pj-field-pair' },
-            endInput,
-            h('label', { className: 'pj-check' }, ongoing, h('span', null, 'Ongoing')))),
-        h('p', { className: 'pj-card-note' },
-          'These are written into the folder note’s frontmatter, so Obsidian and your agent read the same values.')));
-    syncOngoing();
 
     // ── Inside this project: grouped grid of pages that mention this id ─
     const insideCard = h('div', { className: 'pj-card pj-inside' });
@@ -3856,13 +3787,10 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     loadInside();
 
-    /* Contents first. A folder's answer to "what is this" is what is in it,
-       and everything else on this screen is a footnote to that — the status
-       strip above it, the dates and the folder note below. The old order put
-       a 220px description editor between you and the pages. */
-    wrap.appendChild(summary);
+    /* Contents, then the folder note. That is the whole page. A folder's
+       answer to "what is this" is what is in it, and the old order put a
+       220px description editor and a 160px details form in front of it. */
     wrap.appendChild(insideCard);
-    wrap.appendChild(metaCard);
     wrap.appendChild(noteWrap);
     return wrap;
   }
@@ -4890,28 +4818,12 @@ function ProjectsScreen() {
     render();
   }
 
-  /* Status order is the hierarchy. A project list exists to answer "what am I
-     actually working on", and a flat alphabetical grid answers it worst —
-     a shipped project from last year sat at the same weight as the live one. */
-  const PJ_STATUS = [
-    ['active',   'Active'],
-    ['planning', 'Planning'],
-    ['paused',   'Paused'],
-    ['',         'No status'],
-    ['shipped',  'Shipped'],
-    ['archived', 'Archived'],
-  ];
-
+  /* No status pill, no date line — same reason as the project page. Neither
+     value has ever round-tripped to disk, so both read a key that is always
+     absent: a card built around two facts it could never have. */
   function projectCard(p) {
-    const meta = p.meta || {};
-    const status = String(meta.status || '');
-    const when = (meta.start_date || meta.end_date)
-      ? (meta.start_date ? 'Started ' + meta.start_date : 'Ends ' + meta.end_date)
-        + (meta.start_date && !meta.end_date ? ' · ongoing' : '')
-        + (meta.end_date && meta.start_date ? ' · ended ' + meta.end_date : '')
-      : null;
     return h('div', {
-      className: 'project-card' + (status ? ' pj-is-' + status : ''),
+      className: 'project-card',
       onClick: (e) => {
         if (e.metaKey || e.ctrlKey) { newTab('page', p.id, { switchTo: true }); return; }
         const t = activeTab();
@@ -4921,11 +4833,7 @@ function ProjectsScreen() {
     },
       h('div', { className: 'project-card-hd' },
         h('span', { className: 'project-card-glyph' }, icon('folder')),
-        h('div', { className: 'project-card-name' }, p.title || p.slug || 'Untitled project'),
-        status
-          ? h('span', { className: 'pj-status pj-status-' + status },
-              h('span', { className: 'pj-status-dot' }), status)
-          : null),
+        h('div', { className: 'project-card-name' }, p.title || p.slug || 'Untitled project')),
       /* No description line. A project is a folder, and its card says what a
          folder card says: its name, what is in it, and when it last changed.
          It used to lead with two clamped lines of the folder note's prose —
@@ -4938,18 +4846,7 @@ function ProjectsScreen() {
           counts[p.id] != null
             ? (nOf(counts[p.id], 'page') + ' inside')
             : 'counting…'),
-        when ? h('span', { className: 'project-card-when' }, when) : null));
-  }
-
-  function projectGroups(items) {
-    const by = {};
-    items.forEach((p) => {
-      const k = String((p.meta || {}).status || '');
-      (by[k] = by[k] || []).push(p);
-    });
-    return PJ_STATUS
-      .filter(([k]) => by[k] && by[k].length)
-      .map(([k, label]) => ({ key: k, label, items: by[k] }));
+        p.updated ? h('span', { className: 'project-card-when' }, fmtDate(p.updated)) : null));
   }
 
   function layout() {
@@ -4971,15 +4868,16 @@ function ProjectsScreen() {
         : (projects.length === 0
             ? EmptyState('No projects yet.',
                 'Click "+ new project" to create one. Inside it you can attach topics, canvases — anything.')
-            : h('div', { className: 'projects-groups' },
-                projectGroups(projects).map((g, _i, all) => h('div', { className: 'pj-group-sec' },
-                  // With one group the header is noise — and a one-project
-                  // vault opened to a heading reading "No status", which
-                  // lands as nagging rather than as structure.
-                  all.length > 1 ? h('div', { className: 'sect-hd' },
-                    h('span', null, g.label),
-                    h('span', { className: 'sect-hd-c' }, String(g.items.length))) : null,
-                  h('div', { className: 'projects-grid' }, g.items.map(projectCard)))))),
+            /* One grid. This used to group by status — "Active", "Paused",
+               "Shipped" — which was the right idea for a project list and
+               impossible in practice: status never reached disk, so every
+               project landed in the same "No status" bucket and the heading
+               was suppressed to hide it. Most recent first, which the vault
+               does know. */
+            : h('div', { className: 'projects-grid' },
+                [...projects]
+                  .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
+                  .map(projectCard))),
     ]);
   }
 

@@ -529,10 +529,21 @@ container while calling itself a Topic is the label contradicting the chrome.
 Same rule as the bookmark, same bargain: the derived facet takes the pill, the
 stored kind keeps the count, Projects tallies separately.
 
-- **Details** uses native `type="date"` pickers — the control already speaks
-  `YYYY-MM-DD`, so nothing is converted — plus an *Ongoing* checkbox instead of
-  asking you to type the word. It says where the values go, because writing them
-  changes the file Obsidian and your agent read.
+**No status and no dates.** There was a Details card — status, started, ends,
+an *Ongoing* checkbox — and it had never once worked in either direction:
+`updatePage` writes `status` out of `patch.status` while the editor only ever
+sent `patch.meta.status`, `start_date` and `end_date` are not in its write list
+at all, and `page(id)` surfaces canvas, excalidraw and bookmark keys into `meta`
+and nothing else. Whatever you typed was blank again on reload. The Projects
+screen grouped by the same field, so every project fell into one "No status"
+bucket and the heading was suppressed to hide it.
+
+Making it work was the other option. CONVENTION.md decides against it:
+`end_date` is not part of the format, and the convention already answers how
+state is marked — *"Native tags are workflow … `tags: [draft, current]` mark
+state — status, lifecycle, review marks."* A project is a folder; the pages
+inside it carry their own tags. Anything already in a vault's frontmatter stays
+there, untouched and readable in Obsidian.
 - **The create picker is the same picker the global Create modal uses**: icon,
   name, and the one-line hint that already lives in `KIND_META` and used to be
   buried in a `title` tooltip. It was a strip of six 10px buttons prefixed with
