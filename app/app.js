@@ -3951,12 +3951,14 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (!p) throw new Error('no page with id ' + pageId);
     page = { ...p, tags: [...(p.tags || [])], mentions: [...(p.mentions || [])], meta: { ...(p.meta || {}) } };
     layout();
-    // Patch the breadcrumb in place once we have the real title — crumbsFor
-    // initially renders the id prefix because the page wasn't cached yet.
+    /* Rebuild the breadcrumb once we have the real page — crumbsFor runs
+       before the fetch resolves, so it had neither the title (it printed an
+       id prefix) nor, when the route you arrived from was not a container,
+       any way to know where the page actually lives. Both are answers only
+       the loaded page has. */
     try {
-      const last = document.querySelector('.crumb-row > b');
-      const title = page.title || page.slug;
-      if (last && title) last.textContent = title;
+      const row = document.querySelector('.crumb-row');
+      if (row) row.replaceWith(BreadcrumbRow(crumbsFor('page')));
     } catch (_) {}
   }).catch((e) => {
     // Distinguish "no such page" from "the renderer threw" — reporting a render
@@ -5071,9 +5073,27 @@ function _parentCrumbsFor(parent) {
     ];
   }
   if (parent === 'mention-tags') return [{ label: 'mention tags', route: 'mention-tags' }];
-  // Other parent routes (graph, about-me, write, tweet, backup, import…)
-  // get a single crumb back to themselves.
-  return [{ label: tabLabel({ route: parent }).toLowerCase(), route: parent }];
+  return null;
+}
+
+/* A breadcrumb is a containment claim, not a history trail. Only these routes
+   are places a page can be *in*; arriving from anywhere else — Settings, About
+   me, the dashboard — used to be reported as "settings / Bindery", which says
+   the page lives in Settings. */
+function routeContainsPages(r) {
+  // `tag:x` lists pages; `tags` lists tags. Only the first is somewhere a page
+  // can be. Same for `mention:` versus `mention-tags`.
+  return !!r && (r === 'pages' || r === 'projects' || r.startsWith('project:')
+    || r.startsWith('kind:') || r.startsWith('tag:') || r.startsWith('mention:'));
+}
+
+/* Where the page actually lives, for when the route you came from cannot say. */
+function containerRouteOf(p) {
+  if (!p) return 'pages';
+  if (/^projects\/[^/]+\//.test(String(p.path || ''))) return 'projects';
+  const m = metaForPage(p);
+  const k = (m === KIND_META.bookmark) ? 'bookmark' : p.kind;
+  return KIND_ORDER.includes(k) ? 'kind:' + k : 'pages';
 }
 
 function crumbsFor(route) {
@@ -5085,12 +5105,13 @@ function crumbsFor(route) {
   if (route === 'page') {
     // Build chain: ~ / <parent-chain> / <page title>
     const t = activeTab();
-    const parent = (t && t.parentRoute) || 'pages';
-    const chain = [home, ..._parentCrumbsFor(parent)];
     // Resolve the page title from cache when we have it; fall back to the
     // id prefix and let V2PageView patch the DOM once it loads.
     const cached = (typeof cacheGetPage === 'function' && app.openPageId)
       ? cacheGetPage(app.openPageId) : null;
+    const recorded = t && t.parentRoute;
+    const parent = routeContainsPages(recorded) ? recorded : containerRouteOf(cached);
+    const chain = [home, ...(_parentCrumbsFor(parent) || _parentCrumbsFor('pages'))];
     const title = (cached && (cached.title || cached.slug)) ||
                   (app.openPageId ? app.openPageId.slice(0, 8) + '…' : '?');
     chain.push(title);
