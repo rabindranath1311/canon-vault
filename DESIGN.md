@@ -420,8 +420,24 @@ below 1180px. They do want the width — they just cannot want it badly enough
 to give up the only route to managing the page. Width is recoverable by
 collapsing the sidebar; the actions were not recoverable by anything.
 
-The project note is the one exception, on purpose: its body *is* a full-width
-management surface, with its own details, description and contents.
+No exceptions any more. The project note used to keep `side = null` on the
+argument that its body was a full-width management surface — once that body
+became a plain contents list, `null` again meant "the one page with no
+delete, no export and no history", and the rule above closed it.
+
+The delete control says **"Delete page"**. It was "Forget this" — a euphemism
+its own confirm dialog immediately contradicted ("Delete this page?"), and a
+word nobody scanning for delete would find.
+
+## The header chips say their own names
+
+Tags and mentions share **one wrapping row** under the title, with no gutter
+labels. The chips announce their own type — a tag is a lime `#pill`, a mention
+carries a link glyph and squared corners — so the uppercase TAGS / MENTIONS
+labels only restated what the chips already said, and the two labelled rows
+they anchored were most of the header's height. A hairline seam separates the
+families when both are present; the add-affordances sit at the end of each
+group, quiet until used.
 
 ## The inspo wall names its tiles
 

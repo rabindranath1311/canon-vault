@@ -1504,24 +1504,45 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   border-color: var(--signal-alert);
 }
 .btn-danger:hover { background: var(--fg-strong); border-color: var(--fg-strong); }
+/* The create picker. Each card is one kind: the icon sits in a chip tinted
+   with the kind's own colour, so the seven choices scan as seven colours
+   before they scan as seven paragraphs — the left-border rail version read as
+   a settings list. Three columns, not four: the hint lines were wrapping to
+   four rows in the 4-up grid and the cards towered. */
 .kind-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3);
 }
 .kind-card {
   appearance: none;
-  display: flex; flex-direction: column; gap: 6px; text-align: left;
-  padding: 12px 12px 14px;
-  background: var(--paper-2);
-  border: 1px solid var(--line-soft);
-  border-left: 3px solid var(--k-c);
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--sp-2); text-align: left;
+  padding: var(--sp-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
   color: var(--fg); font: inherit;
-  cursor: default;
+  cursor: pointer;
+  transition: transform var(--dur-2) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              border-color var(--dur-1) var(--ease-out);
 }
-.kind-card:hover { background: var(--hover); border-color: var(--k-c); }
-.kind-card-g { font-size: var(--fz-h1); line-height: 1; color: var(--k-c); }
+.kind-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+  border-color: color-mix(in srgb, var(--k-c) 45%, var(--line));
+}
+.kind-card:active { transform: translateY(0); transition-duration: 40ms; }
+.kind-card-g {
+  display: grid; place-items: center;
+  width: 34px; height: 34px;
+  border-radius: var(--radius-badge);
+  color: var(--k-c);
+  background: color-mix(in srgb, var(--k-c) 11%, transparent);
+}
+.kind-card-g svg, .kind-card-g .lucide svg { width: 17px; height: 17px; }
 .kind-card-l {
-  font-size: var(--fz-mini); font-weight: 500;
-  letter-spacing: var(--track-label);
+  font-size: var(--fz-h3); font-weight: 600;
+  letter-spacing: var(--track-title);
 }
 .kind-card-h { font-size: var(--fz-micro); color: var(--muted); line-height: 1.5; }
 
@@ -1590,17 +1611,17 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 }
 .page-meta-del:hover { color: var(--signal-alert); }
 
+/* One wrapping row. It was two stacked rows, each with a fixed uppercase
+   gutter label — the chips already say their own type, so the labels only
+   spent height restating it. */
 .page-chips-row {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px var(--sp-2);
 }
-.chip-strip {
-  display: flex; align-items: center; gap: 6px;
-  flex-wrap: wrap;
-}
-.chip-strip-l {
-  font-size: var(--fz-micro); color: var(--faint);
-  letter-spacing: var(--track-caps); text-transform: uppercase;
-  min-width: 60px;
+.chips-sep {
+  width: 1px; height: 14px; flex: none;
+  background: var(--line);
+  margin: 0 var(--sp-1);
 }
 .chip-input {
   appearance: none; border: 0; background: transparent;
@@ -1841,11 +1862,6 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   font-size: var(--fz-h3); cursor: pointer; padding: 2px 8px; border-radius: 6px;
 }
 .bento-del:hover { color: var(--fg); background: var(--paper-2); }
-.bento-src {
-  font-size: var(--fz-micro); color: var(--muted); text-decoration: none;
-  padding: 0 8px 8px;
-}
-.bento-src:hover { color: var(--fg); }
 .bento-empty {
   border: 1px dashed var(--line); border-radius: 10px;
   padding: 26px; text-align: center; color: var(--muted); font-size: var(--fz-body);
@@ -3253,7 +3269,7 @@ img.canvas-item-image {
   font-size: 0.92em;
   white-space: nowrap;
 }
-.chip-strip .hashtag {
+.page-chips-row .hashtag {
   font-size: var(--fz-micro);
   padding: 1px 6px;
 }
@@ -3579,7 +3595,6 @@ img.canvas-item-image {
 .log-head,
 .pages-th,
 .recent-th,
-.chip-strip-l,
 .am-sect-hd,
 .obs-members-l,
 .page-ancestors,
@@ -4325,8 +4340,6 @@ code, pre, kbd, samp {
 }
 .page-meta-side { gap: var(--sp-3); font-size: var(--fz-mini); }
 .page-meta-del, .page-meta-obs { font-size: var(--fz-mini); }
-.chip-strip { gap: var(--sp-2); }
-.chip-strip-l { min-width: 72px; }
 
 /* The title competes with the timestamp + obsidian + delete cluster for a
    column that is only ~500px once the chat rail is out. The title wins and
@@ -5188,18 +5201,33 @@ body.cv-settled .screen, body.cv-settled .page {
 .bento-mode.on { background: var(--accent); color: var(--cta-fg); border-color: var(--accent); }
 .bento-mode.on .lucide { color: currentColor; }
 
+/* The card's body: image full-bleed above, everything textual inside this
+   padded zone. The caption used to carry top-padding only, so it sat flush
+   against the card's left border and the tags against its bottom edge. */
+.bento-body {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+.bento-body-ft {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-2);
+}
 .bento-cap-view {
   font-size: var(--fz-mini); color: var(--fg);
-  padding: var(--sp-2) 0 0; cursor: text; line-height: 1.45;
+  cursor: text; line-height: 1.45;
   border-radius: 3px;
 }
 .bento-cap-view.is-empty { color: var(--faint); font-style: italic; }
 .bento-cap-view:hover { color: var(--fg); background: var(--hover); }
-.bento-tags-view { display: flex; flex-wrap: wrap; gap: 4px; padding-top: var(--sp-2); }
+/* A caption that is only an invitation surfaces on hover, not always — a wall
+   of "Add a caption" placeholders is noise on a surface made for looking. */
+.bento-card .bento-cap-view.is-empty { opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
+.bento-card:hover .bento-cap-view.is-empty,
+.bento-card:focus-within .bento-cap-view.is-empty { opacity: 1; }
+.bento-tags-view { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .bento-tags-view .tag-chip { cursor: pointer; }
 .bento-src {
-  display: inline-flex; align-items: center; gap: 5px;
-  margin-top: var(--sp-2);
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
   font-size: var(--fz-micro); color: var(--muted); text-decoration: none;
 }
 .bento-src:hover { color: var(--fg); }
@@ -5362,12 +5390,13 @@ body.cv-settled .screen, body.cv-settled .page {
 .page-grid.inspo-grid,
 .page-grid.bookmark-grid,
 .page-grid.snippet-grid,
+.page-grid.project-grid,
 .page-grid.md-grid { grid-template-columns: minmax(0, 1fr) 300px; }
 .page-grid.canvas-grid, .page-grid.inspo-grid { grid-template-columns: minmax(0, 1fr) 272px; }
 .page-grid.no-chat { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 1180px) {
   .page-grid.canvas-grid, .page-grid.inspo-grid,
-  .page-grid.bookmark-grid, .page-grid.snippet-grid,
+  .page-grid.bookmark-grid, .page-grid.snippet-grid, .page-grid.project-grid,
   .page-grid.md-grid, .page-grid.topic-grid { grid-template-columns: minmax(0, 1fr); }
   .page-grid .topic-side { display: none; }
 }
@@ -5982,3 +6011,56 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   .welcome { animation: none; }
   .welcome-go { transition: none; }
 }
+
+/* ── About me: the résumé, folded ──────────────────────────────────────
+   Experience/skills/education/highlights are agent-useful and person-boring:
+   one closed disclosure instead of four open sections, so the page reads as
+   a person with a background rather than a CV with a personality quiz
+   stapled to the top. */
+.am-cv { margin-top: var(--sp-6); }
+.am-cv-s {
+  cursor: pointer; list-style: none;
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fz-mini); color: var(--muted);
+  padding: var(--sp-2) 0;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.am-cv-s::-webkit-details-marker { display: none; }
+.am-cv-s:hover { color: var(--fg); }
+.am-cv-chev { display: inline-flex; width: 14px; height: 14px; color: var(--faint); }
+.am-cv-chev svg { width: 14px; height: 14px; transition: transform var(--dur-2) var(--ease-out); }
+.am-cv[open] .am-cv-chev svg { transform: rotate(90deg); }
+.am-cv-hint { color: var(--faint); }
+.am-cv-body { padding-top: var(--sp-2); }
+@media (prefers-reduced-motion: reduce) { .am-cv-chev svg { transition: none; } }
+
+
+/* Project card: the folder, legible from outside. Composition chips in the
+   header — which kinds, how many — then a glimpse of the first pages. A
+   name, a count and a timestamp distinguishes two projects exactly as well
+   as two unlabelled boxes did. */
+.project-card-comp { display: inline-flex; gap: var(--sp-2); margin-left: auto; flex: none; }
+.project-card-comp-k {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: var(--fz-micro); color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.project-card-comp-k .lucide { color: var(--k-c, var(--muted)); }
+.project-card-comp-k svg { width: 12px; height: 12px; }
+.project-card-peek {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.project-card-peek-row {
+  font-size: var(--fz-mini); color: var(--fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-left: var(--sp-3); position: relative;
+}
+.project-card-peek-row::before {
+  content: ''; position: absolute; left: 2px; top: 0.62em;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--i-2);
+}
+.project-card-peek-more { color: var(--faint); }
+.project-card-peek-more::before { background: transparent; }
+.project-card-peek-empty { font-size: var(--fz-mini); color: var(--faint); font-style: italic; }

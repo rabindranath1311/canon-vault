@@ -324,6 +324,12 @@ export class Data {
     // `bookmark` is a view, not a storage kind: a note with a url. The file
     // still says `kind: note`, so Obsidian and the convention see nothing new.
     if (kind === "bookmark") items = items.filter((e) => e.kind === "note" && e.url != null);
+    /* Board and Drawing are one stored kind over two file formats with two
+       different owners, and the nav lists them as two facets. Unlike the
+       bookmark facet they are DISJOINT — the nav row says "Board", and a
+       drawing counted under it is the label lying. */
+    else if (kind === "drawing") items = items.filter((e) => e.kind === "canvas" && isExcalidrawPath(e.path));
+    else if (kind === "canvas") items = items.filter((e) => e.kind === "canvas" && !isExcalidrawPath(e.path));
     else if (kind) items = items.filter((e) => e.kind === kind);
     if (tag) items = items.filter((e) => (e.tags || []).includes(tag));
     if (mention) {
@@ -408,9 +414,10 @@ export class Data {
   counts() {
     const counts = {};
     for (const e of this.v.list()) {
-      counts[e.kind] = (counts[e.kind] || 0) + 1;
-      // The bookmark view tallies separately; the note count keeps including
-      // them, since on disk that is what they are.
+      // Board / Drawing split disjointly (see the pages() filter above);
+      // bookmark stays inclusive — on disk a bookmark IS a note.
+      const k = e.kind === "canvas" && isExcalidrawPath(e.path) ? "drawing" : e.kind;
+      counts[k] = (counts[k] || 0) + 1;
       if (e.kind === "note" && e.url != null) counts.bookmark = (counts.bookmark || 0) + 1;
     }
     return { counts };
@@ -659,7 +666,7 @@ export class Data {
          showing two of them. Both were true; only one of them was the answer
          to the question the label asks. */
       const seen = new Set(rest.map((e) => e.id));
-      let mentioned = 0;
+      const mentioners = [];
       if (note) {
         const title = String(note.title || "").toLowerCase();
         const idl = String(note.id || "").toLowerCase();
@@ -668,9 +675,14 @@ export class Data {
           if ((e.mentions || []).some((m) => {
             const ml = String(m).toLowerCase();
             return ml === idl || (title && ml === title);
-          })) mentioned++;
+          })) mentioners.push(e);
         }
       }
+      // One definition of "inside", used by the count, the card's preview and
+      // its composition alike: folder members plus the pages that mention the
+      // project. `members` alone was folder-only, so a card could say "Empty"
+      // one line above "2 pages inside".
+      const inside = [...rest, ...mentioners];
       items.push({
         id: note ? note.id : `project:${name}`,
         name,
@@ -679,8 +691,9 @@ export class Data {
         notePath: note ? note.path : null,
         excerpt: note ? note.excerpt || "" : "",
         updated: members.map((e) => e.updated).filter(Boolean).sort().pop() || null,
-        memberCount: rest.length + mentioned,
+        memberCount: inside.length,
         members: rest.map((e) => pageOut(e)),
+        inside: inside.map((e) => pageOut(e)),
       });
     }
     items.sort((a, b) => String(a.title).localeCompare(String(b.title)));

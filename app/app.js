@@ -697,6 +697,10 @@ const DRAWING_META = {
   hint: 'An Excalidraw drawing. Edited here and in Obsidian — this app writes it.',
 };
 function isDrawingPath(path) { return /\.excalidraw\.md$/i.test(String(path || '')); }
+/* Registered under its facet name so every `KIND_META[k]` lookup — the nav,
+   tab labels, kind cards — resolves the Drawing facet without a special case.
+   Same OBJECT as DRAWING_META, so identity comparisons keep working. */
+KIND_META.drawing = DRAWING_META;
 /** The chrome for a page, splitting `canvas` by file format. */
 function metaForPage(p) {
   /* `projects/X/X.md` is a folder note. Whatever `kind:` it carries on disk,
@@ -725,7 +729,7 @@ function metaForPage(p) {
 // SPEC §5: 13 kinds collapsed to 4. The old markdown/bookmark/snippet entries
 // stay in KIND_META only as a fallback for a stranger's vault; they are not
 // offered anywhere, because `note` chrome is decided by frontmatter (§5).
-const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'inspo'];
+const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'drawing', 'inspo'];
 // Work-mode (design architecture) kinds. Same store + same mention/tag graph
 // as the personal kinds above; only the surface (nav, home, create) differs.
 
@@ -1483,7 +1487,7 @@ function PageHeader(title, meta, sub, right) {
    whichever door they came through. So: every creatable thing is here,
    including Project and Drawing, and Project asks for its name inline
    instead of handing off to the browser. */
-const CREATABLE_KINDS = [...KIND_ORDER, 'drawing', 'project'];
+const CREATABLE_KINDS = [...KIND_ORDER, 'project'];
 function creatableMeta(k) {
   if (k === 'drawing') return DRAWING_META;
   if (k === 'project') return {
@@ -3317,7 +3321,14 @@ function V2PageView(pageId, onChange, onDeleted) {
       }
 
       if (!editing) {
-        // ── View ──────────────────────────────────────────────────────
+        /* ── View ──────────────────────────────────────────────────────
+           One card, two zones: the image full-bleed on top, and below it a
+           BODY that owns the padding. The caption, tags and source used to
+           hang directly off the card with top-padding only, so text sat
+           flush against the left border and the tags against the bottom
+           edge — each card read as an image with debris under it rather
+           than as one built thing. A card with nothing to say below the
+           image gets no body at all, so a pure image stays a pure image. */
         const cap = h('div', {
           className: 'bento-cap-view' + (item.caption ? '' : ' is-empty'),
           title: 'Click to edit the caption',
@@ -3333,21 +3344,26 @@ function V2PageView(pageId, onChange, onDeleted) {
             inp.focus(); inp.select();
           },
         }, item.caption || 'Add a caption');
-        el.appendChild(cap);
 
-        if ((item.tags || []).length) {
-          el.appendChild(h('div', { className: 'bento-tags-view' },
-            item.tags.map((t) => h('button', {
-              className: 'tag-chip tag-chip-btn',
-              onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
-            }, t))));
+        const body = h('div', { className: 'bento-body' }, cap);
+        if ((item.tags || []).length || (item.url && item.image)) {
+          body.appendChild(h('div', { className: 'bento-body-ft' },
+            (item.tags || []).length
+              ? h('div', { className: 'bento-tags-view' },
+                  item.tags.map((t) => h('button', {
+                    className: 'tag-chip tag-chip-btn',
+                    onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
+                  }, t)))
+              : h('span'),
+            (item.url && item.image)
+              ? h('a', {
+                  className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
+                  title: item.url,
+                  onClick: (e) => e.stopPropagation(),
+                }, icon('link-2'), 'Source')
+              : null));
         }
-        if (item.url && item.image) {
-          el.appendChild(h('a', {
-            className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
-            onClick: (e) => e.stopPropagation(),
-          }, icon('link-2'), 'Source'));
-        }
+        el.appendChild(body);
         return el;
       }
 
@@ -3682,7 +3698,7 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     // Every kind the vault knows, plus a drawing — the whole point of a
     // project is holding them all in one folder.
-    const CREATABLE = [...KIND_ORDER, 'drawing'];
+    const CREATABLE = [...KIND_ORDER];
     const metaForKind = (k) => (k === 'drawing' ? DRAWING_META : (KIND_META[k] || {}));
 
     async function createInside(k) {
@@ -3957,7 +3973,10 @@ function V2PageView(pageId, onChange, onDeleted) {
                 }
               },
             });
-          } }, icon('trash-2'), 'Forget this'))));
+          /* Says what it does. It was "Forget this" — a euphemism its own
+             confirm dialog immediately contradicted ("Delete this page?"),
+             and the word nobody scanning for delete would find. */
+          } }, icon('trash-2'), 'Delete page'))));
 
     return aside;
 
@@ -4075,68 +4094,71 @@ function V2PageView(pageId, onChange, onDeleted) {
              one slip away from "obsidian ↗". One of them had to go, and it
              was not going to be the one in Actions. */
         )),
+      /* One row, no gutter labels. The chips announce their own type — a tag
+         is a lime #pill, a mention carries a link glyph and squared corners —
+         so the uppercase TAGS / MENTIONS labels only restated what the chips
+         already say, and the two labelled rows they anchored were most of the
+         header's height. The add-affordances sit at the end of their group,
+         quiet until used. */
       isProjectNote ? null : h('div', { className: 'page-chips-row' },
-        h('div', { className: 'chip-strip' },
-          h('span', { className: 'chip-strip-l' }, 'tags'),
-          page.tags.map((t, i) => h('span', {
-            className: 'tag-chip rm tag-chip-click',
-            title: 'Click to see all pages with #' + t,
-            onClick: (e) => {
-              if (e.target.tagName === 'BUTTON') return;  // remove btn handled separately
-              setRoute('tag:' + t);
-            },
+        page.tags.map((t, i) => h('span', {
+          className: 'tag-chip rm tag-chip-click',
+          title: 'Click to see all pages with #' + t,
+          onClick: (e) => {
+            if (e.target.tagName === 'BUTTON') return;  // remove btn handled separately
+            setRoute('tag:' + t);
           },
-            h('span', { className: 'tag-chip-t' }, t),
-            h('button', { title: 'Remove this tag', onClick: (e) => {
+        },
+          h('span', { className: 'tag-chip-t' }, t),
+          h('button', { title: 'Remove this tag', 'aria-label': 'Remove tag ' + t,
+            onClick: (e) => {
               e.stopPropagation();
               page.tags.splice(i, 1); queueSave(); layout();
             } }, '×'))),
-          AutocompleteInput({
-            placeholder: '+ tag',
-            allowCreate: true,
-            fetchSuggestions: (q) => searchTags(q, page.tags),
-            renderItem: (it) => [
-              h('span', { className: 'ac-row-l' }, it.tag),
-              h('span', { className: 'ac-row-r' }, String(it.count)),
-            ],
-            onPick: ({ existing, created }) => {
-              const val = existing ? existing.tag : created;
-              if (!val) return;
-              page.tags.push(val);
-              invalidateTagsCache();
-              queueSave(); layout();
-            },
-          })),
-        h('div', { className: 'chip-strip' },
-          h('span', { className: 'chip-strip-l' }, 'mentions'),
-          // A mention is a LINK to another page; a tag is a label you apply.
-          // They read as two different objects now — this one carries a link
-          // glyph and squared corners, the tag is a rounded #pill.
-          // A mention chip means "a link to another page". Two things were
-          // getting in that are neither: the page's OWN path (a board
-          // mentioning itself) and asset paths like attachments/foo.png,
-          // which rendered as five identical truncated chips. Both are
-          // filtered for display only — the underlying array is untouched,
-          // so nothing is dropped from the file.
-          visibleMentions().map(({ mn, i }) => h('span', { className: 'mention-chip rm' },
-            h('span', { className: 'mention-chip-i' }, icon('link-2')),
-            h('span', { className: 'mention-chip-t' }, mn),
-            h('button', { title: 'Remove this link',
-              onClick: () => { page.mentions.splice(i, 1); queueSave(); layout(); } }, '×'))),
-          AutocompleteInput({
-            placeholder: '+ mention (search title…)',
-            allowCreate: false,
-            fetchSuggestions: (q) => searchMentions(q, page.mentions),
-            renderItem: (it) => [
-              h('span', { className: 'ac-row-l' }, it.title || '(untitled)'),
-              h('span', { className: 'ac-row-r' }, it.kind),
-            ],
-            onPick: ({ existing }) => {
-              if (!existing) return;
-              page.mentions.push(existing.id);  // canonical ref by id
-              queueSave(); layout();
-            },
-          })),
+        AutocompleteInput({
+          placeholder: '+ tag',
+          allowCreate: true,
+          fetchSuggestions: (q) => searchTags(q, page.tags),
+          renderItem: (it) => [
+            h('span', { className: 'ac-row-l' }, it.tag),
+            h('span', { className: 'ac-row-r' }, String(it.count)),
+          ],
+          onPick: ({ existing, created }) => {
+            const val = existing ? existing.tag : created;
+            if (!val) return;
+            page.tags.push(val);
+            invalidateTagsCache();
+            queueSave(); layout();
+          },
+        }),
+        /* The seam between the two families — present only when both are. */
+        (page.tags.length && visibleMentions().length)
+          ? h('span', { className: 'chips-sep', 'aria-hidden': 'true' }) : null,
+        // A mention chip means "a link to another page". Two things were
+        // getting in that are neither: the page's OWN path (a board
+        // mentioning itself) and asset paths like attachments/foo.png,
+        // which rendered as five identical truncated chips. Both are
+        // filtered for display only — the underlying array is untouched,
+        // so nothing is dropped from the file.
+        visibleMentions().map(({ mn, i }) => h('span', { className: 'mention-chip rm' },
+          h('span', { className: 'mention-chip-i' }, icon('link-2')),
+          h('span', { className: 'mention-chip-t' }, mn),
+          h('button', { title: 'Remove this link', 'aria-label': 'Remove link ' + mn,
+            onClick: () => { page.mentions.splice(i, 1); queueSave(); layout(); } }, '×'))),
+        AutocompleteInput({
+          placeholder: '+ link a page',
+          allowCreate: false,
+          fetchSuggestions: (q) => searchMentions(q, page.mentions),
+          renderItem: (it) => [
+            h('span', { className: 'ac-row-l' }, it.title || '(untitled)'),
+            h('span', { className: 'ac-row-r' }, it.kind),
+          ],
+          onPick: ({ existing }) => {
+            if (!existing) return;
+            page.mentions.push(existing.id);  // canonical ref by id
+            queueSave(); layout();
+          },
+        }),
         /* An "in content" strip used to list every #hashtag found in the
            body. It restated information the reader can already see — the
            tags are right there in the prose, styled as tags — and on an
@@ -4166,7 +4188,12 @@ function V2PageView(pageId, onChange, onDeleted) {
     // which made a container look like a note.
     if (isProjectNote) {
       body = renderProjectBody(_pjPath[1]);
-      side = null;
+      /* The rail too. `side = null` was rationalised when the body was a
+         full-width management surface with its own details card; the body is
+         a contents list now, and null meant a project was the one page with
+         no delete, no export and no version history — the exact hole the
+         "every kind carries the rail" rule exists to close. */
+      side = renderTopicSide();
       extraClass = ' project-grid';
     } else if (page.kind === 'canvas') {
       // One kind, two file formats, and the split decides who owns the scene:
@@ -4530,48 +4557,70 @@ function AboutMeScreen() {
             ['mood_baseline', 'Mood baseline', 'text'],
           ])),
 
-        // ── Resume sections (stored in about_me.extras) ──────────────────
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Experience'),
-        entryList('experience', [
-          ['role',     'Role',     {}],
-          ['org',      'Organization', {}],
-          ['start',    'Start', { placeholder: '2023' }],
-          ['end',      'End', { placeholder: 'present' }],
-          ['location', 'Location', {}],
-          ['summary',  'Summary', { long: true, placeholder: 'What you shipped, and what it changed' }],
-        ], 'experience'),
+        /* ── In your own words — before the résumé, because this page is
+           about a person and prose is how a person actually sounds. The
+           field sat at the very bottom, under four CV sections. */
+        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'In your own words'),
+        h('textarea', {
+          className: 'page-body-ta',
+          placeholder: 'Whatever matters that no field asks for — what you care about, what you are avoiding, what a good day looks like.',
+          value: me.body,
+          onInput: (e) => { me.body = e.target.value; queueSave(); },
+        }),
 
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Skills'),
-        entryList('skills', [
-          ['name',  'Skill name', {}],
-          ['area',  'Area (Code / Design / Product / …)', {}],
-          ['level', 'Level (expert / proficient / learning)', {}],
-        ], 'skill'),
-
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Education'),
-        entryList('education', [
-          ['school', 'School / institution', {}],
-          ['degree', 'Degree', {}],
-          ['field',  'Field', {}],
-          ['start',  'Start', {}],
-          ['end',    'End', {}],
-        ], 'education'),
-
-        h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Highlights'),
-        highlightList(),
+        /* ── Background, folded ─────────────────────────────────────────
+           Experience, skills, education and highlights are résumé material:
+           useful to an agent writing on your behalf, but they were four
+           always-open sections that made the page read as a CV with a
+           personality quiz stapled to the top. One closed disclosure now —
+           the data is all still there and still written to the same file,
+           it just stops being the page's centre of gravity. */
+        (() => {
+          const n = (me.experience || []).length + (me.skills || []).length
+                  + (me.education || []).length + (me.highlights || []).length;
+          const det = h('details', { className: 'am-cv' },
+            h('summary', { className: 'am-cv-s' },
+              h('span', { className: 'am-cv-chev' }, icon('chevron-right')),
+              'Background',
+              h('span', { className: 'am-cv-hint' },
+                n ? nOf(n, 'entry') + ' — experience, skills, education, highlights'
+                  : 'experience, skills, education, highlights')),
+            h('div', { className: 'am-cv-body' },
+              h('div', { className: 'sect-hd' }, 'Experience'),
+              entryList('experience', [
+                ['role',     'Role',     {}],
+                ['org',      'Organization', {}],
+                ['start',    'Start', { placeholder: '2023' }],
+                ['end',      'End', { placeholder: 'present' }],
+                ['location', 'Location', {}],
+                ['summary',  'Summary', { long: true, placeholder: 'What you shipped, and what it changed' }],
+              ], 'experience'),
+              h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Skills'),
+              entryList('skills', [
+                ['name',  'Skill name', {}],
+                ['area',  'Area (Code / Design / Product / \u2026)', {}],
+                ['level', 'Level (expert / proficient / learning)', {}],
+              ], 'skill'),
+              h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Education'),
+              entryList('education', [
+                ['school', 'School / institution', {}],
+                ['degree', 'Degree', {}],
+                ['field',  'Field', {}],
+                ['start',  'Start', {}],
+                ['end',    'End', {}],
+              ], 'education'),
+              h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Highlights'),
+              highlightList()));
+          return det;
+        })(),
 
         /* "download resume.md" and "critique with AI" both threw the moment
-           you pressed them — the export went through gone() and the critique
+           you pressed them \u2014 the export went through gone() and the critique
            raised before its first await. Two more buttons that existed only
            to fail, the same shape as the AI activity log. About me is a file
            in your vault; export it with the page Actions like anything else. */
+        null)));
 
-        h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Notes'),
-        h('textarea', {
-          className: 'page-body-ta', placeholder: 'Anything that does not fit a field above.',
-          value: me.body,
-          onInput: (e) => { me.body = e.target.value; queueSave(); },
-        }))));
   };
 
   SB.data().aboutMe().then((d) => { me = d; layout(); }).catch(() => {
@@ -4818,10 +4867,23 @@ function ProjectsScreen() {
     render();
   }
 
-  /* No status pill, no date line — same reason as the project page. Neither
-     value has ever round-tripped to disk, so both read a key that is always
-     absent: a card built around two facts it could never have. */
+  /* The card shows the folder the way the folder shows itself: what is
+     inside, by kind, and a glimpse of the actual pages. It was a name, a
+     count and a timestamp — which distinguishes two projects exactly as well
+     as two unlabelled boxes. (No status pill and no date line: neither value
+     ever round-tripped to disk.) */
   function projectCard(p) {
+    const members = p.inside || p.members || [];
+    // Composition, in nav order: one glyph+count per kind present.
+    const byKind = {};
+    members.forEach((m) => {
+      const meta = metaForPage(m);
+      const key = meta === KIND_META.bookmark ? 'bookmark'
+                : meta === KIND_META.drawing ? 'drawing' : m.kind;
+      byKind[key] = (byKind[key] || 0) + 1;
+    });
+    const comp = KIND_ORDER.filter((k) => byKind[k]);
+
     return h('div', {
       className: 'project-card',
       onClick: (e) => {
@@ -4833,19 +4895,32 @@ function ProjectsScreen() {
     },
       h('div', { className: 'project-card-hd' },
         h('span', { className: 'project-card-glyph' }, icon('folder')),
-        h('div', { className: 'project-card-name' }, p.title || p.slug || 'Untitled project')),
-      /* No description line. A project is a folder, and its card says what a
-         folder card says: its name, what is in it, and when it last changed.
-         It used to lead with two clamped lines of the folder note's prose —
-         and where there was none, with "No description yet.", which is a
-         prompt to write something this screen does not want. The folder
-         note is still on the project page, where it is a footnote to the
-         contents rather than the identity of the thing. */
+        h('div', { className: 'project-card-name' }, p.title || p.slug || 'Untitled project'),
+        comp.length
+          ? h('span', { className: 'project-card-comp' },
+              comp.map((k) => h('span', {
+                className: 'project-card-comp-k',
+                style: { '--k-c': (KIND_META[k] || {}).color || 'var(--muted)' },
+                title: nOf(byKind[k], (KIND_META[k] || {}).label || k,
+                           ((KIND_META[k] || {}).label || k) + 's'),
+              },
+                icon((KIND_META[k] || {}).icon || 'file-text'),
+                String(byKind[k]))))
+          : null),
+      members.length
+        ? h('ul', { className: 'project-card-peek' },
+            members.slice(0, 3).map((m) => h('li', { className: 'project-card-peek-row' },
+              h('span', { className: 'project-card-peek-t' }, m.title || m.slug || '(untitled)'))),
+            members.length > 3
+              ? h('li', { className: 'project-card-peek-row project-card-peek-more' },
+                  '+ ' + nOf(members.length - 3, 'more page', 'more pages'))
+              : null)
+        : h('div', { className: 'project-card-peek-empty' }, 'Empty — open it to add pages.'),
       h('div', { className: 'project-card-meta' },
         h('span', { 'data-pjcount': p.id },
           counts[p.id] != null
             ? (nOf(counts[p.id], 'page') + ' inside')
-            : 'counting…'),
+            : 'counting\u2026'),
         p.updated ? h('span', { className: 'project-card-when' }, fmtDate(p.updated)) : null));
   }
 
@@ -5345,7 +5420,9 @@ function containerRouteOf(p) {
   if (!p) return 'pages';
   if (/^projects\/[^/]+\//.test(String(p.path || ''))) return 'projects';
   const m = metaForPage(p);
-  const k = (m === KIND_META.bookmark) ? 'bookmark' : p.kind;
+  const k = m === KIND_META.bookmark ? 'bookmark'
+          : m === KIND_META.drawing ? 'drawing'
+          : p.kind;
   return KIND_ORDER.includes(k) ? 'kind:' + k : 'pages';
 }
 

@@ -59,8 +59,11 @@ What the code needs to know:
   is never moved, and an inbound link to the old name is kept alive as an alias
   rather than by rewriting somebody else's file.
 - `KIND_ORDER` in [app/app.js](app/app.js) is the *by-kind nav*, not the set of
-  kinds: it carries `bookmark` as a derived facet (`data.js` filters
-  `kind === "note" && url != null`). The four real kinds are the ones above.
+  kinds: it carries `bookmark` and `drawing` as derived facets. Bookmark is
+  inclusive (`kind === "note" && url != null` — the note count keeps them,
+  since on disk that is what they are); Board/Drawing are **disjoint** (split
+  on `isExcalidrawPath`), because the nav row says "Board" and a drawing
+  counted under it is the label lying. The four real kinds are the ones above.
 - `note` chrome is chosen from frontmatter, not kind — which is why bookmark,
   snippet and markdown collapsed into one.
 - `canvas` is **one kind over two formats with two different owners**, so the
