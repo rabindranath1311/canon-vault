@@ -63,12 +63,19 @@ What the code needs to know:
   chrome is chosen from the path: `metaForPage` in [app/app.js](app/app.js)
   labels a `.excalidraw.md` "Drawing" and a `.canvas` "Board". That label is the
   only thing telling a user whether their edits will be kept, so it is decided
-  in one place and never re-derived at a call site.
+  in one place and never re-derived at a call site. **`metaForPage` takes the
+  page, not its `kind`** — it also resolves the bookmark facet, reading `url`
+  both hoisted (index entries) and under `meta` (full pages). Anything showing
+  a kind asks it; `KIND_META[p.kind]` at a call site is the bug.
   - **Board** → `renderCanvasBody`, read-only: pan, pinch, zoom, fit, and the
     nodes and edges from the `.canvas`. No handler in it can write. The editing
     half was deleted, not disabled — see the note on the function.
   - **Drawing** → `renderExcalidrawBody`, the vendored Excalidraw editor,
     dynamically imported so a vault with no drawings never loads its ~8MB.
+    `window.EXCALIDRAW_ASSET_PATH` must be an **absolute** URL — the bundle
+    feeds it to `new URL(file, base)`, and a relative base throws once per text
+    element, so every drawing renders its shapes and none of its words. Derive
+    it from `document.baseURI`; never hardcode an origin.
   - **Inspo is not a canvas.** It shares CSS class names and nothing else: a
     bento wall whose order lives in the markdown body, with no geometry at all.
 - `CONVENTION_VERSION` in `app/vault/scaffold.js` is written to `.canon-vault`
@@ -110,6 +117,10 @@ brain/               the rules and the agent prompts — the non-code half
   SETUP-PROMPT.md    one-shot vault bootstrap for any agent
   RECIPES.md         ongoing agent tasks: ingest, lint, dedupe, merge
 demo/                the "Try a demo vault" content — INVENTED, never real
+                     it must cover every kind: it is the front door, and a
+                     kind missing from it is a kind nobody can see working
+                     (drawings had no demo file, so a font-loader bug that
+                     blanked the text in every drawing shipped unnoticed)
 docs/
   WHY.md             the argument for every constraint, and what this is bad at
   deploy.md          local run + Vercel + any static host

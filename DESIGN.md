@@ -416,6 +416,23 @@ collapsing the sidebar; the actions were not recoverable by anything.
 The project note is the one exception, on purpose: its body *is* a full-width
 management surface, with its own details, description and contents.
 
+## The inspo wall names its tiles
+
+Each tile on the Inspo wall is a whole **page**, not an image — so it has a
+name, and the name stays visible. It used to appear only on hover, which is the
+Pinterest pattern and wrong here: a wall of pages you can read one at a time by
+hovering is a wall you cannot scan.
+
+What hover reveals is the second line — item count and date — the part you only
+want once you are deciding. It is **collapsed**, not merely transparent, because
+an always-drawn two-line scrim covers a third of a short tile and this is a
+surface you look at.
+
+The scrim holds its weight *through* the text band
+(`0.86 → 0.78 @46% → 0.46 @72% → 0`) rather than fading linearly across it. A
+single `to top` ramp sits at roughly 40% alpha exactly where the title is, which
+is the weakest place it could have been.
+
 ## One editing surface
 
 `ProseEditor` in `app.js` is the only writing surface. There were six: three
@@ -516,7 +533,62 @@ when `onClick` lands on a non-native element it also gets `tabindex="0"`,
 that would drift apart. Space is `preventDefault`ed, since scrolling the page
 is never what a focused row is asking for.
 
+## One resolver decides what a page is
+
+`metaForPage(page)` — label, icon, colour — is the **only** thing allowed to
+answer "what kind is this". Everything that shows a kind takes the page and asks
+it: the header pill, `KindChip`, the metadata rail, the search results, the
+obsession members, the project grid, the file-nodes on a board.
+
+The rule exists because two of the four kinds are not what their `kind:` field
+says. A `note` carrying a `url` **is a bookmark** to the reader; a `canvas` at a
+`.excalidraw.md` path **is a drawing**, and that word is the only thing telling
+someone whether their edits will be kept. Every call site that reached for
+`KIND_META[p.kind]` instead got both wrong — so in the two tables where you meet
+most of your vault, a bookmark wore the note icon and announced itself as
+"Note".
+
+The hoisting matters too: a full page object carries the url under `meta.url`,
+an index entry from `pages()` carries it at the top level, and `data.js` derives
+the bookmark facet from the hoisted one. `metaForPage` reads both.
+
+## Say it once, and say it right
+
+- **The metadata rail owes you the facts the page does not already show.** It
+  used to print `Slug` — the H1 restated a centimetre below it — and Tags and
+  Mentions **counts** for chips listed in the header row. In their place: the
+  **file path**, the one fact this whole app is about and the only one it never
+  showed.
+- **Plurals go through `nOf(n, one, many)`.** Ten places counted things and each
+  decided for itself; most did not bother, so the app said "1 projects".
+- **`themeFamily()`, never `theme === 'light'`.** Four modes, two families. A
+  vendored surface with its own two-value theme asks the helper, or Sepia comes
+  out dark.
+- **A tab says the page's name.** It is recorded on the tab when the page loads,
+  so it survives a reload and an evicted cache, and it is cleared when the tab
+  is pointed somewhere else.
+
+## Breadcrumbs are containment, not history
+
+The crumb chain says **where a page lives**, never where you came from. Only
+routes that actually list pages count as parents — `pages`, `projects`,
+`project:<id>`, `kind:x`, `tag:x`, `mention:x`. (`tag:x` lists pages; `tags`
+lists tags, so it is not one.) Arriving from Settings or About me falls back to
+the page's real container: its project folder, or its kind.
+
+That fallback needs the loaded page, and the crumb row renders before the fetch
+resolves — so **the row is rebuilt when the page lands**, not patched. Patching
+only the last crumb fixed the title and left the chain lying.
+
 ## Layout under pressure
+
+**`.main` is the only scroller; a screen just grows.** `.screen` used to be a
+scroll container with `height: 100%` nested inside it. That is invisible on a
+full-width screen and obvious on a narrow one: Settings is capped at 46rem, so
+its scrollbar drew a rule down the middle of the page instead of sitting at the
+window edge, and the wheel only moved the page while the pointer was over the
+form. (A page's `.page-main` is the deliberate exception — the metadata rail
+should hold still while the body scrolls.)
 
 The one hard rule is that **the page body never scrolls sideways**. Tables are
 where that gets tested: the dashboard's recent-pages grid needs ~640px of fixed
