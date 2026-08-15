@@ -122,97 +122,98 @@ function brandLockup() {
   return el;
 }
 
-/* A tiny element factory. app.js has a real one, but app.js does not exist
-   yet on this screen — bridge.js is what stands the vault up. */
-function el(tag, cls, text) {
-  const n = document.createElement(tag);
-  if (cls) n.className = cls;
-  if (text != null) n.textContent = text;
-  return n;
-}
-
-/* What the reader is actually deciding, and why it is safe. Kept here rather
-   than in a marketing site because this screen is where the question gets
-   asked, and the answer is short enough to give in full. */
-const PROMISES = [
-  ["On your disk",
-   "Files stay in the folder you pick. There is no server to send them to and no account to make."],
-  ["Obsidian-native",
-   "Plain markdown, wikilinks, frontmatter, canvases. Same folder open in both apps, live."],
-  ["Agent-ready",
-   "The file convention is public, so your coding agent reads and writes the same vault you do."],
-];
-
-const WHAT_HAPPENS = [
-  "Your browser asks permission for that one folder. You can withdraw it whenever you like.",
-  "An empty folder gets a starting structure and its own copy of the convention.",
-  "A folder that already has notes is adopted exactly as it is — nothing is written to any file until you edit it here.",
-];
-
-/* The front door.
- *
- * It used to be a lockup, one sentence, a button and a link, top-left on an
- * empty page: the barest screen in the app, in the one place where somebody
- * is deciding whether to hand over a folder. Everything below answers a
- * question that decision actually raises — what is this, what does it cost
- * me, and what happens the moment I click.
- */
+// The front door, set like the marketing site's hero rather than a bare form:
+// the same aurora, the same drawn file, the same kind-dot meta row — expressed
+// in the app's own tokens so all four colour modes render it correctly. Two
+// class names are load-bearing beyond this file: the site embeds the app in an
+// iframe and reaches in to hide `.sb-connect-cta` and click `.sb-connect-demo`.
+// Keep both.
 function firstRun(onPick, onDemo) {
   const root = document.getElementById("root") || document.body;
   root.innerHTML = "";
-  const wrap = el("main", "sb-connect");
+  const wrap = document.createElement("main");
+  wrap.className = "sb-connect sb-front";
 
-  const hero = el("div", "sb-hero");
-  hero.appendChild(brandLockup());
-  hero.appendChild(el("h1", "sb-hero-h", "A thinking surface over your own files."));
-  hero.appendChild(el("p", "sb-hero-p",
-    "Canon Vault reads and writes plain markdown straight from a folder on your "
-    + "disk. Nothing is uploaded, nothing is synced, and there is no account — "
-    + "your notes are just files, and they stay that way."));
+  // The demo path exists because handing over a folder is a real decision,
+  // and nobody makes it for software they have not seen work. It runs the
+  // whole app against an in-memory vault of invented pages — no picker, no
+  // permission prompt, nothing written.
+  const demoHTML = onDemo
+    ? '<button type="button" class="sb-connect-demo">Try a demo vault</button>'
+    : "";
+  const demoNote = onDemo
+    ? '<p class="sb-connect-note">The demo is invented pages, held in memory — nothing touches your disk.</p>'
+    : "";
 
-  const actions = el("div", "sb-actions");
-  const cta = el("button", "sb-connect-cta", "Choose a folder");
-  cta.type = "button";
-  cta.addEventListener("click", onPick);
-  actions.appendChild(cta);
+  // The file in the visual is the demo vault's own invented topic — the same
+  // one the site's hero draws — never anything from a real vault.
+  wrap.innerHTML = [
+    '<div class="sb-connect-aurora" aria-hidden="true"></div>',
+    '<div class="sb-connect-inner">',
+    '  <section class="sb-connect-copy">',
+    '    <span class="sb-connect-brand-slot"></span>',
+    '    <p class="sb-connect-pill"><span class="sbc-pulse" aria-hidden="true"></span>Local-first · plain markdown · nothing uploaded</p>',
+    '    <h1 class="sb-connect-h1">A second brain that lives <span class="sb-connect-voice">in your files.</span></h1>',
+    '    <p class="sb-connect-lede">Pick the folder your notes live in — or an empty one to start.',
+    '       The app, Obsidian and your coding agent all read the same files.',
+    '       No database, no account.</p>',
+    '    <div class="sb-connect-cta-row">',
+    '      <button type="button" class="sb-connect-cta">',
+    '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>',
+    '        Choose folder</button>',
+    "      " + demoHTML,
+    '    </div>',
+    "    " + demoNote,
+    '    <ul class="sb-connect-meta">',
+    '      <li><i style="background:var(--k-canvas)"></i><b>4</b>&nbsp;page kinds, one format</li>',
+    '      <li><i style="background:var(--k-mdwn)"></i><b>[[Wikilinks]]</b>&nbsp;build the graph</li>',
+    '      <li><i style="background:var(--k-topic)"></i>Works offline, folder remembered</li>',
+    '      <li><i style="background:var(--k-desg)"></i>Any <b>agent</b> reads it directly</li>',
+    '    </ul>',
+    '  </section>',
+    '  <aside class="sb-connect-vis" aria-hidden="true">',
+    '    <div class="sbc-stage">',
+    '      <div class="sbc-file">',
+    '        <div class="sbc-file-name">',
+    '          <svg class="sbc-ico" viewBox="0 0 16 20" fill="none"><path d="M9.5 1H3a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V5.5L9.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9.5 1v4.5H14" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
+    '          topics/Quire&nbsp;Structures.md',
+    '          <span class="sbc-dim">on your disk</span>',
+    '        </div>',
+    '        <div class="sbc-file-body">',
+    '<div class="sbc-ln"> 1\n 2\n 3\n 4\n 5\n 6\n 7\n 8\n 9\n10\n11\n12\n13\n14\n15\n16\n17</div>'
+    + '<div class="sbc-co"><span class="r">---</span>\n'
+    + '<span class="k">id</span><span class="r">:</span>      <span class="v">01KW4F6WG0VTM69V8PB5BK8TTC</span>\n'
+    + '<span class="k">kind</span><span class="r">:</span>    <span class="v">topic</span>\n'
+    + '<span class="k">title</span><span class="r">:</span>   <span class="v">Quire Structures</span>\n'
+    + '<span class="k">updated</span><span class="r">:</span> <span class="v">2026-08-28T09:20:00+00:00</span>\n'
+    + '<span class="k">tags</span><span class="r">:</span>    <span class="v">[current]</span>\n'
+    + '<span class="r">---</span>\n'
+    + '\n'
+    + 'The running hub for how gathered\n'
+    + 'sheets behave. The through-line:\n'
+    + '<span class="b">the fold is the unit, not the page.</span>\n'
+    + '\n'
+    + '<span class="h">## Links</span>\n'
+    + '\n'
+    + '- <span class="w">[[Lantern Cartography Notes]]</span>\n'
+    + '- <span class="w">[[Binding Methods]]</span>\n'
+    + '- <span class="w">[[Bindery]]</span></div>',
+    '        </div>',
+    '      </div>',
+    '    </div>',
+    '    <div class="sbc-clients">',
+    '      <span><i style="background:var(--k-canvas)"></i>the app</span>',
+    '      <span><i style="background:var(--k-desg)"></i>Obsidian</span>',
+    '      <span><i style="background:var(--k-topic)"></i>your agent</span>',
+    '    </div>',
+    '    <div class="sbc-cap">one file, opened by all three</div>',
+    '  </aside>',
+    '</div>',
+  ].join("\n");
 
-  // Handing over a folder is a real decision, and nobody makes it for software
-  // they have not seen work. The demo runs the whole app against an in-memory
-  // vault of invented pages — no picker, no permission prompt, nothing written.
-  // It was a text link inside a sentence; it is a door, so it looks like one.
-  if (onDemo) {
-    const demo = el("button", "sb-connect-demo", "Try a demo vault");
-    demo.type = "button";
-    demo.addEventListener("click", onDemo);
-    actions.appendChild(demo);
-  }
-  hero.appendChild(actions);
-  hero.appendChild(el("p", "sb-actions-note",
-    onDemo ? "The demo is invented pages held in memory — it never touches your disk."
-           : "Chromium browsers only, because the folder API exists nowhere else."));
-  wrap.appendChild(hero);
-
-  const promises = el("ul", "sb-promises");
-  PROMISES.forEach(([t, d], i) => {
-    const li = el("li", "sb-promise");
-    li.style.setProperty("--i", String(i));
-    li.appendChild(el("h2", "sb-promise-t", t));
-    li.appendChild(el("p", "sb-promise-d", d));
-    promises.appendChild(li);
-  });
-  wrap.appendChild(promises);
-
-  /* A folder picker is a permission prompt, and a permission prompt you did
-     not expect is a permission prompt you decline. Closed by default — this
-     is reassurance for the people who want it, not a step for everyone. */
-  const det = el("details", "sb-what");
-  const sum = el("summary", "sb-what-s", "What happens when you choose a folder");
-  det.appendChild(sum);
-  const ol = el("ol", "sb-what-l");
-  WHAT_HAPPENS.forEach((t) => ol.appendChild(el("li", null, t)));
-  det.appendChild(ol);
-  wrap.appendChild(det);
-
+  wrap.querySelector(".sb-connect-brand-slot").replaceWith(brandLockup());
+  wrap.querySelector(".sb-connect-cta").addEventListener("click", onPick);
+  if (onDemo) wrap.querySelector(".sb-connect-demo").addEventListener("click", onDemo);
   root.appendChild(wrap);
 }
 

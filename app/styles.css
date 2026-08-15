@@ -5862,6 +5862,145 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   .sb-connect-cta, .sb-promise { transition: none; }
 }
 
+
+/* ── The front door, aurora edition ───────────────────────────────────
+   Scoped to .sb-front so the non-Chromium explainer — which shares
+   .sb-connect and the .sb-hero-* classes with boot.js — is untouched.
+   Set like the marketing site's hero: the same aurora, the same drawn
+   file, the same kind-dot meta rows, expressed through the app's own
+   tokens so all four modes render it. The aurora and the headline
+   gradient are the kind spectrum at low saturation, not a new palette —
+   the one screen where the kinds may be decorative, because they are
+   what is being introduced. */
+.sb-connect.sb-front {
+  position: relative; min-height: 100vh; min-height: 100dvh;
+  display: grid; align-items: center; overflow: hidden;
+  max-width: none; gap: 0;
+  padding: 48px 48px 56px;
+}
+/* The shared field/paper layers belong to the explainer's version of this
+   screen; this one paints its own. */
+.sb-front::before, .sb-front::after { content: none; }
+
+.sb-connect-aurora { position: absolute; inset: -30% -20% auto -20%; height: 130%;
+  background:
+    radial-gradient(42% 48% at  8% 12%, rgba(255,183, 94,0.55), transparent 68%),
+    radial-gradient(38% 44% at 34%  2%, rgba(255,214,140,0.52), transparent 70%),
+    radial-gradient(40% 46% at 62%  8%, rgba(255,158,193,0.50), transparent 70%),
+    radial-gradient(38% 44% at 92% 18%, rgba(196,164,255,0.48), transparent 70%),
+    radial-gradient(46% 40% at 78% 46%, rgba(142,197,255,0.34), transparent 72%),
+    radial-gradient(50% 38% at 24% 44%, rgba(255,225,196,0.40), transparent 74%);
+  filter: blur(10px); opacity: 0.5; pointer-events: none; }
+/* The wash was mixed on warm paper; on a dark ground the same alpha reads as
+   smoke, so it drops to a hint rather than being re-tuned per palette. */
+[data-theme="dark"] .sb-connect-aurora,
+[data-theme="midnight"] .sb-connect-aurora { opacity: 0.13; }
+
+.sb-connect-inner { position: relative; z-index: 2;
+  width: 100%; max-width: 1120px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 64px; align-items: center;
+  animation: cv-rise var(--dur-4) var(--ease-out) both; }
+@media (max-width: 1080px) {
+  .sb-connect-inner { grid-template-columns: minmax(0, 1fr); gap: 56px; max-width: 620px; }
+  .sb-connect-vis { display: none; }
+}
+.sb-front .sb-connect-brand { margin-bottom: 2rem; }
+/* Modest on purpose — the headline under it carries the screen now, and a
+   240px wordmark over a 42px headline was two things shouting. */
+.sb-front .sb-connect-brand .brand-mark { height: 24px; }
+.sb-front .sb-connect-brand .brand-word { width: 164px; }
+
+.sb-connect-pill { display: inline-flex; align-items: center; gap: 9px;
+  margin: 0 0 18px; font-family: var(--font-mono); font-size: var(--fz-micro);
+  font-weight: 500; letter-spacing: var(--track-caps); text-transform: uppercase;
+  color: var(--muted); }
+.sbc-pulse { width: 6px; height: 6px; border-radius: 50%; flex: none;
+  background: var(--color-emerald);
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.5); animation: sbc-pulse 2.4s ease-out infinite; }
+@keyframes sbc-pulse { 70% { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+
+/* Raw clamp and raw tracking rather than the density scale: this screen
+   renders before the app shell exists and is set against the viewport, like
+   the site hero — the same exemption the explainer already takes. The italic
+   slants into its gaps and reads looser than it measures, so it takes a
+   touch more negative tracking than the roman around it. */
+.sb-connect-h1 { margin: 0; font-size: clamp(32px, 3.3vw, 42px); font-weight: 400;
+  letter-spacing: -0.05em; line-height: 1.12; text-wrap: balance; }
+.sb-connect-voice { font-style: italic; font-weight: 400; letter-spacing: -0.055em;
+  padding-right: 0.06em;
+  background: linear-gradient(96deg, var(--k-canvas), var(--k-locl) 52%, var(--k-desg));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sb-connect-lede { margin: 18px 0 0; max-width: 48ch;
+  font-size: var(--fz-prose); line-height: 1.6; color: var(--muted); }
+
+.sb-connect-cta-row { display: flex; flex-wrap: wrap; align-items: center;
+  gap: 12px; margin-top: 30px; }
+.sb-front .sb-connect-cta { display: inline-flex; align-items: center; gap: 10px;
+  height: 46px; padding: 0 20px; border-radius: 10px;
+  font-size: var(--fz-prose); }
+.sb-front .sb-connect-cta svg { width: 17px; height: 17px; }
+.sb-front .sb-connect-demo { display: inline-flex; align-items: center;
+  height: 46px; padding: 0 18px; border-radius: 10px; font-size: var(--fz-prose); }
+.sb-connect-note { margin: 14px 0 0; font-size: var(--fz-mini); color: var(--faint); }
+
+.sb-connect-meta { list-style: none; margin: 34px 0 0; padding: 22px 0 0;
+  border-top: 1px solid var(--line-very-soft);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px;
+  font-size: var(--fz-mini); color: var(--muted); letter-spacing: var(--track-label); }
+.sb-connect-meta li { display: inline-flex; align-items: center; gap: 8px; }
+.sb-connect-meta i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.sb-connect-meta b { color: var(--fg); font-weight: 550; }
+
+/* — the file, as an object. Not a screenshot: the gutter, the ruled line
+     numbers and the sheet behind are what make a text file read as a real
+     one. Same drawing as the site hero, on the app's surfaces. */
+.sbc-stage { position: relative; padding: 14px 12px 0 0; }
+.sbc-stage::before { content: ""; position: absolute; inset: -16% -12%;
+  background: radial-gradient(closest-side, var(--accent-bg), transparent 70%);
+  pointer-events: none; }
+.sbc-stage::after { content: ""; position: absolute; right: 0; top: 0;
+  width: 88%; height: 96%; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--s-raised); opacity: 0.75;
+  box-shadow: var(--shadow-card); }
+.sbc-file { position: relative; z-index: 2; overflow: hidden;
+  border: 1px solid var(--i-2); border-radius: 12px;
+  background: var(--s-raised); box-shadow: var(--shadow-overlay); }
+.sbc-file-name { display: flex; align-items: center; gap: 9px;
+  padding: 11px 14px; border-bottom: 1px solid var(--i-1);
+  background: var(--s-sunken);
+  font-size: var(--fz-mini); font-weight: 500; color: var(--i-6); }
+.sbc-ico { width: 13px; height: auto; color: var(--i-4); flex: none; }
+.sbc-dim { margin-left: auto; color: var(--i-3); font-weight: 400;
+  font-size: var(--fz-micro); }
+.sbc-file-body { display: grid; grid-template-columns: auto minmax(0, 1fr);
+  font-family: var(--font-mono); font-size: var(--fz-micro); line-height: 1.95;
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+.sbc-ln { padding: 14px 11px 16px; text-align: right; color: var(--i-3);
+  background: var(--s-sunken); border-right: 1px solid var(--i-1);
+  user-select: none; font-variant-numeric: tabular-nums; white-space: pre; }
+.sbc-co { padding: 14px 16px 16px; overflow-x: auto; white-space: pre;
+  color: var(--i-6); }
+.sbc-co .r { color: var(--i-3); }
+.sbc-co .k { color: var(--k-topic); }
+.sbc-co .v { color: var(--i-5); }
+.sbc-co .h { color: var(--i-7); font-weight: 500; }
+.sbc-co .w { color: var(--k-canvas); }
+.sbc-co .b { color: var(--i-7); font-weight: 600; }
+.sbc-clients { position: relative; z-index: 2; display: flex; flex-wrap: wrap;
+  justify-content: center; gap: 8px 22px; margin-top: 20px;
+  font-size: var(--fz-mini); font-weight: 500; color: var(--i-4); }
+.sbc-clients span { display: inline-flex; align-items: center; gap: 7px; }
+.sbc-clients i { width: 5px; height: 5px; border-radius: 50%; flex: none; }
+.sbc-cap { margin-top: 9px; text-align: center;
+  font-size: var(--fz-mini); color: var(--i-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-connect-inner { animation: none; }
+  .sbc-pulse { animation: none; }
+}
+
 /* ── Skeletons ─────────────────────────────────────────────────────────
    The shape of what is coming, instead of the word "loading". A sheen
    travels across the bars rather than each one pulsing on its own: one
