@@ -122,7 +122,9 @@ function confirmDialog(opts = {}) {
           }, confirmLabel)))));
     document.body.appendChild(bg);
     document.addEventListener('keydown', onKey, true);
-    // Focus the confirm button so Enter works immediately
+    asDialog(bg);
+    // Then override where focus lands: on a confirm, the answer is the button,
+    // so Enter works the moment the dialog appears.
     const confirmBtn = bg.querySelector('.btn-primary');
     if (confirmBtn) confirmBtn.focus();
   });
@@ -187,6 +189,89 @@ function toast(message, opts = {}) {
 
 /* Pick a snapshot. Deliberately plain — a list of times, newest first, and
    nothing else, because a snapshot carries no other metadata. */
+/* Make an overlay behave like a dialog.
+ *
+ * There are four modals in the app and each was hand-built: a `.modal-bg` with
+ * a `.modal` inside it, appended to the body. None of them was a dialog in any
+ * sense a keyboard or a screen reader could tell. Opening Create with ⌘N left
+ * focus on `<body>`, so reaching the first card meant tabbing in from the top
+ * of the document — through the whole sidebar, behind an overlay you cannot
+ * see past — and Tab walked straight back out the other side into the page the
+ * modal was covering. Nothing announced a dialog had opened, and closing one
+ * dropped focus at the top of the page rather than back on the control you
+ * used to open it.
+ *
+ * One helper, called at each of the four sites. It is safe to call again on
+ * the same open overlay — `render()` rebuilds the create modal's element on
+ * every keystroke in the project-name field, and stealing focus back each time
+ * would be worse than never taking it.
+ */
+const FOCUSABLE_SEL =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),' +
+  'textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+function asDialog(bg, { onEscape, label, restore } = {}) {
+  const dialog = bg.querySelector('.modal') || bg;
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+  // Name it from its own heading when it has one, so the name cannot drift.
+  const hd = dialog.querySelector('.modal-hd b');
+  if (hd && !dialog.id) {
+    hd.id = hd.id || ('modal-hd-' + (asDialog._n = (asDialog._n || 0) + 1));
+    dialog.setAttribute('aria-labelledby', hd.id);
+  } else if (label) {
+    dialog.setAttribute('aria-label', label);
+  }
+
+  const focusables = (root) =>
+    [...(root || dialog).querySelectorAll(FOCUSABLE_SEL)].filter((e) => e.offsetParent !== null);
+
+  // Remember the opener once per opening, not once per re-render.
+  if (!asDialog._restore) asDialog._restore = restore || document.activeElement;
+  if (!bg.contains(document.activeElement)) {
+    /* The body first, then anywhere. In DOM order the first focusable is the
+       ✕ in the header, and landing a keyboard user on Close is answering a
+       question they did not ask — they opened this to do the thing inside. */
+    const body = dialog.querySelector('.modal-body');
+    ((body && focusables(body)[0]) || focusables()[0] || dialog).focus();
+  }
+
+  const onKey = (e) => {
+    if (!document.body.contains(bg)) return;         // observer will clean up
+    if (e.key === 'Escape' && onEscape) {
+      e.preventDefault(); e.stopPropagation(); onEscape(); return;
+    }
+    if (e.key !== 'Tab') return;
+    const f = focusables();
+    if (!f.length) { e.preventDefault(); dialog.focus(); return; }
+    const first = f[0], last = f[f.length - 1];
+    const inside = dialog.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === first || !inside)) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+      e.preventDefault(); first.focus();
+    }
+  };
+  document.addEventListener('keydown', onKey, true);
+
+  // Give focus back to whatever opened this, once the overlay is really gone.
+  const obs = new MutationObserver(() => {
+    if (document.body.contains(bg)) return;
+    obs.disconnect();
+    document.removeEventListener('keydown', onKey, true);
+    /* A function, not an element, when the opener will not survive: render()
+       rebuilds the whole tree, so the button that opened the create modal is
+       a different object by the time it closes and focusing the old one is a
+       no-op on a detached node. */
+    const back = typeof asDialog._restore === 'function' ? asDialog._restore() : asDialog._restore;
+    asDialog._restore = null;
+    if (back && document.body.contains(back)) { try { back.focus(); } catch (_) {} }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+  return dialog;
+}
+
 function historyDialog(snaps, title) {
   return new Promise((resolve) => {
     const close = (v) => {
@@ -217,6 +302,7 @@ function historyDialog(snaps, title) {
               h('span', { className: 'history-go' }, 'Restore')))))));
     document.body.appendChild(bg);
     document.addEventListener('keydown', onKey, true);
+    asDialog(bg);
   });
 }
 
@@ -1305,13 +1391,23 @@ function CreateModal(open, onPick, onClose) {
   }
 
   if (startAt === 'project') paintProjectName(); else paintGrid();
-  return h('div', { className: 'modal-bg', onClick: (e) => { if (e.target.classList.contains('modal-bg')) onClose(); } },
+  const bg = h('div', { className: 'modal-bg', onClick: (e) => { if (e.target.classList.contains('modal-bg')) onClose(); } },
     h('div', { className: 'modal' },
       h('div', { className: 'modal-hd' },
         h('b', null, 'Create new'),
         h('span', { className: 'modal-kbd' }, '\u2318N'),
-        h('button', { className: 'sb-twk-x', onClick: onClose }, '\u2715')),
+        h('button', { className: 'sb-twk-x', title: 'Close', 'aria-label': 'Close',
+          onClick: onClose }, '\u2715')),
       body));
+  // This one is returned into the render tree rather than appended, so it is
+  // not in the document yet. Escape is already handled by the global key
+  // handler that owns \u2318N.
+  requestAnimationFrame(() => {
+    if (document.body.contains(bg)) {
+      asDialog(bg, { restore: () => document.querySelector('.nav-create .btn-create') });
+    }
+  });
+  return bg;
 }
 
 function V2Home(state, onOpen, onCreate, onKind) {
@@ -2033,6 +2129,8 @@ function V2PageView(pageId, onChange, onDeleted) {
               h('button', { className: 'btn-primary', onClick: save }, 'attach'))))));
       bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
       document.body.appendChild(bg);
+      // Escape had no handler at all here — the only way out was the mouse.
+      asDialog(bg, { onEscape: close });
       titleI.focus();
     }
 
@@ -2090,6 +2188,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
       document.addEventListener('keydown', onKey, true);
       document.body.appendChild(bg);
+      asDialog(bg);
       urlI.focus();
     }
 
