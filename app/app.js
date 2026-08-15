@@ -2384,7 +2384,9 @@ function V2PageView(pageId, onChange, onDeleted) {
     loadExcalidraw().then((mod) => {
       status.textContent = '';
       handle = mod.mountExcalidraw(host, {
-        theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
+        // Sepia is a light mode. Comparing against the string 'light' put the
+        // editor in dark chrome on a paper-coloured page.
+        theme: themeFamily(),
         initialData: framed((ex && ex.scene) || null),
         onReady: (hd) => { savedVersion = hd.version(); },
         onChange: queue,
@@ -4733,6 +4735,13 @@ function prefersDark() {
 function resolveTheme(pref) {
   if (pref === 'system' || !pref) return prefersDark() ? 'dark' : 'light';
   return THEME_IDS.includes(pref) ? pref : 'light';
+}
+/* Four modes, two families. Anything asking "is this a dark surface?" — a
+   vendored editor with its own two-value theme, an embedded document — has to
+   ask this, not compare against the string 'light', or Sepia comes out dark. */
+function themeFamily() {
+  const t = THEMES.find((x) => x.id === document.documentElement.getAttribute('data-theme'));
+  return (t && t.family) || (prefersDark() ? 'dark' : 'light');
 }
 try {
   window.matchMedia('(prefers-color-scheme: dark)')
