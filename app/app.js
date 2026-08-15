@@ -2941,7 +2941,7 @@ function V2PageView(pageId, onChange, onDeleted) {
             item.tags.map((t) => h('button', {
               className: 'tag-chip tag-chip-btn',
               onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
-            }, h('span', { className: 'tag-chip-h' }, '#'), h('span', null, t)))));
+            }, t))));
         }
         if (item.url && item.image) {
           el.appendChild(h('a', {
@@ -3727,7 +3727,6 @@ function V2PageView(pageId, onChange, onDeleted) {
               setRoute('tag:' + t);
             },
           },
-            h('span', { className: 'tag-chip-h' }, '#'),
             h('span', { className: 'tag-chip-t' }, t),
             h('button', { title: 'Remove this tag', onClick: (e) => {
               e.stopPropagation();
@@ -3934,10 +3933,16 @@ function TagsIndexScreen() {
     const cloud = h('div', { className: 'tags-cloud' });
     const sorted = [...tags].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
     sorted.forEach((t) => {
-      const weight = Math.min(1.6, 0.85 + Math.log2(t.count + 1) * 0.18);
+      /* A tag is a tag wherever it appears. This screen drew grey outlined
+         boxes while every other surface draws lime pills, so the one screen
+         devoted to tags was the one that did not look like it.
+
+         Frequency used to be carried by font-size — an inline em value that
+         sat off the type scale entirely, and redundant besides, since the
+         count is printed right there. It rides on the count badge now. */
       cloud.appendChild(h('button', {
-        className: 'tag-cloud-chip',
-        style: { fontSize: weight + 'em' },
+        className: 'tag-chip tag-chip-btn tag-cloud-chip',
+        title: t.count + (t.count === 1 ? ' page' : ' pages'),
         onClick: () => setRoute('tag:' + t.tag),
       },
         h('span', { className: 'tag-cloud-name' }, t.tag),

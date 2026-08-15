@@ -2353,18 +2353,6 @@ body.canvas-fullscreen .canvas-viewport,
   display: flex; flex-wrap: wrap; gap: 10px;
   margin-top: 14px;
 }
-.tag-cloud-chip {
-  appearance: none; border: 1px solid var(--line);
-  background: var(--paper); color: var(--fg);
-  font-family: inherit;
-  padding: 6px 12px;
-  cursor: pointer;
-  display: inline-flex; align-items: center; gap: 8px;
-  transition: border-color 0.12s, background 0.12s;
-}
-.tag-cloud-chip:hover { border-color: var(--accent); background: var(--hover); }
-.tag-cloud-name { color: var(--accent); font-weight: 500; }
-.tag-cloud-name::before { content: '#'; color: var(--faint); margin-right: 1px; }
 .tag-cloud-count {
   color: var(--faint); font-size: 0.75em;
   background: var(--paper-2);
@@ -5596,3 +5584,66 @@ body:has(.sb-vault-banner) .app { height: calc(100% - var(--banner-h)); }
 /* The toast rides just above it rather than guessing an offset. */
 body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3)); }
 .sb-vault-banner-action { white-space: nowrap; }
+
+/* ── Tag index ─────────────────────────────────────────────────────────
+   Same pill as everywhere else. Frequency is the badge, not the font size —
+   sizing by count put this screen's type off the scale and repeated a number
+   that was already printed beside it. */
+.tags-cloud { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.tag-cloud-chip { gap: 2px; padding: 4px 6px 4px 9px; }
+.tag-cloud-name { font-weight: 500; }
+.tag-cloud-count {
+  margin-left: 5px; padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--lime-ink) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92em;
+}
+
+/* The hash belongs to the chip, not to three of its call sites. It was an
+   explicit span in three places and absent in the rest, so the same tag read
+   "#current" in a page's chip row and "current" in the table beside it. */
+.tag-chip::before {
+  content: '#';
+  opacity: 0.55;
+  margin-right: 1px;
+}
+
+/* ── Page bodies scroll their own content ──────────────────────────────
+   `.page-body` is a flex column with `flex: 1; min-height: 0` inside an
+   `overflow: hidden` column. That is right for ONE child that fills the
+   height — the original full-page textarea — and wrong for every kind that
+   has since grown stacked sections. A topic (writing + attachments) and a
+   bookmark (links + context) overflowed the box: the later section did not
+   move down, it drew on top of the earlier one.
+
+   The column scrolls, and sections keep their natural height instead of
+   being squeezed to fit. Surfaces that genuinely fill — the board, the
+   drawing editor — opt back in below. */
+.page-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: var(--sp-5);
+}
+.page-body > * { flex: none; }
+/* Full-bleed scenes keep the old behaviour: they size themselves and manage
+   their own panning, so an outer scrollbar would fight them. */
+.page-body.canvas-body,
+.page-body.excalidraw-body,
+.page-body.inspo-bento { overflow: visible; }
+.page-body.canvas-body > *,
+.page-body.excalidraw-body > * { flex: 1 1 auto; }
+
+/* ── The rail's cards keep their own height ────────────────────────────
+   `.topic-side` is a flex column, so its cards inherited `flex-shrink: 1`.
+   Once the four of them together were taller than the rail, every one got
+   squashed — and because `.side-card` has `overflow: hidden` (it needs it,
+   for the corner radius) each quietly cut its own last rows off. Metadata
+   lost Tags and Mentions; Actions lost "Forget this", so DELETE was
+   invisible on a page with enough backlinks.
+
+   Cards keep their natural height and the rail scrolls, which is what the
+   overflow on the rail was always for. */
+.topic-side > * { flex: none; }
+.side-card { flex: none; }
+.topic-side { overflow-y: auto; padding-bottom: var(--sp-4); }
