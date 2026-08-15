@@ -574,13 +574,6 @@ body {
 
 /* Settings popover anchored to the gear button (bottom of the sidebar)
    rather than docked to the top-right of the viewport. */
-.app.app-tabs .sb-tweaks {
-  top: auto; right: auto;
-  bottom: 8px; left: 240px;        /* sidebar width (232) + small gap */
-  border: 1px solid var(--line); border-top: 1px solid var(--line);
-  border-radius: 4px;
-  box-shadow: var(--shadow-overlay);
-}
 
 /* Search overlay (⌘K modal) */
 .search-overlay {
@@ -1066,73 +1059,12 @@ h2.sect .ct { color: var(--faint); font-weight: 400; }
 button { font: inherit; }
 
 /* ── In-app settings panel (brutalist, replaces design-tool Tweaks) ───── */
-.sb-tweaks {
-  position: fixed; right: 0; top: 38px; z-index: 2147483646;
-  width: 264px; max-height: calc(100vh - 48px);
-  display: flex; flex-direction: column;
-  background: var(--paper);
-  border: 1px solid var(--line); border-top: 0;
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--fz-mini);
-  box-shadow: var(--shadow-overlay);
-}
-.sb-twk-hd {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px 8px 14px;
-  border-bottom: 1px solid var(--line);
-}
-.sb-twk-hd b { font-size: var(--fz-micro); letter-spacing: var(--track-caps); }
 .sb-twk-x {
   appearance: none; border: 0; background: transparent;
   color: var(--muted); font: inherit; font-size: var(--fz-mini);
   width: 22px; height: 22px; cursor: default;
 }
 .sb-twk-x:hover { background: var(--hover); color: var(--fg); }
-.sb-twk-body {
-  padding: 10px 14px 14px;
-  display: flex; flex-direction: column; gap: 10px;
-  overflow-y: auto; min-height: 0;
-}
-.sb-twk-sect {
-  font-size: var(--fz-micro); font-weight: 600; letter-spacing: var(--track-caps);
-  text-transform: uppercase; color: var(--faint);
-  padding-top: 6px;
-}
-.sb-twk-sect:first-child { padding-top: 0; }
-.sb-twk-row { display: flex; flex-direction: column; gap: 6px; }
-.sb-twk-row-h {
-  flex-direction: row; align-items: center; justify-content: space-between;
-}
-.sb-twk-lbl { color: var(--muted); }
-.sb-seg {
-  display: flex; border: 1px solid var(--line-soft);
-}
-.sb-seg-btn {
-  appearance: none; flex: 1; border: 0;
-  border-right: 1px solid var(--line-soft);
-  background: transparent; color: var(--muted);
-  font: inherit; font-size: var(--fz-micro);
-  letter-spacing: var(--track-label);
-  padding: 5px 4px; cursor: default;
-}
-.sb-seg-btn:last-child { border-right: 0; }
-.sb-seg-btn:hover { background: var(--hover); }
-.sb-seg-btn[aria-current="true"] {
-  background: var(--accent); color: var(--paper);
-}
-.sb-toggle {
-  position: relative; width: 34px; height: 18px;
-  border: 1px solid var(--line); background: var(--paper-2);
-  padding: 0; cursor: default;
-}
-.sb-toggle[data-on="1"] { background: var(--accent); border-color: var(--accent); }
-.sb-toggle i {
-  position: absolute; top: 1px; left: 1px;
-  width: 14px; height: 14px; background: var(--fg);
-  transition: transform 0.14s;
-}
-.sb-toggle[data-on="1"] i { background: var(--paper); transform: translateX(16px); }
 .sb-field {
   appearance: none; width: 100%; height: 28px; padding: 0 8px;
   border: 1px solid var(--line-soft); background: var(--bg);
@@ -1140,17 +1072,6 @@ button { font: inherit; }
   cursor: default;
 }
 .sb-field:focus { border-color: var(--accent); }
-.sb-jump { display: flex; flex-wrap: wrap; gap: 4px; }
-.sb-jump-chip {
-  border: 1px solid var(--line-soft);
-  padding: 4px 8px; font-size: var(--fz-micro); color: var(--muted);
-  cursor: default;
-}
-.sb-jump-chip:hover { border-color: var(--accent); color: var(--accent); }
-.sb-jump-chip[aria-current="true"] {
-  border-color: var(--accent); color: var(--accent);
-  background: var(--accent-bg);
-}
 
 /* ── Draggable right rail (activity log resize handle) ────────────────── */
 .log-resize {
@@ -3443,7 +3364,6 @@ img.canvas-item-image {
 .sb-input,
 .sb-textarea,
 .sb-select { border-radius: var(--radius-btn); }
-.sb-seg { border-radius: var(--radius-btn); overflow: hidden; }
 .tag,
 .kind-chip { border-radius: var(--radius-badge); }
 
@@ -3664,7 +3584,6 @@ img.canvas-item-image {
 .recent-th,
 .chip-strip-l,
 .am-sect-hd,
-.sb-twk-sect,
 .obs-members-l,
 .page-ancestors,
 .md-mode-btn,
@@ -3708,8 +3627,8 @@ code, pre, kbd, samp {
 
 /* Modal and settings chrome had font-family: var(--font-mono) on the whole
    panel, which put prose labels in mono. Labels are interface text. */
-.modal, .sb-tweaks { font-family: var(--font-sans); }
-.modal .kbd, .sb-tweaks .kbd { font-family: var(--font-mono); }
+.modal { font-family: var(--font-sans); }
+.modal .kbd { font-family: var(--font-mono); }
 
 /* Long-form surfaces other than the note body: LLM output and topic prose.
    Same reading treatment, capped measure, no mono. */
@@ -3816,8 +3735,7 @@ code, pre, kbd, samp {
 .nav-item,
 .list-row, .pages-row, .recent-row,
 .tag-chip, .mention-chip, .kind-chip,
-.obs-member, .sb-jump-chip, .sb-seg-btn,
-.tabbar .tab, .tabbar .tab-close, .tabbar .tab-add,
+.obs-member, .tabbar .tab, .tabbar .tab-close, .tabbar .tab-add,
 .page-meta-del, .nav-gear, .tb-gear {
   transition: background var(--dur-1) var(--ease-out),
               color var(--dur-1) var(--ease-out),
@@ -3876,7 +3794,6 @@ code, pre, kbd, samp {
      touch of scale so it reads as coming toward you rather than appearing. — */
 .modal-bg, .search-overlay { animation: cv-scrim-in var(--dur-2) var(--ease-out) both; }
 .modal, .search-panel      { animation: cv-pop-in var(--dur-3) var(--ease-out) both; }
-.sb-tweaks                 { animation: cv-pop-in var(--dur-2) var(--ease-out) both; }
 .tabbar .tab-search-results { animation: cv-fade-up var(--dur-2) var(--ease-out) both; }
 
 /* — Focus. A visible ring on keyboard focus only, drawn as a ring plus a
@@ -4079,7 +3996,7 @@ code, pre, kbd, samp {
 
 /* — The activity-log and settings popovers float above white, so they take
      the overlay shadow rather than the card one. — */
-.sb-tweaks, .search-panel, .modal { border-radius: var(--radius-card); overflow: hidden; }
+.search-panel, .modal { border-radius: var(--radius-card); overflow: hidden; }
 
 /* — Kind accents. The per-kind colours were authored for a light ground
      originally, so they need no shifting — but the 3px left rails they sit
@@ -5250,7 +5167,6 @@ input[type="checkbox"], input[type="radio"] {
   cursor: pointer; text-align: left;
   transition: background var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
-.sb-twk-link:hover { background: var(--hover); border-color: var(--i-2); }
 .sb-twk-link .lucide { color: var(--faint); }
 
 /* ── ProseEditor ───────────────────────────────────────────────────────
@@ -5340,7 +5256,6 @@ input[type="checkbox"], input[type="radio"] {
 /* The demo / reconnect banner is fixed to the bottom edge, so a toast placed
    there lands underneath it and is never seen. Lift it clear when one is up.
    Chromium-only app, so :has() is fair game. */
-body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--sp-4) + 58px); }
 
 /* ── Tier 5: taste, decided ────────────────────────────────────────────
    F28 · The entrance stagger plays once per session, not on every route
@@ -5658,3 +5573,26 @@ body.cv-settled .screen, body.cv-settled .page {
   margin-top: var(--sp-3);
 }
 .att-link-actions .btn-create { width: auto; padding-inline: var(--sp-4); }
+
+/* ── The vault banner reserves its own space ───────────────────────────
+   It is `position: fixed; bottom: 0`, and nothing accounted for it — so it
+   sat ON TOP of the app's last 50px for as long as it was shown. That is
+   not only the visual interruption it looks like: the strip it covered
+   contains the sidebar footer, which is where the colour-mode picker, the
+   vault status line and the SETTINGS BUTTON live. With the demo or
+   reconnect banner up, Settings was unreachable.
+
+   The banner is a real row now: fixed height, and the app is shortened by
+   exactly that much so nothing is ever underneath it. */
+:root { --banner-h: 52px; }
+.sb-vault-banner {
+  height: var(--banner-h);
+  padding: 0 var(--sp-4);
+  font-size: var(--fz-mini);
+  color: var(--fg);
+  gap: var(--sp-3);
+}
+body:has(.sb-vault-banner) .app { height: calc(100% - var(--banner-h)); }
+/* The toast rides just above it rather than guessing an offset. */
+body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3)); }
+.sb-vault-banner-action { white-space: nowrap; }

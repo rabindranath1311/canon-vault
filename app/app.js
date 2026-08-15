@@ -1073,7 +1073,7 @@ function SearchPanel(onClose) {
 }
 
 
-function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSettingsToggle, offline, lastSynced) {
+function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
   const order = KIND_ORDER;
   /* KIND_ORDER is the NAV, not the set of kinds — `bookmark` is a derived
      facet (a note carrying a url), so summing the facet counts counted every
@@ -1146,12 +1146,14 @@ function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSet
       h('div', { className: 'nav-status-row' },
         h('span', { className: 'nav-status-label nav-status-sync' },
           offline ? 'not saved' : ('saved ' + (lastSynced || 'just now')))),
-      h('button', {
-        className: 'nav-gear', onClick: onSettingsToggle, title: 'Settings / tweak',
-        'aria-expanded': String(!!app.settingsOpen),
-      },
-        h('span', { className: 'nav-icon' }, icon('settings')),
-        h('span', { className: 'nav-lbl' }, 'Settings'))));
+      /* No gear here. "Settings" already sits in the SYSTEM group four rows
+         up, and the popover it opened had been reduced to one control plus a
+         link to the very screen that nav row goes to. Two doors to the same
+         room, one of them a worse room.
+
+         What genuinely belongs at the bottom is the picker above: colour mode
+         is the setting people change on a whim, and it is one click here. */
+      ));
 }
 
 /* A row of real colour chips. Each paints its own page + ink, so the control
@@ -4559,48 +4561,6 @@ function ProjectsScreen() {
 
 
 
-/* ── settings panel ───────────────────────────────────────────────────── */
-function SettingsPanel(t, setTweak, route, setRoute, onClose) {
-  function seg(label, value, options, onChange) {
-    return h('div', { className: 'sb-twk-row' },
-      h('div', { className: 'sb-twk-lbl' }, label),
-      h('div', { className: 'sb-seg' },
-        options.map((o) => h('button', {
-          className: 'sb-seg-btn',
-          'aria-current': value === o.value ? 'true' : 'false',
-          onClick: () => onChange(o.value),
-        }, o.label))));
-  }
-  return h('div', { className: 'sb-tweaks' },
-    h('div', { className: 'sb-twk-hd' },
-      h('b', null, 'Settings'),
-      h('button', { className: 'sb-twk-x', onClick: onClose }, '✕')),
-    h('div', { className: 'sb-twk-body' },
-      h('div', { className: 'sb-twk-sect' }, 'Look'),
-      seg('Density', t.density, [
-        { value: 'compact', label: 'compact' }, { value: 'cozy', label: 'cozy' },
-        { value: 'comfortable', label: 'comfy' },
-      ], (v) => setTweak('density', v)),
-      /* Two things used to live below this, and both were lying.
-
-         "Show AI activity log" toggled a rail fed by `ActivityLog([], …)` —
-         a hardcoded empty array. It could never show anything. A labelled
-         switch that does nothing is worse than no switch, because the user
-         concludes the feature is broken rather than absent.
-
-         "Jump to" listed six routes, three of which (ask, graph,
-         mention-tags) were deleted by the migration and navigated nowhere.
-         The other three duplicate the sidebar two inches to the left.
-
-         What is left is the one genuine quick tweak, plus a way through to
-         everything else. Colour mode is in the sidebar footer. */
-      h('div', { className: 'sb-twk-sect' }, 'More'),
-      h('button', {
-        className: 'sb-twk-link',
-        onClick: () => { onClose(); setRoute('settings'); },
-      }, icon('settings'), h('span', null, 'All settings'))));
-}
-
 /* ── app root (v2) ────────────────────────────────────────────────────── */
 // Light is the default, not System. System is the more fashionable default,
 // but it means anyone whose OS is dark never sees the theme this app was
@@ -4628,7 +4588,6 @@ const app = {
   listCache: { kind: null, pages: [], stale: true },
   offline: false,
   loaded: false,
-  settingsOpen: false,
   createOpen: false,
   lastSynced: '',               // surfaced in sidebar footer
   navW: (() => { try { return Number(localStorage.getItem('sb.navW')) || 244; } catch (_) { return 244; } })(),
@@ -5240,7 +5199,6 @@ function render() {
   const appEl = h('div', { className: 'app app-tabs',
     'data-log': 'hidden',
     'data-nav': app.navCollapsed ? 'collapsed' : 'open' });
-  const toggleSettings = () => { app.settingsOpen = !app.settingsOpen; render(); };
   const openSearch = () => { app.searchOpen = true; render(); };
   const closeSearch = () => { app.searchOpen = false; render(); };
 
@@ -5256,8 +5214,6 @@ function render() {
   appEl.appendChild(Sidebar(
     app.route, setRoute, app.kindCounts,
     () => { app.createOpen = true; render(); },
-    openSearch,
-    toggleSettings,
     app.offline,
     app.lastSynced,
   ));
@@ -5265,7 +5221,6 @@ function render() {
   currentMain = buildMain();
   appEl.appendChild(h('div', { className: 'main' }, currentMain));
 
-  if (app.settingsOpen) appEl.appendChild(SettingsPanel(app.t, setTweak, app.route, setRoute, toggleSettings));
   if (app.createOpen) appEl.appendChild(CreateModal(app.createOpen, createPage, () => { app.createOpen = false; render(); }));
   if (app.searchOpen) appEl.appendChild(SearchPanel(closeSearch));
   root.appendChild(appEl);
