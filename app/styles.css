@@ -1264,44 +1264,6 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .btn-primary:hover { filter: brightness(1.08); }
 
 /* Home: kind summary grid */
-.kind-summary {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin: 16px 0 28px;
-}
-.kind-summary-card {
-  appearance: none;
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 14px 14px 16px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--k-c, var(--line));
-  color: var(--fg); font: inherit; text-align: left;
-  cursor: default;
-}
-.kind-summary-card:hover {
-  border-color: var(--k-c);
-  background: var(--hover);
-}
-.kind-summary-top {
-  display: flex; align-items: center; gap: 8px;
-  color: var(--k-c);
-}
-.kind-summary-g { font-size: var(--fz-h2); line-height: 1; }
-.kind-summary-l {
-  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
-  font-weight: 500;
-}
-.kind-summary-n {
-  font-size: var(--fz-display); font-weight: 500;
-  color: var(--fg);
-  letter-spacing: var(--track-title);
-  font-variant-numeric: tabular-nums;
-}
-.kind-summary-h {
-  font-size: var(--fz-mini); color: var(--muted);
-  line-height: 1.5;
-}
 
 /* Section header */
 .sect-hd {
@@ -1807,7 +1769,6 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .page-screen { padding: 18px 24px 24px; height: 100%; }
 
 @media (max-width: 1200px) {
-  .kind-summary { grid-template-columns: repeat(2, 1fr); }
   .kind-grid { grid-template-columns: repeat(2, 1fr); }
   .page-grid { grid-template-columns: minmax(0, 1fr); }
 }
@@ -3471,7 +3432,6 @@ img.canvas-item-image {
 /* — Rounded geometry (DESIGN.md: cards 12, buttons/inputs 6, badges 2) — */
 .card { border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
 .obs-card,
-.kind-summary-card { border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
 .btn,
 .btn-create,
 .btn-primary,
@@ -3688,7 +3648,6 @@ img.canvas-item-image {
 .page-title-static,
 .screen-title    { letter-spacing: var(--track-display); font-weight: 600; text-wrap: balance; }
 .obs-title,
-.kind-summary-n,
 .tier-count,
 .list-row-title,
 .pages-title,
@@ -3729,7 +3688,6 @@ img.canvas-item-image {
 .nav-item .ct,
 .dash-sub,
 .dash-sub b,
-.kind-summary-n,
 .tier-count,
 .obs-stats b,
 .obs-weight { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv01" 1; }
@@ -3808,7 +3766,6 @@ code, pre, kbd, samp {
 .pages-list .list-row,
 .pages-board .board-card,
 .obs-grid .obs-card,
-.kind-summary .kind-summary-card,
 .tier-grid .tier-card,
 .pages-bento .bento-tile {
   animation: cv-fade-up var(--dur-3) var(--ease-out) both;
@@ -3817,28 +3774,24 @@ code, pre, kbd, samp {
 .pages-list .list-row:nth-child(1),
 .pages-board .board-card:nth-child(1),
 .obs-grid .obs-card:nth-child(1),
-.kind-summary .kind-summary-card:nth-child(1),
 .tier-grid .tier-card:nth-child(1),
 .pages-bento .bento-tile:nth-child(1) { animation-delay: 0ms; }
 .pages-table .pages-row:nth-child(2),
 .pages-list .list-row:nth-child(2),
 .pages-board .board-card:nth-child(2),
 .obs-grid .obs-card:nth-child(2),
-.kind-summary .kind-summary-card:nth-child(2),
 .tier-grid .tier-card:nth-child(2),
 .pages-bento .bento-tile:nth-child(2) { animation-delay: 22ms; }
 .pages-table .pages-row:nth-child(3),
 .pages-list .list-row:nth-child(3),
 .pages-board .board-card:nth-child(3),
 .obs-grid .obs-card:nth-child(3),
-.kind-summary .kind-summary-card:nth-child(3),
 .tier-grid .tier-card:nth-child(3),
 .pages-bento .bento-tile:nth-child(3) { animation-delay: 44ms; }
 .pages-table .pages-row:nth-child(4),
 .pages-list .list-row:nth-child(4),
 .pages-board .board-card:nth-child(4),
 .obs-grid .obs-card:nth-child(4),
-.kind-summary .kind-summary-card:nth-child(4),
 .tier-grid .tier-card:nth-child(4),
 .pages-bento .bento-tile:nth-child(4) { animation-delay: 66ms; }
 .pages-table .pages-row:nth-child(5),
@@ -3884,18 +3837,18 @@ code, pre, kbd, samp {
   transition-duration: 40ms;   /* the press must not lag the finger */
 }
 
-.board-card, .kind-summary-card, .obs-card, .bento-tile, .canvas-item {
+.board-card, .obs-card, .bento-tile, .canvas-item {
   transition: transform var(--dur-2) var(--ease-out),
               box-shadow var(--dur-2) var(--ease-out),
               border-color var(--dur-1) var(--ease-out);
   will-change: transform;
 }
-.board-card:hover, .kind-summary-card:hover {
+.board-card:hover {
   transform: translate3d(0, -2px, 0);
   box-shadow: var(--shadow-raised);
 }
 .bento-tile:hover { transform: translate3d(0, -3px, 0); box-shadow: var(--shadow-raised); }
-.board-card:active, .kind-summary-card:active, .bento-tile:active {
+.board-card:active, .bento-tile:active {
   transform: translate3d(0, 0, 0);
   transition-duration: 40ms;
 }
@@ -3979,7 +3932,7 @@ code, pre, kbd, samp {
     scroll-behavior: auto !important;
   }
   .nav-item:hover,
-  .board-card:hover, .kind-summary-card:hover, .bento-tile:hover,
+  .board-card:hover, .bento-tile:hover,
   .btn:active, .btn-create:active, .btn-primary:active,
   .theme-chip:hover, .theme-chip:active, .pj-picker-card:hover {
     transform: none !important;
@@ -4004,7 +3957,7 @@ code, pre, kbd, samp {
      lightest shadow in the ramp so they lift off the page rather than
      floating ambiguously on it. — */
 .pages-table, .pages-list, .list,
-.obs-card, .tier-card, .kind-summary-card, .board-card,
+.obs-card, .tier-card, .board-card,
 .am-sect, .set-sec, .bento-tile, .kind-card {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
@@ -4132,7 +4085,7 @@ code, pre, kbd, samp {
      originally, so they need no shifting — but the 3px left rails they sit
      in were sized for a dark card where they read as a glow. On white they
      are a hard stripe; 2px is enough to code the kind. — */
-.kind-summary-card, .kind-card { border-left-width: 2px; }
+.kind-card { border-left-width: 2px; }
 
 /* — Scrollbars. The dark thumb tuned for a black canvas is a black slug on
      white; step it back and let it darken on hover. — */
@@ -4210,15 +4163,14 @@ code, pre, kbd, samp {
 
 /* Card interiors. 14px was the file's most common padding and it is one step
    too tight for the type sizes above it. */
-.obs-card, .tier-card, .kind-summary-card, .board-card,
+.obs-card, .tier-card, .board-card,
 .am-sect, .kind-card, .pj-card     { padding: var(--sp-4); gap: var(--sp-3); }
 .card-b                            { padding: var(--sp-4); }
 .pages-th, .pages-row, .recent-th, .recent-row {
   padding: var(--sp-3) var(--sp-4);
 }
 .list-row                          { padding: var(--sp-3) var(--sp-4); }
-.obs-grid, .tier-grid, .kind-summary, .pages-board { gap: var(--sp-3); }
-.kind-summary                      { margin: var(--sp-4) 0 var(--sp-6); }
+.obs-grid, .tier-grid, .pages-board { gap: var(--sp-3); }
 
 /* ── Label / value pairs ───────────────────────────────────────────────
    Six regions each invented their own version of "a small label beside a
@@ -4906,7 +4858,7 @@ input[type="checkbox"], input[type="radio"] {
 
 /* Cards get a top sheen — the single cheapest way to make a flat rectangle
    read as a surface with an edge rather than a shape cut out of the page. */
-.obs-card, .kind-summary-card, .tier-card, .pj-card, .side-card,
+.obs-card, .tier-card, .pj-card, .side-card,
 .board-card, .kind-card, .set-sec, .am-sect, .pages-table, .pages-list {
   background-image: linear-gradient(180deg, var(--sheen) 0, transparent 42px);
 }
@@ -4915,7 +4867,7 @@ input[type="checkbox"], input[type="radio"] {
 .obs-card { background-image:
   radial-gradient(120% 130% at 0% 0%, color-mix(in srgb, var(--accent) var(--wash-edge), transparent) 0%, transparent 58%),
   linear-gradient(180deg, var(--sheen) 0, transparent 52px); }
-.kind-summary-card, .kind-card, .pj-picker-card { background-image:
+.kind-card, .pj-picker-card { background-image:
   radial-gradient(130% 140% at 0% 0%, color-mix(in srgb, var(--k-c, var(--accent)) var(--wash-strength), transparent) 0%, transparent 62%),
   linear-gradient(180deg, var(--sheen) 0, transparent 36px); }
 
@@ -5107,7 +5059,7 @@ input[type="checkbox"], input[type="radio"] {
    like it is doing something rather than reloading the page. */
 .app, .app .nav, .app .tabbar, .app .main,
 .pj-card, .side-card, .obs-card, .pages-table, .pages-list,
-.kind-summary-card, .tier-card, .empty-state {
+.tier-card, .empty-state {
   transition: background-color var(--dur-3) var(--ease-out),
               border-color var(--dur-3) var(--ease-out),
               color var(--dur-3) var(--ease-out);
@@ -5399,7 +5351,6 @@ body.cv-settled .pages-table .pages-row,
 body.cv-settled .pages-list .list-row,
 body.cv-settled .pages-board .board-card,
 body.cv-settled .obs-grid .obs-card,
-body.cv-settled .kind-summary .kind-summary-card,
 body.cv-settled .tier-grid .tier-card,
 body.cv-settled .pages-bento .bento-tile {
   animation-delay: 0ms !important;
@@ -5612,3 +5563,98 @@ body.cv-settled .screen, body.cv-settled .page {
   .page-grid.md-grid, .page-grid.topic-grid { grid-template-columns: minmax(0, 1fr); }
   .page-grid .topic-side { display: none; }
 }
+
+/* ── Content measure ───────────────────────────────────────────────────
+   The screen had no maximum width, so on a wide display a table stretched
+   to 1185px and a row's title sat a hand's width from its own tags — the
+   eye loses the line between them and the table reads as scattered rather
+   than as rows. 1080px is the width the canon-vault site settled on, so the
+   two now agree.
+
+   Full-bleed surfaces opt out: a board, a wall and an editor want every
+   pixel, and none of them is a line of text you track across. */
+:root { --content-max: 1080px; }
+.screen > * { max-width: var(--content-max); }
+.screen.settings > *,
+.projects-screen > * { max-width: var(--content-max); }
+/* Spatial and editing surfaces are exempt — they are not read line by line. */
+.page-grid,
+.inspo-bento, .inspo-bento > *,
+.canvas-surface, .board-with-body,
+.bento-groups, .bento-toolbar,
+.project-body, .project-body > * { max-width: none; }
+
+/* A sparse grid should look deliberate, not truncated.
+   `auto-fill` kept generating empty tracks, so a vault with one strong theme
+   showed a single 288px card marooned in a 1080px band. Capping the track
+   and clustering left reads as "there is one of these", which is the truth. */
+.obs-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 400px));
+  justify-content: start;
+}
+
+/* ── About me ──────────────────────────────────────────────────────────
+   Its labels are sentences, not keys, so they stack above their field
+   rather than sharing the 84px label column the metadata rail uses — in
+   that column "Tone the AI should match" wrapped to three uppercase lines
+   and took longer to read than the answer would. */
+.am-field {
+  display: flex; flex-direction: column; gap: 3px;
+  grid-template-columns: none;
+  padding: var(--sp-2) 0;
+  align-items: stretch;
+}
+.am-lbl {
+  display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap;
+  font-size: var(--fz-micro);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  font-weight: 550;
+  color: var(--muted);
+}
+/* The hint carries what the parenthetical used to, in a voice you can read. */
+.am-hint {
+  text-transform: none; letter-spacing: var(--track-body);
+  font-weight: 400; font-size: var(--fz-micro); color: var(--faint);
+}
+.am-input {
+  width: 100%;
+  background: transparent;
+  border: 0; border-bottom: 1px solid var(--line);
+  padding: 5px 0;
+  font: inherit; font-size: var(--fz-mini); color: var(--fg);
+  transition: border-color var(--dur-1) var(--ease-out);
+}
+.am-input:focus { outline: none; border-bottom-color: var(--accent); }
+.am-grid { gap: var(--sp-3); }
+.am-sect { padding: var(--sp-4); }
+
+/* An add control is the size of its own label. `.sb-secondary` stretched to
+   the container, so "+ experience" was a full-width empty bar that read as a
+   dropzone. */
+.am-add {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 6px;
+  width: auto; margin-top: var(--sp-2);
+}
+.am-entry {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  padding: var(--sp-3);
+  background: var(--paper);
+}
+
+/* Attach-a-link form. Label above field, like About me — these are
+   sentences, and the modal has the width for them. */
+.att-link-form { display: flex; flex-direction: column; gap: 4px; }
+.att-link-form .am-lbl { margin-top: var(--sp-2); }
+.att-link-form .set-input, .att-link-form .page-body-ta { width: 100%; }
+.att-link-hint {
+  margin: var(--sp-2) 0 0; font-size: var(--fz-micro);
+  color: var(--faint); line-height: 1.5;
+}
+.att-link-actions {
+  display: flex; gap: var(--sp-2); justify-content: flex-end;
+  margin-top: var(--sp-3);
+}
+.att-link-actions .btn-create { width: auto; padding-inline: var(--sp-4); }

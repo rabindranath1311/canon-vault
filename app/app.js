@@ -1075,7 +1075,14 @@ function SearchPanel(onClose) {
 
 function Sidebar(route, setRoute, kindCounts, onCreate, _unusedSearchOpen, onSettingsToggle, offline, lastSynced) {
   const order = KIND_ORDER;
-  const total = order.reduce((a, k) => a + ((kindCounts || {})[k] || 0), 0);
+  /* KIND_ORDER is the NAV, not the set of kinds — `bookmark` is a derived
+     facet (a note carrying a url), so summing the facet counts counted every
+     bookmark twice. The sidebar said "15 pages" while the dashboard said
+     "14 pages total", two numbers for the same vault and the louder one
+     wrong. The real total comes from the store. */
+  const total = (app.stats && app.stats.pages_total != null)
+    ? app.stats.pages_total
+    : order.reduce((n, k) => n + ((kindCounts || {})[k] || 0), 0);
   const groupLabel = (g) => g.group === 'kinds'
     ? `by kind — ${total} pages`
     : g.label;
@@ -1921,7 +1928,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       const close = () => bg.remove();
       const save = () => {
         const body = bodyT.value.trim();
-        if (!body) { alert('paste or upload something first'); return; }
+        if (!body) { toast('Paste or upload something first'); return; }
         const isChat = spec.kind === 'chat';
         page.meta.attachments.push({
           id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -1955,40 +1962,15 @@ function V2PageView(pageId, onChange, onDeleted) {
         extraRow.appendChild(h('span', { className: 'att-modal-extra-or' }, 'or paste below'));
       }
 
-      // Chat: also let the user paste a public share URL (ChatGPT / Claude)
-      // and fetch the conversation transcript into the textarea.
-      if (spec.kind === 'chat') {
-        const shareI = h('input', { className: 'topic-att-titleI',
-          placeholder: 'paste a public share URL (ChatGPT / Claude / Gemini) — optional', type: 'url' });
-        const status = h('span', { className: 'att-modal-extra-or' });
-        const fetchBtn = h('button', { className: 'side-action', onClick: async () => {
-          const url = shareI.value.trim();
-          if (!url) { alert('paste a share URL first'); return; }
-          fetchBtn.disabled = true; fetchBtn.textContent = '… fetching';
-          status.textContent = '';
-          try {
-            const r = await gone('shared-chat import', 'in-app LLM features were removed (SPEC §16)');
-            if (r.body) {
-              bodyT.value = r.body;
-              if (r.title && !titleI.value.trim()) titleI.value = r.title;
-              status.textContent = '✓ ' + (r.source || 'chat') + ' · ' + r.body.length + ' chars';
-            } else {
-              status.textContent = '✗ ' + (r.error || 'no content fetched');
-            }
-          } catch (e) {
-            status.textContent = '✗ ' + (e.message || e);
-          } finally {
-            fetchBtn.disabled = false; fetchBtn.textContent = '↓ fetch';
-          }
-        } }, '↓ fetch');
-        extraRow.appendChild(h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', flex: '1' } },
-          h('div', { style: { display: 'flex', gap: '6px' } }, shareI, fetchBtn),
-          status));
-      }
+      /* A "paste a share URL and we'll fetch the transcript" field lived
+         here. It could never work — a browser tab cannot read chatgpt.com —
+         so it always failed, and it advertised an in-app LLM integration the
+         contract forbids. Pasting the conversation text is the path that
+         works, and it is the one the textarea below already offers. */
 
       bg.appendChild(h('div', { className: 'modal' },
         h('div', { className: 'modal-hd' },
-          h('b', null, '+ ' + spec.label.toUpperCase()),
+          h('b', null, 'Attach ' + spec.label),
           h('button', { className: 'sb-twk-x', onClick: close }, '✕')),
         h('div', { className: 'modal-body' },
           h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
@@ -2004,75 +1986,58 @@ function V2PageView(pageId, onChange, onDeleted) {
     }
 
     // Special link flow — paste URL → fetch + show preview → save
+    /* Attach a link.
+       This used to offer a "↓ fetch" button that promised to pull the page's
+       body and preview it. A browser page cannot fetch an arbitrary URL —
+       CORS forbids it, which is exactly why the clipper extension exists —
+       so the button always failed and then asked "No body was fetched. Save
+       the link without context anyway?", a question raised by the app's own
+       broken promise.
+
+       So: no fetch. You paste the URL, you type why it matters, and the
+       clipper fills in the body when you capture through it. */
     function linkAttachmentModal() {
-      const urlI = h('input', { className: 'topic-att-titleI', placeholder: 'https://…', type: 'url' });
-      const previewBox = h('div', { className: 'topic-att-link-preview' });
-      const statusLine = h('div', { className: 'topic-att-link-status' });
-      let fetched = null;  // {url, kind, title, body, og}
+      const urlI = h('input', { className: 'set-input', placeholder: 'https://…', type: 'url' });
+      const titleI = h('input', { className: 'set-input', placeholder: 'What is this? (optional)' });
+      const noteT = h('textarea', {
+        className: 'page-body-ta', placeholder: 'Why it matters, what to remember…',
+        style: { minHeight: '110px' },
+      });
       const bg = h('div', { className: 'modal-bg' });
       const close = () => bg.remove();
+      const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
 
-      async function doFetch() {
-        const url = urlI.value.trim();
-        if (!url) { alert('paste a URL first'); return; }
-        statusLine.textContent = 'fetching…';
-        clear(previewBox);
-        try {
-          const og = await fetchLinkPreview(url);
-          const r = await gone('link fetch', 'a browser page cannot fetch arbitrary URLs (SPEC §7)');
-          fetched = {
-            url, kind: r.kind, title: r.title || (og && og.title) || url,
-            body: r.body || '', og: og || null, error: r.error || '',
-          };
-          renderPreview();
-          statusLine.textContent = r.body
-            ? '✓ ' + r.kind + ' · ' + r.body.length + ' chars'
-            : (r.error || '✗ no body fetched');
-        } catch (e) {
-          statusLine.textContent = '✗ ' + (e.message || e);
-        }
-      }
-      function renderPreview() {
-        clear(previewBox);
-        if (!fetched) return;
-        const og = fetched.og;
-        if (og && og.image) previewBox.appendChild(h('img', {
-          className: 'topic-att-link-img', src: og.image, loading: 'lazy', alt: '' }));
-        previewBox.appendChild(h('div', { className: 'topic-att-link-meta' },
-          h('div', { className: 'topic-att-link-title' }, fetched.title || og && og.title || fetched.url),
-          og && og.description ? h('div', { className: 'topic-att-link-desc' }, og.description.slice(0, 160)) : null,
-          h('div', { className: 'topic-att-link-host' }, (fetched.url || '').replace(/^https?:\/\//, '').slice(0, 60))));
-      }
       function save() {
-        if (!fetched || !fetched.body) {
-          if (!confirm('No body was fetched. Save the link without context anyway?')) return;
-        }
+        const url = urlI.value.trim();
+        if (!url) { urlI.focus(); return; }
         page.meta.attachments.push({
           id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
           type: 'link',
-          title: fetched.title || urlI.value.trim(),
+          title: titleI.value.trim() || url,
           source: 'link',
-          body: (fetched && fetched.body) || '',
-          meta: fetched ? { url: fetched.url, og: fetched.og, kind: fetched.kind } : { url: urlI.value.trim() },
+          body: noteT.value.trim(),
+          meta: { url },
         });
         queueSave(); renderAttachments(); close();
       }
 
-      bg.appendChild(h('div', { className: 'modal' },
+      bg.appendChild(h('div', { className: 'modal confirm-modal' },
         h('div', { className: 'modal-hd' },
-          h('b', null, '+ LINK'),
-          h('button', { className: 'sb-twk-x', onClick: close }, '✕')),
+          h('b', null, 'Attach a link'),
+          h('button', { className: 'sb-twk-x', onClick: close }, '\u2715')),
         h('div', { className: 'modal-body' },
-          h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-            urlI,
-            h('div', { style: { display: 'flex', gap: '6px', alignItems: 'center' } },
-              h('button', { className: 'side-action', onClick: doFetch }, '↓ fetch'),
-              statusLine),
-            previewBox,
-            h('div', { style: { display: 'flex', gap: '8px', justifyContent: 'flex-end' } },
-              h('button', { className: 'side-action', onClick: close }, 'cancel'),
-              h('button', { className: 'btn-primary', onClick: save }, 'attach'))))));
+          h('div', { className: 'att-link-form' },
+            h('label', { className: 'am-lbl' }, 'URL'), urlI,
+            h('label', { className: 'am-lbl' }, 'Title'), titleI,
+            h('label', { className: 'am-lbl' }, 'Note'), noteT,
+            h('p', { className: 'att-link-hint' },
+              'The page body is not downloaded — a browser tab cannot read another site. ',
+              'Capture through the clipper extension to bring the text in with it.'),
+            h('div', { className: 'att-link-actions' },
+              h('button', { className: 'btn', onClick: close }, 'Cancel'),
+              h('button', { className: 'btn-create', onClick: save }, 'Attach'))))));
       bg.addEventListener('click', (e) => { if (e.target === bg) close(); });
+      document.addEventListener('keydown', onKey, true);
       document.body.appendChild(bg);
       urlI.focus();
     }
@@ -2095,10 +2060,6 @@ function V2PageView(pageId, onChange, onDeleted) {
         onClick: () => { menu.remove(); linkAttachmentModal(); },
       }, 'Link'));
       menu.appendChild(h('div', { className: 'att-chat-menu-sep' }, 'Conversation export'));
-      const rect = anchorBtn.getBoundingClientRect();
-      menu.style.position = 'fixed';
-      menu.style.top = (rect.bottom + 4) + 'px';
-      menu.style.left = rect.left + 'px';
       const opts = [
         ['chat:chatgpt', 'ChatGPT'],
         ['chat:claude', 'Claude'],
@@ -2112,7 +2073,23 @@ function V2PageView(pageId, onChange, onDeleted) {
           onClick: () => { menu.remove(); pasteAttachmentModal(k); },
         }, label));
       });
+      /* Position AFTER the items exist — measuring an empty menu gave a
+         height of zero and the flip never triggered. Flips up when there is
+         no room below and clamps to the right edge: the tray sits at the
+         bottom of a topic, so opening downward put the menu under the demo
+         banner, off the viewport, with its options unreachable. */
+      menu.style.position = 'fixed';
+      menu.style.visibility = 'hidden';
       document.body.appendChild(menu);
+      const rect = anchorBtn.getBoundingClientRect();
+      const mh = menu.offsetHeight, mw = menu.offsetWidth;
+      const roomBelow = window.innerHeight - rect.bottom;
+      menu.style.top = (roomBelow < mh + 16 && rect.top > mh + 16)
+        ? (rect.top - mh - 4) + 'px'
+        : (rect.bottom + 4) + 'px';
+      menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - mw - 8)) + 'px';
+      menu.style.visibility = '';
+
       // Click anywhere outside closes it
       setTimeout(() => {
         const off = (e) => {
@@ -2865,7 +2842,7 @@ function V2PageView(pageId, onChange, onDeleted) {
           const { path } = await uploadAsset(f);
           model.groups[0].items.unshift({ image: path, caption: '', tags: [], url: null });
           save(); paint();
-        } catch (e) { alert('upload failed: ' + e.message); }
+        } catch (e) { toast('Upload failed — ' + e.message, { tone: 'error' }); }
       });
       actions.appendChild(fileIn);
       actions.appendChild(h('button', { className: 'btn-secondary', onClick: () => fileIn.click() }, '+ image'));
@@ -3373,7 +3350,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         if (t) { t.parentRoute = 'project:' + projectId; persistTabs(); }
         openPage(p.id);
       } catch (err) {
-        alert('Create failed: ' + err.message);
+        toast('Could not create that — ' + err.message, { tone: 'error' });
       }
     }
 
@@ -3576,7 +3553,7 @@ function V2PageView(pageId, onChange, onDeleted) {
               a.download = res.filename.split('/').pop();
               a.click();
               URL.revokeObjectURL(a.href);
-            } catch (e) { alert('Export failed: ' + e.message); }
+            } catch (e) { toast('Export failed — ' + e.message, { tone: 'error' }); }
           } }, icon('download'), 'Export .md'),
         /* The other half of the write safety. Every overwrite has snapshotted
            to `.history/` since 5.19 and the app never said so, so the app
@@ -3639,8 +3616,8 @@ function V2PageView(pageId, onChange, onDeleted) {
         // is too deep.
         const depth = await pageDepth(page);
         if (depth >= SUBPAGE_MAX_DEPTH - 1) {
-          alert('Sub-pages are capped at ' + SUBPAGE_MAX_DEPTH + ' levels. ' +
-                'This page is already at level ' + (depth + 1) + ' — promote it before adding more.');
+          toast('Sub-pages stop at ' + SUBPAGE_MAX_DEPTH + ' levels deep — '
+            + 'link to a page instead of nesting another one.');
           return;
         }
         const newPage = await SB.data().createPage({
@@ -3652,7 +3629,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         await SB.data().updatePage(page.id, { meta: page.meta });
         cacheInvalidatePage(page.id);
         app.openPageId = newPage.id; app.route = 'page'; render();
-      } catch (e) { alert('Create subpage failed: ' + e.message); }
+      } catch (e) { toast('Could not create the sub-page — ' + e.message, { tone: 'error' }); }
     }
   }
 
@@ -4080,13 +4057,16 @@ function AboutMeScreen() {
       }, '×'));
       wrap.appendChild(row);
     });
+    // `.sb-secondary` stretched to the container, so "+ experience" rendered
+    // as a full-width empty bar that reads as a dropzone rather than a
+    // button. An add control should be the size of its own label.
     wrap.appendChild(h('button', {
-      className: 'sb-secondary',
+      className: 'btn am-add',
       onClick: () => {
         me[key].push(Object.fromEntries(fields.map(([k]) => [k, ''])));
         queueSave(); layout();
       },
-    }, '+ ', addLabel));
+    }, icon('plus'), 'Add ' + addLabel));
     return wrap;
   }
 
@@ -4113,42 +4093,22 @@ function AboutMeScreen() {
     return wrap;
   }
 
-  async function downloadResume() {
-    const r = await gone('resume export', 'an LLM feature, removed per SPEC §16');
-    const blob = new Blob([r.content], { type: 'text/markdown' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'resume.md';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
 
-  async function critiqueResume() {
-    const out = h('div', { className: 'sb-log' }, 'asking the AI for a critique…');
-    critiqueBox.replaceWith(critiqueBox = out);
-    try {
-      throw new Error('resume critique is gone — an LLM feature, removed per SPEC §16');
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || r.status);
-      const box = h('div', { className: 'sb-log' }, data.critique || '(no response)');
-      critiqueBox.replaceWith(critiqueBox = box);
-    } catch (e) {
-      const box = h('div', { className: 'sb-log' }, '✗ ', String(e.message || e));
-      critiqueBox.replaceWith(critiqueBox = box);
-    }
-  }
-  let critiqueBox = h('div');
-
-  const subField = (sectionKey, fieldKey, label, kind) => {
+  const subField = (sectionKey, fieldKey, label, kind, hint) => {
     me[sectionKey] = me[sectionKey] || {};
     const val = me[sectionKey][fieldKey];
     const renderVal = Array.isArray(val) ? val.join(', ') : (val == null ? '' : String(val));
+    /* Labels sit ABOVE their field, not in a column beside it.
+       These are sentences, not keys — "Tone to match", "Preferred form" —
+       and in the shared 84px label column they wrapped into three-line
+       uppercase stacks that took longer to read than the answers would. */
     return h('div', { className: 'am-field' },
-      h('label', { className: 'am-lbl' }, label),
+      h('label', { className: 'am-lbl' }, label,
+        hint ? h('span', { className: 'am-hint' }, hint) : null),
       h('input', {
         className: 'am-input',
         value: renderVal,
-        placeholder: kind === 'list' ? 'comma-separated values…' : '',
+        placeholder: kind === 'list' ? 'Separate with commas' : '',
         onInput: (e) => {
           const v = e.target.value;
           me[sectionKey][fieldKey] = kind === 'list'
@@ -4161,7 +4121,7 @@ function AboutMeScreen() {
 
   const section = (title, key, fields) => h('div', { className: 'am-sect' },
     h('div', { className: 'am-sect-hd' }, title),
-    fields.map(([fkey, label, kind]) => subField(key, fkey, label, kind)));
+    fields.map(([fkey, label, kind, hint]) => subField(key, fkey, label, kind, hint)));
 
   const layout = () => {
     clear(wrap);
@@ -4169,17 +4129,19 @@ function AboutMeScreen() {
       h('div', { className: 'page-main' },
         h('div', { className: 'page-hd' },
           h('div', { className: 'page-hd-row' },
+            // The pill and the title both read "About me". One of them is
+            // enough, and the title is the one that matches every other page.
             h('span', { className: 'page-kind-pill', style: { '--k-c': 'var(--k-self)' } },
               h('span', { className: 'kind-chip-g' }, icon('circle-user')),
-              h('span', null, 'About me')),
+              h('span', null, 'You')),
             h('span', { className: 'page-title-static' }, 'About me'),
             h('div', { className: 'page-meta-side' },
               h('span', { className: 'page-meta-when' }, me.updated ? 'updated ' + fmtDate(me.updated) : '')))),
         h('div', { className: 'am-grid' },
           section('Identity', 'identity', [
             ['name', 'Name', 'text'],
-            ['values', 'Core values', 'list'],
-            ['current_focus', 'Current focus', 'text'],
+            ['values', 'Core values', 'list', 'What you will not trade away'],
+            ['current_focus', 'Current focus', 'text', 'What you are on right now'],
           ]),
           section('Taste', 'taste', [
             ['visual', 'Visual taste', 'list'],
@@ -4187,11 +4149,14 @@ function AboutMeScreen() {
             ['music', 'Music', 'list'],
           ]),
           section('Communication', 'communication', [
-            ['tone', 'Tone the AI should match', 'text'],
-            ['preferred_form', 'Preferred form (bullets/prose/etc.)', 'text'],
+            /* Was "Tone the AI should match" — this app has no AI. The
+               file is read by whichever agent you point at your vault, so
+               the label says that instead of implying a feature. */
+            ['tone', 'Tone to match', 'text', 'How you want your writing to sound'],
+            ['preferred_form', 'Preferred form', 'text', 'Bullets, prose, something else'],
           ]),
           section('State', 'state', [
-            ['energy_pattern', 'Energy pattern', 'text'],
+            ['energy_pattern', 'Energy pattern', 'text', 'When you do your best work'],
             ['mood_baseline', 'Mood baseline', 'text'],
           ])),
 
@@ -4200,10 +4165,10 @@ function AboutMeScreen() {
         entryList('experience', [
           ['role',     'Role',     {}],
           ['org',      'Organization', {}],
-          ['start',    'Start (e.g. 2023)', {}],
-          ['end',      'End (or "present")', {}],
+          ['start',    'Start', { placeholder: '2023' }],
+          ['end',      'End', { placeholder: 'present' }],
           ['location', 'Location', {}],
-          ['summary',  'Summary — what you shipped / impact', { long: true }],
+          ['summary',  'Summary', { long: true, placeholder: 'What you shipped, and what it changed' }],
         ], 'experience'),
 
         h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Skills'),
@@ -4225,14 +4190,15 @@ function AboutMeScreen() {
         h('div', { className: 'sect-hd', style: { marginTop: '20px' } }, 'Highlights'),
         highlightList(),
 
-        h('div', { className: 'sb-row', style: { marginTop: '16px' } },
-          h('button', { className: 'sb-primary', onClick: downloadResume }, '↓ download resume.md'),
-          h('button', { className: 'sb-secondary', onClick: critiqueResume }, '⚡ critique with AI')),
-        critiqueBox,
+        /* "download resume.md" and "critique with AI" both threw the moment
+           you pressed them — the export went through gone() and the critique
+           raised before its first await. Two more buttons that existed only
+           to fail, the same shape as the AI activity log. About me is a file
+           in your vault; export it with the page Actions like anything else. */
 
         h('div', { className: 'sect-hd', style: { marginTop: '24px' } }, 'Notes'),
         h('textarea', {
-          className: 'page-body-ta', placeholder: 'freeform reflective writing…',
+          className: 'page-body-ta', placeholder: 'Anything that does not fit a field above.',
           value: me.body,
           onInput: (e) => { me.body = e.target.value; queueSave(); },
         }))));
@@ -4977,6 +4943,14 @@ async function refreshCounts() {
   try {
     const { counts } = SB.data().counts();
     app.kindCounts = counts || {};
+    // The true page count, for the sidebar header. Summing the by-kind
+    // counts double-counts bookmarks, which are notes with a url rather
+    // than a kind of their own.
+    try {
+      const all = SB.data().pages({ limit: 5000 });
+      const items = (all && all.items) || [];
+      app.stats = { pages_total: items.length };
+    } catch (_) {}
     app.lastSynced = _fmtTimeAgo();
   } catch (_) {}
 }
@@ -5005,28 +4979,13 @@ async function createPage(kind, name) {
     await refreshCounts();
     openPage(p.id);
   } catch (e) {
-    alert('Create failed: ' + e.message);
+    toast('Could not create that — ' + e.message, { tone: 'error' });
     render();
   }
 }
 
 // Work mode is project-first: the entry point is creating a project, which
 // opens as a workspace where IA / flows / screens / components / tokens are
-// created inside it (each mentions the project id).
-async function createProjectAndOpen() {
-  app.createOpen = false;
-  try {
-    const p = await gone('work projects', 'the wproject kind was deleted (SPEC §5)');
-    if (!p || !p.id) throw new Error('server returned no page id — ' + JSON.stringify(p).slice(0, 180));
-    invalidatePageIndex();
-    cacheSetPage(p);
-    await refreshCounts();
-    openPage(p.id);
-  } catch (e) {
-    alert('Create failed: ' + e.message);
-    render();
-  }
-}
 
 // Render a label for the parent-route portion of a page crumb chain.
 // Returns the array of intermediate crumbs (between `~` and the page title).
@@ -5215,8 +5174,8 @@ function SettingsScreen() {
         className: 'btn', onClick: async () => {
           try {
             if (window.indexedDB && indexedDB.deleteDatabase) indexedDB.deleteDatabase('sb-thumbs');
-            alert('Thumbnail cache cleared.');
-          } catch (e) { alert('Could not clear: ' + e.message); }
+            toast('Thumbnail cache cleared');
+          } catch (e) { toast('Could not clear the cache — ' + e.message, { tone: 'error' }); }
         },
       }, 'clear'))));
 
