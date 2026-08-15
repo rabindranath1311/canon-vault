@@ -1713,7 +1713,11 @@ function V2PageView(pageId, onChange, onDeleted) {
         if (!v) return false;
         if (ASSET_RE.test(v)) return false;
         if (/\.(png|jpe?g|gif|webp|svg|avif)$/i.test(v)) return false;
-        return !own.has(v) && !own.has(v.split('/').pop());
+        // Compare the STEM too, not just the literal. A canvas page is two
+        // files — `X.md` and `X.canvas` — so a board carried its own sibling
+        // as a mention and drew a chip pointing at itself.
+        const stem = v.split('/').pop().replace(/\.[^.]+$/, '');
+        return !own.has(v) && !own.has(v.split('/').pop()) && !own.has(stem);
       });
   };
 
@@ -2078,6 +2082,19 @@ function V2PageView(pageId, onChange, onDeleted) {
       // Close any existing
       document.querySelectorAll('.att-chat-menu').forEach((n) => n.remove());
       const menu = h('div', { className: 'att-chat-menu' });
+      // Plain material first — it is what most attachments are — then the
+      // conversation exports, which are the specialised case.
+      [['text', 'Text'], ['markdown', 'Markdown']].forEach(([k, label]) => {
+        menu.appendChild(h('button', {
+          className: 'att-chat-menu-item',
+          onClick: () => { menu.remove(); pasteAttachmentModal(k); },
+        }, label));
+      });
+      menu.appendChild(h('button', {
+        className: 'att-chat-menu-item',
+        onClick: () => { menu.remove(); linkAttachmentModal(); },
+      }, 'Link'));
+      menu.appendChild(h('div', { className: 'att-chat-menu-sep' }, 'Conversation export'));
       const rect = anchorBtn.getBoundingClientRect();
       menu.style.position = 'fixed';
       menu.style.top = (rect.bottom + 4) + 'px';
@@ -2109,21 +2126,26 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     function renderAttachments() {
       clear(attSec);
-      const chatBtn = h('button', { className: 'att-chat-trigger' });
-      chatBtn.textContent = '+ chat ▾';
-      chatBtn.addEventListener('click', () => openChatPicker(chatBtn));
-      attSec.appendChild(h('div', { className: 'topic-att-hd' },
-        h('span', null, 'Attached materials · ', String(page.meta.attachments.length)),
-        h('div', { className: 'topic-att-actions' },
-          h('button', { onClick: () => pasteAttachmentModal('text') }, '+ text'),
-          h('button', { onClick: () => pasteAttachmentModal('markdown') }, '+ markdown'),
-          h('button', { onClick: () => linkAttachmentModal() }, '+ link'),
-          chatBtn)));
+      /* Four buttons — "+ text + markdown + link + chat" — for what is one
+         action with a type. And the whole tray sat above the description
+         with a "· 0" counter on a fresh topic, so a page whose purpose is
+         thinking opened with an empty filing cabinet at the top.
 
-      if (!page.meta.attachments.length) {
+         One Attach control, type chosen inside. When there is nothing
+         attached the tray is a single quiet line, not a section. */
+      const n = page.meta.attachments.length;
+      const attachBtn = h('button', { className: 'btn topic-att-add' },
+        icon('plus'), 'Attach');
+      attachBtn.addEventListener('click', () => openChatPicker(attachBtn));
+
+      attSec.appendChild(h('div', { className: 'topic-att-hd' },
+        h('span', null, n ? 'Attached materials' : 'Reference material'),
+        n ? h('span', { className: 'topic-att-n' }, String(n)) : null,
+        h('div', { className: 'topic-att-actions' }, attachBtn)));
+
+      if (!n) {
         attSec.appendChild(h('div', { className: 'topic-att-empty' },
-          'Paste text, markdown, URLs, or chat exports from ChatGPT / Claude / Gemini / NotebookLM. ',
-          'The AI sees everything you attach.'));
+          'Paste notes, a URL, or an exported conversation to keep beside this topic.'));
         return;
       }
 
@@ -2223,8 +2245,12 @@ function V2PageView(pageId, onChange, onDeleted) {
       minHeight: 360,
     }));
 
-    wrap.appendChild(attSec);
+    /* Writing first, material second. The tray used to come first, so every
+       topic opened on an empty filing cabinet and you scrolled past your own
+       storage to reach your own thinking. Attachments are what a topic is
+       BUILT FROM; the topic is what it is FOR. */
     wrap.appendChild(descSec);
+    wrap.appendChild(attSec);
 
     return { body: wrap };
   }
@@ -3129,8 +3155,13 @@ function V2PageView(pageId, onChange, onDeleted) {
         });
         linksWrap.appendChild(h('div', { className: 'bm-link-card' },
           h('div', { className: 'bm-link-card-hd' },
-            h('span', { className: 'bm-link-card-n' }, '#' + (idx + 1)),
-            h('button', { className: 'bm-link-card-rm', title: 'remove this link',
+            /* "#1" on a card when there is exactly one card is a number
+               counting to one. It appears from the second link onward, where
+               it actually distinguishes something. */
+            page.meta.links.length > 1
+              ? h('span', { className: 'bm-link-card-n' }, String(idx + 1))
+              : h('span', { className: 'bm-link-card-n bm-link-card-n-mute' }, 'Link'),
+            h('button', { className: 'bm-link-card-rm', title: 'Remove this link',
               onClick: () => {
                 if (page.meta.links.length === 1 && !link.url) return;
                 page.meta.links.splice(idx, 1);
@@ -3138,10 +3169,11 @@ function V2PageView(pageId, onChange, onDeleted) {
               } }, '×')),
           h('div', { className: 'bm-url-row' },
             urlInput,
-            h('button', { className: 'bm-refresh', title: 'refresh preview',
-              onClick: () => { clearTimeout(urlTimer); refetch(); } }, '↻'),
+            h('button', { className: 'bm-refresh', title: 'Refresh the preview',
+              onClick: () => { clearTimeout(urlTimer); refetch(); } }, icon('arrow-down-up')),
             h('a', { className: 'bm-open', href: link.url || '#', target: '_blank',
-              onClick: (e) => { if (!link.url) e.preventDefault(); } }, 'open ↗')),
+              title: 'Open in a new tab',
+              onClick: (e) => { if (!link.url) e.preventDefault(); } }, 'Open')),
           previewBox));
       });
       // "+ add link" button at the bottom
@@ -3151,7 +3183,7 @@ function V2PageView(pageId, onChange, onDeleted) {
           page.meta.links.push({ url: '', og: null });
           syncLegacy(); queueSave(); renderLinks();
         },
-      }, '+ add link'));
+      }, icon('plus'), 'Add another link'));
     }
 
     // Ensure at least one link card is visible
@@ -3783,6 +3815,17 @@ function V2PageView(pageId, onChange, onDeleted) {
     // A project's folder note IS the project screen. Detected by path — the
     // file says `kind: note` (SPEC: project is a folder, not a kind), so
     // dispatching on kind alone sent every project to the plain text editor,
+    /* Every kind gets the metadata rail.
+       Several used to pass `side = null` — a leftover from when the right
+       column held the chat composer. With chat gone, null did not mean "this
+       kind wants width", it meant boards, walls, bookmarks and snippets had
+       no delete, no export and no version history at all. A kind you cannot
+       manage is not a simpler kind, it is an unfinished one. Width is
+       recoverable by collapsing the sidebar; the actions were not
+       recoverable by anything.
+
+       The project note keeps `null` on purpose: its body IS a full-width
+       management surface, with its own details, description and contents. */
     // which made a container look like a note.
     const _pj = /^projects\/([^/]+)\/([^/]+)\.md$/.exec(page.path || '');
     const isProjectNote = !!(_pj && _pj[1] === _pj[2]);
@@ -3801,13 +3844,13 @@ function V2PageView(pageId, onChange, onDeleted) {
       } else {
         body = withBoardBody(renderCanvasBody());
       }
-      side = null;                   // 6.13: no chat composer (SPEC §16)
+      side = renderTopicSide();
       extraClass = ' canvas-grid';
     } else if (page.kind === 'inspo') {
       // No withBoardBody wrapper: the body IS the wall now, not a caption
       // under a board.
       body = renderInspoBody();
-      side = null;                   // 6.13
+      side = renderTopicSide();
       extraClass = ' canvas-grid inspo-grid';
     } else if (page.kind === 'note') {
       // 6.9 / SPEC §5: `note` chrome is decided by FRONTMATTER, not by kind.
@@ -3843,11 +3886,11 @@ function V2PageView(pageId, onChange, onDeleted) {
       extraClass = ' md-grid';
     } else if (page.kind === 'bookmark') {
       body = renderBookmarkBody();
-      side = null;
+      side = renderTopicSide();
       extraClass = ' bookmark-grid';
     } else if (page.kind === 'snippet') {
       body = renderSnippetBody();
-      side = null;
+      side = renderTopicSide();
       extraClass = ' snippet-grid';
     } else if (page.kind === 'project' || page.kind === 'wproject') {
       body = renderProjectBody();
@@ -3855,7 +3898,7 @@ function V2PageView(pageId, onChange, onDeleted) {
       extraClass = ' project-grid';
     } else {
       body = renderDefaultBody();
-      side = null;   // 6.13: no per-page chat composer (SPEC §16)
+      side = renderTopicSide();
     }
 
     wrap.appendChild(h('div', { className: 'page-grid' + (side ? '' : ' no-chat') + extraClass },

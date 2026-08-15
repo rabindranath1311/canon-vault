@@ -400,6 +400,22 @@ cannot inherit `currentColor` from the page — it flips on
 `prefers-color-scheme` instead, so near-black does not vanish against dark
 browser chrome.
 
+## Every kind carries the rail
+
+Boards, walls, bookmarks and snippets used to pass `side = null` — a leftover
+from when the right column held the chat composer. Once chat was gone, `null`
+did not mean "this kind wants the width", it meant those kinds had **no
+delete, no export and no version history at all**. A kind you cannot manage is
+not a simpler kind, it is an unfinished one.
+
+The spatial kinds get a narrower rail (272px vs 300px) and it drops entirely
+below 1180px. They do want the width — they just cannot want it badly enough
+to give up the only route to managing the page. Width is recoverable by
+collapsing the sidebar; the actions were not recoverable by anything.
+
+The project note is the one exception, on purpose: its body *is* a full-width
+management surface, with its own details, description and contents.
+
 ## One editing surface
 
 `ProseEditor` in `app.js` is the only writing surface. There were six: three

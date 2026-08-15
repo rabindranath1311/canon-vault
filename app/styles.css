@@ -5550,3 +5550,65 @@ body.cv-settled .screen, body.cv-settled .page {
   box-shadow: none;
 }
 .tier-hd { justify-content: flex-start; }
+
+/* ── Topic attachments ─────────────────────────────────────────────────
+   One Attach control instead of four "+ type" buttons, and a quiet line
+   rather than a section when the tray is empty. It now sits below the
+   writing: attachments are what a topic is built from, the topic is what
+   they are for. */
+.topic-att-hd {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-3);
+}
+.topic-att-n {
+  font-size: var(--fz-micro); color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: var(--radius-pill); padding: 1px 7px;
+}
+.topic-att-actions { margin-left: auto; display: flex; gap: var(--sp-2); }
+.topic-att-add { display: inline-flex; align-items: center; gap: 6px; }
+.topic-att-empty {
+  color: var(--faint); font-size: var(--fz-mini);
+  padding: 0 0 var(--sp-2);
+}
+.att-chat-menu-sep {
+  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
+  text-transform: uppercase; color: var(--faint); font-weight: 550;
+  padding: var(--sp-2) var(--sp-3) 4px;
+  border-top: 1px solid var(--line); margin-top: 4px;
+}
+
+/* ── Bookmark links ────────────────────────────────────────────────────
+   The card led with "#1" when there was one link, and its controls were
+   unicode glyphs. */
+.bm-link-card-n-mute {
+  color: var(--faint); font-weight: 550;
+  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+}
+.bm-refresh, .bm-open {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fz-mini);
+}
+.bm-link-add { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Every kind now carries the metadata rail, so every kind needs the two-column
+   template. Spatial kinds get a slightly narrower rail — the board and the
+   wall genuinely do want the width, they just cannot want it badly enough to
+   give up delete, export and history. */
+.page-grid.canvas-grid,
+.page-grid.inspo-grid,
+.page-grid.bookmark-grid,
+.page-grid.snippet-grid,
+.page-grid.md-grid { grid-template-columns: minmax(0, 1fr) 300px; }
+.page-grid.canvas-grid, .page-grid.inspo-grid { grid-template-columns: minmax(0, 1fr) 272px; }
+.page-grid.no-chat { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1180px) {
+  .page-grid.canvas-grid, .page-grid.inspo-grid,
+  .page-grid.bookmark-grid, .page-grid.snippet-grid,
+  .page-grid.md-grid, .page-grid.topic-grid { grid-template-columns: minmax(0, 1fr); }
+  .page-grid .topic-side { display: none; }
+}
