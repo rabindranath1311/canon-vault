@@ -2285,8 +2285,13 @@ function V2PageView(pageId, onChange, onDeleted) {
   let excalidrawModule = null;
   async function loadExcalidraw() {
     if (excalidrawModule) return excalidrawModule;
-    // Fonts resolve relative to this, and the CSS is only needed once here.
-    window.EXCALIDRAW_ASSET_PATH = 'vendor/excalidraw/';
+    /* Fonts resolve relative to this, and it has to be ABSOLUTE. The bundle
+       feeds it to `new URL(file, base)`, and a URL base must be absolute — a
+       bare 'vendor/excalidraw/' threw "Invalid base URL" once per text
+       element, so every drawing rendered its boxes and arrows and none of its
+       words. Derived from the document, so it still works under a subpath and
+       still hardcodes nothing. */
+    window.EXCALIDRAW_ASSET_PATH = new URL('vendor/excalidraw/', document.baseURI).href;
     if (!document.querySelector('link[data-excalidraw]')) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -2353,11 +2358,34 @@ function V2PageView(pageId, onChange, onDeleted) {
       timer = setTimeout(persist, SAVE_AFTER_MS);
     }
 
+    /* A scene that never recorded where it was looking opens at the scene
+       origin — which is the top-left corner of the viewport, under the
+       floating toolbar. A drawing saved from this app or from the Obsidian
+       plugin carries scrollX/scrollY and is left exactly as it was; one that
+       does not gets framed, because the alternative is opening a drawing
+       with its title hidden behind a button bar.
+       (`initialData.scrollToContent` would do this, but the vendored mount
+       wrapper runs restore() first and restore() drops the flag.) */
+    const TOOLBAR_CLEARANCE = 88;
+    function framed(scene) {
+      if (!scene || !Array.isArray(scene.elements) || !scene.elements.length) return scene;
+      const st = scene.appState || {};
+      if (st.scrollX != null || st.scrollY != null) return scene;
+      let minX = Infinity, minY = Infinity;
+      for (const el of scene.elements) {
+        if (!el || el.isDeleted) continue;
+        if (typeof el.x === 'number') minX = Math.min(minX, el.x);
+        if (typeof el.y === 'number') minY = Math.min(minY, el.y);
+      }
+      if (!isFinite(minX) || !isFinite(minY)) return scene;
+      return { ...scene, appState: { ...st, scrollX: -minX + 32, scrollY: -minY + TOOLBAR_CLEARANCE } };
+    }
+
     loadExcalidraw().then((mod) => {
       status.textContent = '';
       handle = mod.mountExcalidraw(host, {
         theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
-        initialData: (ex && ex.scene) || null,
+        initialData: framed((ex && ex.scene) || null),
         onReady: (hd) => { savedVersion = hd.version(); },
         onChange: queue,
       });
