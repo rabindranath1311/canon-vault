@@ -27,7 +27,11 @@ content lives outside the repo entirely. Seed a fictional demo vault instead.
 ## The model, in one line
 
 Four kinds — `note`, `topic`, `canvas`, `inspo` — selected by `kind:` in
-frontmatter, not by folder. A project is a folder, not a kind.
+frontmatter, not by folder. A project is a folder, not a kind — and the app
+treats it as one: the project page opens on its contents grouped by kind, and
+has no description, tags or mentions of its own. The things inside it have
+those. `metaForPage` gives `projects/X/X.md` the Project pill whatever `kind:`
+it carries on disk.
 
 **The file format is defined in [brain/CONVENTION.md](brain/CONVENTION.md)** —
 the single authority, and public because a spec that only exists in someone's

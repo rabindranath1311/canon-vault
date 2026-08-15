@@ -2888,8 +2888,6 @@ img.canvas-item-image {
 .project-card-status-active   { color: var(--k-proj); border-color: var(--k-proj); }
 .project-card-status-shipped  { color: var(--accent); border-color: var(--accent); }
 .project-card-status-paused   { color: var(--signal-warn); }
-.project-card-desc { color: var(--fg); font-size: var(--fz-mini); line-height: 1.5; }
-.project-card-desc.dim { color: var(--muted); font-style: italic; }
 .project-card-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: var(--fz-micro); margin-top: 4px; }
 
 /* Project page body — header card, meta, README, inside section */
@@ -2919,7 +2917,6 @@ img.canvas-item-image {
   width: 100%; background: var(--bg); color: var(--fg);
   border: 1px solid var(--line); padding: 5px 8px; font: inherit; border-radius: 2px;
 }
-.pj-readme .page-body-ta { width: 100%; min-height: 100px; resize: vertical; }
 .pj-add-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   padding: 8px 0; border-bottom: 1px dashed var(--line); margin-bottom: 10px;
@@ -4388,7 +4385,6 @@ code, pre, kbd, samp {
   gap: var(--sp-2) var(--sp-3);
   padding-bottom: var(--sp-1);
 }
-.pj-summary-empty { color: var(--faint); font-size: var(--fz-mini); }
 .pj-status {
   display: inline-flex; align-items: center; gap: var(--sp-2);
   padding: 3px var(--sp-2) 3px var(--sp-2);
@@ -4434,8 +4430,6 @@ code, pre, kbd, samp {
 }
 
 /* Description — rendered by default, textarea only while editing. */
-.pj-readme .md-rendered { max-width: var(--measure); }
-.pj-readme .md-edit-ta  { display: none; width: 100%; min-height: 200px; }
 .pj-desc-editing .md-rendered { display: none; }
 .pj-desc-editing .md-edit-ta  { display: block; }
 
@@ -5141,12 +5135,6 @@ input[type="checkbox"], input[type="radio"] {
   letter-spacing: var(--track-title);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.project-card-desc {
-  font-size: var(--fz-mini); color: var(--muted); line-height: 1.55;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.project-card-desc.dim { color: var(--faint); font-style: italic; }
 .project-card-meta {
   display: flex; justify-content: space-between; align-items: baseline;
   gap: var(--sp-2);
@@ -5192,9 +5180,6 @@ input[type="checkbox"], input[type="radio"] {
 
 /* The bookmark context and project description sit inside cards, so their
    editor should not add a second frame. */
-.bm-section-context .prose-editor, .pj-readme .prose-editor { gap: var(--sp-2); }
-.pj-readme { padding: var(--sp-4); }
-.pj-readme .prose-editor-l { color: var(--muted); }
 
 /* Create picker — the name step for a project. */
 .create-name-form { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
@@ -5667,7 +5652,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 
 /* Truncation is fine; silent truncation is not. The project card clamps its
    description to two lines, so the full text goes in the title. */
-.project-card-desc { cursor: default; }
 
 /* A board preview tile was overflowing its card by a few pixels. */
 .board-card-preview { min-width: 0; }
@@ -5698,3 +5682,43 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 }
 /* A tag page has no body, so its snippet was an empty line holding space. */
 .tab-search-snippet:empty { display: none; }
+
+/* ── The project's folder note ─────────────────────────────────────────
+   A project is a folder, so its own prose is a footnote to the contents, not
+   the headline: one collapsed row at the bottom instead of the 220px
+   description editor that used to sit between you and the pages. It still
+   exists because `projects/X/X.md` is a real file that Obsidian and your
+   agent write to, and text on disk must never be invisible here. */
+.pj-note { margin-top: var(--sp-4); }
+.pj-note-toggle {
+  appearance: none; width: 100%; cursor: pointer;
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-1);
+  background: none; border: 0; border-top: 1px solid var(--line);
+  text-align: left; color: var(--muted);
+  font-size: var(--fz-mini);
+  transition: color var(--dur-1) var(--ease-out);
+}
+.pj-note-toggle:hover { color: var(--fg); }
+.pj-note-chev {
+  display: inline-flex; align-self: center; flex: none;
+  width: 14px; height: 14px; color: var(--faint);
+}
+.pj-note-chev svg { width: 14px; height: 14px; }
+.pj-note-l { flex: none; letter-spacing: var(--track-label); }
+/* The preview is the reason the row can stay closed: it says whether there is
+   anything in there before you spend a click finding out. */
+.pj-note-h {
+  min-width: 0; flex: 1 1 auto; color: var(--faint);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pj-note .prose-editor { padding: var(--sp-3) var(--sp-1) 0; gap: var(--sp-2); }
+.pj-note .md-rendered { max-width: var(--measure); }
+.pj-note .page-body-ta { width: 100%; resize: vertical; }
+
+/* A folder card is a name and what is in it — two lines, so it is sized for
+   two. It kept the padding and the divider of a card that used to carry two
+   clamped lines of prose between them, which read as a card with something
+   missing rather than a card with nothing more to say. */
+.project-card { padding: var(--sp-3) var(--sp-4); gap: var(--sp-1); }
+.project-card-meta { padding-top: 0; border-top: 0; }

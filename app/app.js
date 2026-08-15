@@ -553,6 +553,8 @@ const LUCIDE = {
   'panel-left-close': '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>',
   'panel-left-open':  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
   'link-2':      '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/>',
+  'chevron-right': '<path d="m9 18 6-6-6-6"/>',
+  'chevron-down':  '<path d="m6 9 6 6 6-6"/>',
   'history':     '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   'check':       '<path d="M20 6 9 17l-5-5"/>',
   'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
@@ -637,7 +639,7 @@ const KIND_META = {
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
   'snippet':  { label: 'Snippet',  icon: 'sticky-note', glyph: '∙', color: 'var(--k-snip)',   hint: 'A quick thought. Mature it into anything later.' },
   'inspo':    { label: 'Inspo',    icon: 'image', glyph: '◫', color: 'var(--k-desg)',    hint: 'A page of inspiration items — local images or pasted links, each with caption and tags.' },
-  'project':  { label: 'Project',  icon: 'folder', glyph: '⚐', color: 'var(--k-proj)',   hint: 'A personal container — group topics and canvases under a project via mentions.' },
+  'project':  { label: 'Project',  icon: 'folder', glyph: '⚐', color: 'var(--k-proj)',   hint: 'A folder that holds pages. Not a kind — a container for the others.' },
   'wproject': { label: 'Project',  glyph: '⚑', color: 'var(--k-proj)',   hint: 'A work / design project — holds its IA, flows, components and tokens. Separate from personal projects.' },
 };
 function kindIcon(kind, cls) {
@@ -657,6 +659,13 @@ const DRAWING_META = {
 function isDrawingPath(path) { return /\.excalidraw\.md$/i.test(String(path || '')); }
 /** The chrome for a page, splitting `canvas` by file format. */
 function metaForPage(p) {
+  /* `projects/X/X.md` is a folder note. Whatever `kind:` it carries on disk,
+     the app renders it as the project — a container listing what is inside
+     it — and it used to wear a "Topic" pill above that, which is the label
+     contradicting the chrome. Same rule as the bookmark below, and the same
+     bargain: the derived facet takes the pill, the stored kind keeps the
+     count, and Projects tallies separately. */
+  if (p && /^projects\/([^/]+)\/\1\.md$/.test(String(p.path || ''))) return KIND_META.project;
   if (p && p.kind === 'canvas' && isDrawingPath(p.path)) return DRAWING_META;
   /* A note carrying a url IS a bookmark as far as the reader is concerned:
      the sidebar files it under Bookmark, the page renders the bookmark
@@ -3459,23 +3468,51 @@ function V2PageView(pageId, onChange, onDeleted) {
         parts.push(meta.end_date ? 'ended ' + meta.end_date : 'ongoing');
         summary.appendChild(h('span', { className: 'pj-dates' }, parts.join(' · ')));
       }
-      if (!summary.children.length) {
-        summary.appendChild(h('span', { className: 'pj-summary-empty' },
-          'No status or dates set yet.'));
-      }
+      /* Nothing set means nothing to say. It used to print "No status or
+         dates set yet." as the first line of the page — a sentence whose only
+         content is the absence of a summary, sitting above the contents and
+         two cards above the form that sets it. */
+      summary.style.display = summary.children.length ? '' : 'none';
     }
     refreshSummary();
 
-    // ── Description ─────────────────────────────────────────────────────
-    // The third hand-rolled view/edit toggle in the app, now the shared one.
-    const descCard = h('div', { className: 'pj-card pj-readme' },
-      ProseEditor({
-        label: 'Description',
-        getValue: () => page.body,
-        setValue: (v) => { page.body = v; queueSave(); },
-        placeholder: 'What is this project, why does it matter, what does done look like?\n\nMarkdown works, and [[wikilinks]] resolve.',
-        minHeight: 220,
-      }));
+    /* ── The folder note ─────────────────────────────────────────────────
+       A project is a folder. It has no description, no tags and no mentions —
+       the things inside it have those, and a container that also wants to be
+       a document is why this screen used to read as "a note that happens to
+       list some pages".
+
+       But `projects/X/X.md` is a real file that Obsidian and your agent write
+       to, and it may well have prose in it. Dropping the editor entirely
+       would leave that text on disk and invisible here, which is the one
+       thing this app must never do. So it is a single collapsed row rather
+       than a card: closed by default, and it says whether there is anything
+       inside it before you open it. */
+    let noteOpen = false;
+    const noteWrap = h('div', { className: 'pj-note' });
+    function paintNote() {
+      clear(noteWrap);
+      const text = String(page.body || '').trim();
+      noteWrap.appendChild(h('button', {
+        className: 'pj-note-toggle' + (noteOpen ? ' open' : ''),
+        'aria-expanded': String(noteOpen),
+        onClick: () => { noteOpen = !noteOpen; paintNote(); },
+      },
+        h('span', { className: 'pj-note-chev' }, icon(noteOpen ? 'chevron-down' : 'chevron-right')),
+        h('span', { className: 'pj-note-l' }, 'Folder note'),
+        h('span', { className: 'pj-note-h' },
+          text ? firstLineOf(plainOf(text), 72) : 'empty')));
+      if (noteOpen) {
+        noteWrap.appendChild(ProseEditor({
+          label: null,
+          getValue: () => page.body,
+          setValue: (v) => { page.body = v; queueSave(); },
+          placeholder: 'Anything about the folder itself. The pages inside carry their own.',
+          minHeight: 180,
+        }));
+      }
+    }
+    paintNote();
 
     // ── Details ─────────────────────────────────────────────────────────
     // Was "Project meta": three always-editable inputs with YYYY-MM-DD
@@ -3687,13 +3724,14 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     loadInside();
 
-    // Order follows the questions you actually ask: what is this, then the
-    // facts about it, then what is in it. The old order led with a card that
-    // only restated the title.
+    /* Contents first. A folder's answer to "what is this" is what is in it,
+       and everything else on this screen is a footnote to that — the status
+       strip above it, the dates and the folder note below. The old order put
+       a 220px description editor between you and the pages. */
     wrap.appendChild(summary);
-    wrap.appendChild(descCard);
-    wrap.appendChild(metaCard);
     wrap.appendChild(insideCard);
+    wrap.appendChild(metaCard);
+    wrap.appendChild(noteWrap);
     return wrap;
   }
 
@@ -3936,6 +3974,13 @@ function V2PageView(pageId, onChange, onDeleted) {
       })();
     }
 
+    /* A project is a folder, and a folder does not have tags, a description or
+       a mentions list — the things inside it do. Detected here rather than at
+       the dispatch below, because the header is built first and the chips row
+       has to know. */
+    const _pjPath = /^projects\/([^/]+)\/([^/]+)\.md$/.exec(page.path || '');
+    const isProjectNote = !!(_pjPath && _pjPath[1] === _pjPath[2]);
+
     const header = h('div', { className: 'page-hd' },
       ancestorBar,
       h('div', { className: 'page-hd-row' },
@@ -3970,7 +4015,7 @@ function V2PageView(pageId, onChange, onDeleted) {
              one slip away from "obsidian ↗". One of them had to go, and it
              was not going to be the one in Actions. */
         )),
-      h('div', { className: 'page-chips-row' },
+      isProjectNote ? null : h('div', { className: 'page-chips-row' },
         h('div', { className: 'chip-strip' },
           h('span', { className: 'chip-strip-l' }, 'tags'),
           page.tags.map((t, i) => h('span', {
@@ -4057,12 +4102,10 @@ function V2PageView(pageId, onChange, onDeleted) {
        recoverable by anything.
 
        The project note keeps `null` on purpose: its body IS a full-width
-       management surface, with its own details, description and contents. */
+       container view, with its own details and contents. */
     // which made a container look like a note.
-    const _pj = /^projects\/([^/]+)\/([^/]+)\.md$/.exec(page.path || '');
-    const isProjectNote = !!(_pj && _pj[1] === _pj[2]);
     if (isProjectNote) {
-      body = renderProjectBody(_pj[1]);
+      body = renderProjectBody(_pjPath[1]);
       side = null;
       extraClass = ' project-grid';
     } else if (page.kind === 'canvas') {
@@ -4727,21 +4770,6 @@ function ProjectsScreen() {
     ['archived', 'Archived'],
   ];
 
-  // The excerpt is raw markdown, so `**Where it is:**` was leaking into the
-  // card. This is a summary, not a document — strip the syntax rather than
-  // render it.
-  function plainExcerpt(md, max) {
-    return String(md || '')
-      .replace(/```[\s\S]*?```/g, ' ')
-      .replace(/!?\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, '$1')
-      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/^\s{0,3}#{1,6}\s+/gm, '')
-      .replace(/[*_`>]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, max);
-  }
-
   function projectCard(p) {
     const meta = p.meta || {};
     const status = String(meta.status || '');
@@ -4750,7 +4778,6 @@ function ProjectsScreen() {
         + (meta.start_date && !meta.end_date ? ' · ongoing' : '')
         + (meta.end_date && meta.start_date ? ' · ended ' + meta.end_date : '')
       : null;
-    const desc = plainExcerpt(p.excerpt, 150);
     return h('div', {
       className: 'project-card' + (status ? ' pj-is-' + status : ''),
       onClick: (e) => {
@@ -4767,10 +4794,13 @@ function ProjectsScreen() {
           ? h('span', { className: 'pj-status pj-status-' + status },
               h('span', { className: 'pj-status-dot' }), status)
           : null),
-      // Clamped to two lines, so the whole thing lives in the tooltip —
-      // truncation the reader cannot get past is just missing text.
-      h('div', { className: 'project-card-desc' + (desc ? '' : ' dim'),
-        title: desc || '' }, desc || 'No description yet.'),
+      /* No description line. A project is a folder, and its card says what a
+         folder card says: its name, what is in it, and when it last changed.
+         It used to lead with two clamped lines of the folder note's prose —
+         and where there was none, with "No description yet.", which is a
+         prompt to write something this screen does not want. The folder
+         note is still on the project page, where it is a footnote to the
+         contents rather than the identity of the thing. */
       h('div', { className: 'project-card-meta' },
         h('span', { 'data-pjcount': p.id },
           counts[p.id] != null

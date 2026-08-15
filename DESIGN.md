@@ -502,15 +502,33 @@ groups.
 The tab bar's brand block is pinned to `var(--nav-w)` so the vertical rule
 between sidebar and content runs unbroken through both rows, at any width.
 
-## The project page
+## The project page is a folder
 
-A project is a container, so the page answers three questions in that order:
-**what is this** (description), **what are the facts about it** (details), **what
-is inside it**. It previously led with a card that only restated the title.
+**A project is a folder. It has no description, no tags and no mentions — the
+things inside it have those.** A container that also wants to be a document is
+why this screen used to read as "a note that happens to list some pages": you
+met a 220px description editor, a tag strip and a mentions strip before you
+reached a single one of the pages the folder holds.
 
-- **Description renders**, with an Edit toggle, like every other kind. It was a
-  bare textarea permanently in edit mode, so a description written in markdown
-  showed its own syntax back (`**Where it is:**`).
+So the page opens on **its contents**, grouped by kind. Everything else is a
+footnote to that: the status strip above (hidden entirely when nothing is set —
+"No status or dates set yet." is a sentence whose only content is the absence of
+a summary), the dates below, and the folder note below those.
+
+**The folder note is one collapsed row, not a card.** `projects/X/X.md` is a
+real file that Obsidian and your agent write to, and it may well have prose in
+it — dropping the editor would leave that text on disk and invisible here, which
+is the one thing this app must never do. So it stays, closed, with a preview
+line that says whether there is anything in it before you spend a click finding
+out. The project *card* on the Projects screen drops the prose entirely: a
+folder card is a name and what is in it.
+
+**The page wears the Project pill**, via `metaForPage`. The folder note carries
+some other `kind:` on disk — the demo's is `topic` — and a page that renders as a
+container while calling itself a Topic is the label contradicting the chrome.
+Same rule as the bookmark, same bargain: the derived facet takes the pill, the
+stored kind keeps the count, Projects tallies separately.
+
 - **Details** uses native `type="date"` pickers — the control already speaks
   `YYYY-MM-DD`, so nothing is converted — plus an *Ongoing* checkbox instead of
   asking you to type the word. It says where the values go, because writing them
