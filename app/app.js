@@ -1402,9 +1402,11 @@ function V2Home(state, onOpen, onCreate, onKind) {
       // ── Activity buckets (replaces v1's "memory tiers") ──
       h('div', { className: 'sect-hd' },
         h('span', null, 'Activity buckets'),
-        h('span', { className: 'sect-hd-c' }, 'auto-cohorted by recency')),
+        // Was "auto-cohorted by recency" — two pieces of jargon for a sentence
+        // anyone can read.
+        h('span', { className: 'sect-hd-c' }, 'by when you last touched them')),
       h('div', { className: 'tier-grid' },
-        buckets.map((b) => bucketCard(b))),
+        buckets.map((b) => bucketCard(b, s.pages_total || 0))),
     ]);
   }
 
@@ -1459,8 +1461,18 @@ function V2Home(state, onOpen, onCreate, onKind) {
           h('span', { className: 'obs-member-go' }, icon('arrow-right'))))));
   }
 
-  function bucketCard(b) {
-    const pct = b.cap ? Math.min(100, Math.round((b.count / b.cap) * 100)) : 0;
+  /* Each bucket against the vault, not against a ceiling.
+     `b.cap` and `b.footer_l` are still computed — dashboard.js reproduces the
+     Python original field for field, and a fixture test holds it to that — but
+     they are not shown. The caps were 60 and 200, invented numbers that
+     nothing enforces and nothing happens at, so "5% of soft cap" measured
+     progress toward an event that does not exist. Share of the vault is a
+     proportion the reader can actually use: how much of this is live thinking
+     and how much is archive. Reference stopped being the odd one out, too — it
+     had no cap, so it printed "(pages unbounded)" and drew a flat dashed bar
+     where the others drew a real one. */
+  function bucketCard(b, total) {
+    const pct = total ? Math.round((b.count / total) * 100) : 0;
     return h('div', { className: 'tier-card' },
       h('div', { className: 'tier-hd' },
         h('span', null, b.label.toUpperCase()),
@@ -1469,13 +1481,12 @@ function V2Home(state, onOpen, onCreate, onKind) {
         ),
       h('div', { className: 'tier-n' },
         h('span', { className: 'tier-count' }, String(b.count)),
-        b.cap ? h('span', { className: 'tier-cap' }, ' of ', String(b.cap)) : h('span', { className: 'tier-cap' }, ' pages (unbounded)')),
+        h('span', { className: 'tier-cap' }, ' of ', nOf(total, 'page'))),
       h('div', { className: 'tier-cap-line' }, b.caption),
-      b.cap
-        ? h('div', { className: 'tier-bar' }, h('div', { className: 'tier-bar-fill', style: { width: pct + '%' } }))
-        : h('div', { className: 'tier-bar tier-bar-flat' }),
+      h('div', { className: 'tier-bar' },
+        h('div', { className: 'tier-bar-fill', style: { width: pct + '%' } })),
       h('div', { className: 'tier-foot' },
-        h('span', null, b.footer_l || ''),
+        h('span', null, total ? pct + '% of the vault' : ''),
         h('span', null, b.footer_r || '')));
   }
 

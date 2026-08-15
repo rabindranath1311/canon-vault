@@ -2323,12 +2323,6 @@ body.canvas-fullscreen .canvas-viewport,
 .tier-bar-fill {
   height: 100%; background: var(--accent);
 }
-.tier-bar-flat {
-  background: linear-gradient(90deg, var(--accent) 0, var(--accent) 70%, transparent 70%, transparent 100%);
-  background-size: 6px 100%;
-  background-repeat: repeat-x;
-  border-color: transparent;
-}
 .tier-foot {
   display: flex; justify-content: space-between;
   font-size: var(--fz-micro); color: var(--faint);
@@ -3936,7 +3930,6 @@ code, pre, kbd, samp {
 }
 .tier-bar-fill { background: var(--i-5); }
 .tier-bar { background: var(--paper-2); border-color: var(--line); border-radius: var(--radius-pill); overflow: hidden; }
-.tier-bar-flat { background: linear-gradient(90deg, var(--i-2) 0, var(--i-2) 70%, transparent 70%, transparent 100%); }
 .tier-count { color: var(--fg); }
 .tier-letter { border-color: var(--line); color: var(--muted); }
 
@@ -5415,12 +5408,6 @@ body.cv-settled .screen, body.cv-settled .page {
   min-width: 6px;                 /* a non-zero count always shows something */
   border-radius: var(--radius-pill);
   background: linear-gradient(90deg, var(--i-5), var(--i-4));
-}
-/* "Unbounded" has no proportion to show, so it reads as a rule, not a meter. */
-.tier-bar-flat {
-  background: repeating-linear-gradient(90deg,
-    var(--i-2) 0 4px, transparent 4px 8px);
-  box-shadow: none;
 }
 .tier-hd { justify-content: flex-start; }
 
