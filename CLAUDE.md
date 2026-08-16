@@ -95,7 +95,7 @@ What the code needs to know:
 
 ```
 app/                 the whole product — no framework, no bundler, no build step
-  index.html         bump the ?v= cache-bust when shipping JS/CSS
+  index.html         carries the ?v= cache-bust — bump with scripts/bump-version.mjs
   boot.js            feature-detects showDirectoryPicker; explainer or app
   app.js             screens and rendering
   styles.css         the design system — light-first, two ramps flip per theme (DESIGN.md)
@@ -136,6 +136,10 @@ scripts/
   verify-vault.mjs   the VERIFY check: byte-identical round-trip + invariants
   sync-convention.mjs  regenerates app/vault/brain-text.js from brain/*.md
   sync-demo.mjs        regenerates app/vault/demo-vault.js from demo/
+  bump-version.mjs     bumps BOTH cache-bust markers (index.html ?v= and
+                       sw.js CACHE_VERSION) by reading them. Never hand-edit
+                       either: a sed keyed to the wrong number matches
+                       nothing, silently, and every later one misses too.
   sync-extension.mjs   mirrors app/vault/ into extension/vault/ — byte-exact,
                        enforced by app/test/extension.test.js. Run it after
                        ANY change under app/vault/.
@@ -171,10 +175,12 @@ node --test 'app/test/**/*.test.js'
 node scripts/verify-vault.mjs --vault <path-to-a-vault>
 node scripts/sync-convention.mjs           # after editing brain/*.md
 node scripts/sync-demo.mjs                 # after editing demo/
+node scripts/bump-version.mjs              # before shipping ANY app/ change
 node scripts/sync-extension.mjs            # after editing app/vault/*.js
 node scripts/sync-convention.mjs --check    # what CI runs
 node scripts/sync-demo.mjs --check
 node scripts/sync-extension.mjs --check
+node scripts/bump-version.mjs --check
 ```
 
 The clipper is loaded unpacked from `extension/` (`chrome://extensions` →

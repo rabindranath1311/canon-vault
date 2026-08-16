@@ -29,6 +29,9 @@ jobs:
       - name: app/vault and extension/vault are in sync
         run: node scripts/sync-extension.mjs --check
 
+      - name: The two cache-bust markers are coherent
+        run: node scripts/bump-version.mjs --check
+
       - name: The demo vault passes the validator
         run: node scripts/verify-vault.mjs --vault demo
 
