@@ -722,7 +722,7 @@ function brandWord(cls) {
 
 const KIND_META = {
   'note':     { label: 'Note',     icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'Anything read as prose. A bookmark, a quote, an article — the chrome follows the frontmatter.' },
-  'canvas':   { label: 'Board',    icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A JSON Canvas board of links, text and images. Obsidian owns the arrangement; read-only here.' },
+  'canvas':   { label: 'Canvas',   icon: 'shapes', glyph: '▦', color: 'var(--k-canvas)',  hint: 'A JSON Canvas file. Obsidian’s format and Obsidian’s to edit — this app links out to it rather than rendering it.' },
   'topic':    { label: 'Topic',    icon: 'pilcrow', glyph: '¶', color: 'var(--k-topic)',   hint: 'A text page for a subject you want to think through.' },
   'markdown': { label: 'Markdown', icon: 'file-text', glyph: '§', color: 'var(--k-mdwn)',   hint: 'A rendered markdown article — section headers, pulled quotes, related, contradicts. Beautiful long-form.' },
   'bookmark': { label: 'Bookmark', icon: 'bookmark', glyph: '↗', color: 'var(--k-book)',   hint: 'A URL with context, tags, and connections.' },
@@ -741,13 +741,19 @@ function kindIcon(kind, cls) {
 // confusing thing about the model — you could not tell from the page whether
 // your edits would be kept. This is the one place that decides, so the header,
 // the lists and the project view cannot drift apart.
+/* "Board" is this word now. It named the `.canvas` reader until that was
+   removed; with one spatial editor left there is no second thing to
+   distinguish it from, and "Board" is what people call the surface. The
+   `.canvas` files still in vaults take the name of their actual format below —
+   JSON Canvas — which is more accurate than "Board" ever was for a file this
+   app cannot edit. Two things must never both be called Board. */
 const DRAWING_META = {
-  label: 'Drawing', icon: 'shapes', glyph: '✎', color: 'var(--k-canvas)',
-  hint: 'An Excalidraw drawing. Edited here and in Obsidian — this app writes it.',
+  label: 'Board', icon: 'shapes', glyph: '✎', color: 'var(--k-canvas)',
+  hint: 'A drawing surface — shapes, arrows, handwriting. Saved as Excalidraw, edited here and in Obsidian.',
 };
 function isDrawingPath(path) { return /\.excalidraw\.md$/i.test(String(path || '')); }
 /* Registered under its facet name so every `KIND_META[k]` lookup — the nav,
-   tab labels, kind cards — resolves the Drawing facet without a special case.
+   tab labels, kind cards — resolves the Board facet without a special case.
    Same OBJECT as DRAWING_META, so identity comparisons keep working. */
 KIND_META.drawing = DRAWING_META;
 /** The chrome for a page, splitting `canvas` by file format. */
@@ -778,7 +784,15 @@ function metaForPage(p) {
 // SPEC §5: 13 kinds collapsed to 4. The old markdown/bookmark/snippet entries
 // stay in KIND_META only as a fallback for a stranger's vault; they are not
 // offered anywhere, because `note` chrome is decided by frontmatter (§5).
-const KIND_ORDER = ['note', 'bookmark', 'topic', 'canvas', 'drawing', 'inspo'];
+/* `canvas` is absent on purpose, and it is the one entry whose absence needs
+   explaining: it was the Board row. The app has one spatial editor now, so
+   Board is neither a row you can browse nor a thing you can create — a nav row
+   offering a kind the app cannot make or edit is an offer it cannot keep.
+   Boards already in a vault are not hidden: they keep the Board pill from
+   `metaForPage`, they are searched and linked like any page, and opening one
+   says whose format it is. `drawing` below is the whole of the canvas kind the
+   app owns. */
+const KIND_ORDER = ['note', 'bookmark', 'topic', 'drawing', 'inspo'];
 // Work-mode (design architecture) kinds. Same store + same mention/tag graph
 // as the personal kinds above; only the surface (nav, home, create) differs.
 
@@ -1367,6 +1381,7 @@ function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
         className: 'btn-create',
         onClick: onCreate,
         title: 'Create new page  (⌘N)',
+        'data-tour': 'create',
       },
         h('span', { className: 'btn-create-plus' }, icon('plus')),
         h('span', { className: 'nav-lbl' }, 'Create new')),
@@ -1382,6 +1397,10 @@ function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
           return h('div', {
             className: `nav-item ${g.group === 'kinds' ? 'nav-cat' : ''}`,
             'aria-current': route === it.id ? 'true' : 'false',
+            // A stable handle for the tour to point at. Keyed on the route id
+            // rather than the label, so translating or renaming a row cannot
+            // silently unanchor a step.
+            'data-tour': 'nav:' + it.id,
             onClick: (e) => {
               if (it.href) { window.open(it.href, '_blank', 'noopener,noreferrer'); return; }
               if (e.metaKey || e.ctrlKey) { newTab(it.id, null, { switchTo: true }); return; }
@@ -1486,8 +1505,14 @@ function WelcomeCard(onCreate) {
       action || null));
 
   const steps = [step(1, 'Make something',
-    'Every kind is one picker away — a note, a bookmark, a topic, a board, a wall.',
-    h('button', { className: 'welcome-go', onClick: onCreate }, 'Create a page', icon('arrow-right')))];
+    'Every kind is one picker away — a note, a bookmark, a topic, a drawing, a wall.',
+    h('div', { className: 'welcome-step-slot' },
+      h('button', { className: 'welcome-go', onClick: onCreate }, 'Create a page', icon('arrow-right')),
+      // The tour does not auto-run while this card is up (see maybeStartTour),
+      // so this is the only way to reach it on a first real vault.
+      h('button', {
+        className: 'welcome-go', onClick: () => startTour(0),
+      }, 'Take the tour', icon('arrow-right'))))];
 
   // Only offered when we know the vault's name — otherwise the link is a guess.
   const vault = window.SB_VAULT_NAME || '';
@@ -1547,6 +1572,214 @@ function WelcomeCard(onCreate) {
       }, '✕')),
     h('ol', { className: 'welcome-steps' }, steps));
   return card;
+}
+
+/* ── The tour ──────────────────────────────────────────────────────────────
+ *
+ * A vault is four ideas — files on disk, kinds, links, tags — and the app used
+ * to state none of them. The dashboard's welcome card listed three things to
+ * DO; it could not say what a wikilink was, because it had nowhere to point.
+ * This does: each step anchors to the real control it describes, so the
+ * sentence and the thing it names are on screen together.
+ *
+ * Runs once (a localStorage pref, never the vault) and is replayable from
+ * Settings. It runs in the demo too — the demo is the front door, and someone
+ * who clicked "Try a demo vault" is exactly the person with the questions.
+ *
+ * A step whose anchor is missing is not skipped: it centres instead. Kind rows
+ * come and go with the vault's contents, and a tour that silently drops the
+ * paragraph about drawings on an empty vault teaches least to the person who
+ * needs it most.
+ */
+const TOUR_STEPS = [
+  {
+    id: 'files', icon: 'folder', anchor: null,
+    title: 'Your notes are files',
+    body: 'Plain markdown in the folder you picked — no database, no account, nothing uploaded. '
+        + 'Close this app and everything is still there, readable in any editor.',
+  },
+  {
+    id: 'create', icon: 'plus', anchor: '[data-tour="create"]',
+    title: 'Four kinds, one picker',
+    body: 'Note, topic, drawing, wall. A bookmark is just a note carrying a url — the kind decides '
+        + 'how a page looks, and the frontmatter does the rest. Nothing depends on which folder it lands in.',
+  },
+  {
+    id: 'links', icon: 'files', anchor: '[data-tour="nav:pages"]',
+    title: 'Double brackets make the graph',
+    body: 'Type [[ and a page name anywhere — in prose, or on a shape inside a drawing. Links resolve '
+        + 'by filename, so Obsidian follows exactly the same ones, and every page lists what points back at it.',
+  },
+  {
+    id: 'tags', icon: 'tag', anchor: '[data-tour="nav:tags"]',
+    title: 'Tags slice, links connect',
+    body: 'A #tag is a label you can filter the whole vault by. A link is a relationship between two '
+        + 'particular pages. Tags live in the frontmatter, so they are ordinary text in an ordinary file.',
+  },
+  {
+    id: 'drawing', icon: 'shapes', anchor: '[data-tour="nav:kind:drawing"]',
+    title: 'One place for anything spatial',
+    body: 'A board is the app’s own editor — shapes, arrows, handwriting — saved as .excalidraw.md, '
+        + 'the format the Obsidian Excalidraw plugin reads. Words, links and images on a board are '
+        + 'written into the markdown too, so search, your backlinks and your agent all see what is in it.',
+  },
+  {
+    id: 'obsidian', icon: 'arrow-right', anchor: null,
+    title: 'Obsidian and your agent, same folder',
+    body: 'Not an export and not a sync. Point Obsidian at this folder and both are live at once. '
+        + 'Hand the folder to a coding agent and CONVENTION.md, sitting beside your notes, tells it the rules.',
+  },
+  {
+    id: 'clipper', icon: 'bookmark', anchor: '[data-tour="nav:settings"]',
+    title: 'Capture from the browser',
+    body: 'The Chrome clipper writes straight into the vault — a page, a quotation or an image becomes '
+        + 'a file, through the same save safety as anything you type here. Load it unpacked from extension/.',
+  },
+];
+
+/** Is the tour on screen right now? Keeps ⌘N and friends from fighting it. */
+let _tourEl = null;
+
+function startTour(startAt = 0) {
+  if (_tourEl) return;                       // already running
+  let i = Math.max(0, Math.min(startAt, TOUR_STEPS.length - 1));
+
+  const scrim = h('div', { className: 'tour-scrim' });
+  const ring = h('div', { className: 'tour-ring', 'aria-hidden': 'true' });
+  const card = h('div', {
+    className: 'tour-card', role: 'dialog', 'aria-modal': 'false',
+    'aria-label': 'How this works',
+  });
+  const root = h('div', { className: 'tour' }, scrim, ring, card);
+  _tourEl = root;
+  document.body.appendChild(root);
+  requestAnimationFrame(() => root.classList.add('tour-in'));
+
+  /* Marked seen the moment it OPENS, not when it is completed.
+     Recording it on finish only counted the people who pressed Done or
+     Escape — reload in the middle, or close the tab, and the flag was never
+     written, so the tour came back on every single load until you played it
+     through. Shown once means once, however you leave it; Settings → Take the
+     tour is the way back. */
+  try { const p = loadPrefs(); p.tourSeen = true; savePrefs(p); } catch (_) {}
+
+  function finish() {
+    if (!_tourEl) return;
+    root.classList.remove('tour-in');
+    document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('resize', place);
+    const el = root;
+    _tourEl = null;
+    setTimeout(() => el.remove(), 260);
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); go(i + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(i - 1); }
+  }
+
+  /* Anchor the ring and the card to the live element. Read on every step and
+     on resize rather than cached: the nav is resizable and collapsible, and a
+     ring left behind at a stale rect points confidently at nothing. */
+  function place() {
+    const step = TOUR_STEPS[i];
+    const el = step.anchor ? document.querySelector(step.anchor) : null;
+    const r = el ? el.getBoundingClientRect() : null;
+    if (!r || !r.width) {
+      ring.style.display = 'none';
+      card.classList.add('tour-card-mid');
+      card.style.left = ''; card.style.top = '';
+      return;
+    }
+    ring.style.display = '';
+    const pad = 6;
+    ring.style.left = (r.left - pad) + 'px';
+    ring.style.top = (r.top - pad) + 'px';
+    ring.style.width = (r.width + pad * 2) + 'px';
+    ring.style.height = (r.height + pad * 2) + 'px';
+
+    card.classList.remove('tour-card-mid');
+    const cw = card.offsetWidth || 360;
+    const ch = card.offsetHeight || 200;
+    const gap = 16;
+    // Prefer the right of the anchor (the nav lives on the left); flip to the
+    // left when there is no room, and clamp so the card is never off-screen.
+    let left = r.right + gap;
+    if (left + cw > window.innerWidth - 12) left = Math.max(12, r.left - gap - cw);
+    let top = r.top + r.height / 2 - ch / 2;
+    top = Math.max(12, Math.min(top, window.innerHeight - ch - 12));
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+  }
+
+  function go(n) {
+    if (n < 0) return;
+    if (n >= TOUR_STEPS.length) { finish(); return; }
+    i = n;
+    paint();
+  }
+
+  function paint() {
+    const step = TOUR_STEPS[i];
+    const last = i === TOUR_STEPS.length - 1;
+    card.replaceChildren(
+      h('button', {
+        className: 'tour-x', title: 'Close', 'aria-label': 'Close the tour',
+        onClick: finish,
+      }, '✕'),
+      h('div', { className: 'tour-hd' },
+        h('span', { className: 'tour-mark' }, icon(step.icon)),
+        h('h2', { className: 'tour-t' }, step.title)),
+      h('p', { className: 'tour-b' }, step.body),
+      h('div', { className: 'tour-ft' },
+        h('div', { className: 'tour-dots' }, TOUR_STEPS.map((s, n) => h('button', {
+          className: 'tour-dot' + (n === i ? ' on' : ''),
+          title: s.title, 'aria-label': `Step ${n + 1}: ${s.title}`,
+          'aria-current': n === i ? 'true' : 'false',
+          onClick: () => go(n),
+        }))),
+        h('div', { className: 'tour-btns' },
+          i > 0 ? h('button', { className: 'tour-back', onClick: () => go(i - 1) }, 'Back') : null,
+          h('button', { className: 'tour-next', onClick: () => go(i + 1) },
+            last ? 'Done' : 'Next', last ? null : icon('arrow-right')))),
+      h('div', { className: 'tour-count' }, `${i + 1} of ${TOUR_STEPS.length}`),
+    );
+    // Re-run the entrance on each step so the move reads as a step, not a jump.
+    card.classList.remove('tour-step-in');
+    void card.offsetWidth;                    // restart the animation
+    card.classList.add('tour-step-in');
+    place();
+  }
+
+  document.addEventListener('keydown', onKey, true);
+  window.addEventListener('resize', place);
+  paint();
+  // The nav may still be painting on a cold boot; re-place once it has.
+  setTimeout(place, 60);
+  /* The card opens under the cursor — it is launched by a click, and it lands
+     where the pointer already is. Until the entrance is over it takes no
+     clicks at all, so a double-click, a repeated tap or an event the browser
+     had queued cannot land on whichever dot happens to be under the mouse and
+     skip the reader three steps into a tour they have not started reading. */
+  setTimeout(() => card.classList.add('tour-armed'), 220);
+}
+
+/** First run only. Called after boot has painted something to point at. */
+function maybeStartTour() {
+  let prefs;
+  try { prefs = loadPrefs(); } catch (_) { return; }
+  if (prefs.tourSeen) return;
+  /* Two first-run greetings at once is one too many. On a real vault the
+     dashboard's welcome card is already up with the three things to DO, and it
+     carries a "Take the tour" button — so the tour waits to be asked rather
+     than covering the card that just offered it. In the demo there is no
+     welcome card (it would invite you to make a page that dies on reload),
+     which is exactly where an unprompted tour belongs. */
+  if (!prefs.welcomeSeen && !window.SB_DEMO) return;
+  // Wait for the nav to exist, or every anchor resolves to null and the whole
+  // tour centres itself in the middle of the screen saying nothing about where.
+  setTimeout(() => { if (document.querySelector('[data-tour="create"]')) startTour(0); }, 400);
 }
 
 function PageHeader(title, meta, sub, right) {
@@ -2776,7 +3009,12 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     let handle = null;
     let savedVersion = null;
+    let savedOnce = false;   // has this session written anything? decides the idle label
     let timer = null;
+    // fileId → the vault file it was written to, seeded from what the file
+    // already recorded so a reopened drawing does not re-file its own images.
+    let embedPaths = new Map(
+      ((ex && ex.embeddedFiles) || []).map((e) => [e.key, e.value]));
 
     // onChange fires on every pointer move. Writing per event would fill
     // `.history` with hundreds of near-identical snapshots and hammer the disk,
@@ -2786,22 +3024,41 @@ function V2PageView(pageId, onChange, onDeleted) {
     async function persist() {
       if (!handle) return;
       const version = handle.version();
-      if (version === savedVersion) return;
+      // Nothing actually changed — but `queue()` has already put "unsaved
+      // changes…" on screen, because onChange cannot tell a pan from an edit.
+      // Returning here used to leave that label up forever: every drawing sat
+      // there claiming unsaved work seconds after it had been written, which
+      // is the save indicator lying in the one direction that matters.
+      if (version === savedVersion) { status.textContent = savedOnce ? 'saved' : ''; return; }
       const scene = handle.getScene();
       if (!scene) return;
       status.textContent = 'saving…';
+      // An image pasted into the drawing becomes a real file in attachments/
+      // before the drawing is written, so the `## Embedded Files` index can
+      // name it. Carries the mapping forward across saves — an image is
+      // written out once, not once per keystroke.
+      try {
+        embedPaths = await SB.data().adoptDrawingImages(
+          scene, page.title || page.slug, embedPaths);
+      } catch (e) {
+        // A drawing that cannot file its images is still a drawing worth
+        // saving; the scene keeps them inline either way.
+        console.warn('could not write drawing images to attachments/', e);
+      }
       const md = window.SB_EXCALIDRAW.serialize(scene, {
         compressed: true,
         backOfNote: (ex && ex.backOfNote) || '',
         frontmatter: (ex && ex.frontmatter) || null,
-        elementLinks: (ex && ex.elementLinks) || [],
-        embeddedFiles: (ex && ex.embeddedFiles) || [],
+        embeddedFiles: embedPaths,
       });
       // `body` is the whole plugin block; savePage routes it through the same
       // conflict + `.history` machinery every other page uses.
       const r = await savePage({ body: bodyOfExcalidrawFile(md) });
+      // A refused save stays on screen: that one is not noise, it is the
+      // reason the file on disk is not what you are looking at.
       if (r === null) { status.textContent = 'not saved'; return; }
       savedVersion = version;
+      savedOnce = true;
       status.textContent = 'saved';
     }
     function queue() {
@@ -2861,425 +3118,6 @@ function V2PageView(pageId, onChange, onDeleted) {
     return String(md).replace(/^---\n[\s\S]*?\n---\n/, '');
   }
 
-  /**
-   * A `.canvas` board, rendered read-only.
-   *
-   * JSON Canvas is Obsidian's format and Obsidian owns it. This view draws the
-   * nodes and edges it finds there and never writes geometry back — not a gap
-   * to be closed later, but the reason a board is safe to open here at all.
-   *
-   * The editing half of this renderer (item drag, resize, pen + eraser strokes,
-   * "+ text" / "+ link" / "+ image", drop, paste, ⌘Z) has been REMOVED rather
-   * than disabled. It used to sit behind a `READ_ONLY` flag that only hid the
-   * toolbar: the handlers stayed live on the viewport, so an Apple Pencil
-   * stroke, a paste, or a ⌘Z still reached `queueSave()` and wrote a page whose
-   * geometry had nowhere to go. Half-removed editing is worse than either
-   * choice — it is how the app came to write a YAML header over a user's board.
-   *
-   * Anything the app itself writes is a drawing, and drawings are Excalidraw.
-   * One editor, one format, one owner per scene.
-   */
-  function renderCanvasBody() {
-    if (!page.meta) page.meta = {};
-    // Both come from the `.canvas` file via data.js; absent means "not a board
-    // yet", which renders as an empty surface rather than an error.
-    const items = Array.isArray(page.meta.layout) ? page.meta.layout : [];
-    const edges = Array.isArray(page.meta.edges) ? page.meta.edges : [];
-
-    const surface = h('div', { className: 'canvas-surface' });
-    const viewport = h('div', { className: 'canvas-viewport board-ro' });
-    const obsHref = obsidianUrl(page.path);
-    viewport.appendChild(h('div', { className: 'board-readonly' },
-      h('span', null, 'Boards are read-only here — arrange them in Obsidian.'),
-      obsHref ? h('a', { href: obsHref }, 'open in Obsidian ↗') : null));
-
-    // ── Edges layer ──────────────────────────────────────────────────────
-    // Sits below the cards, inside `surface` so it inherits pan + zoom for free.
-    //
-    // The span and the matching negative origin are both load-bearing. This
-    // layer used to be `width=0 height=0` with `overflow: visible`, on the
-    // theory that an outer <svg> would then paint outside its own viewport —
-    // it does not, so every connection computed here was drawn into a zero-size
-    // box and clipped away. The geometry was right and nothing ever appeared.
-    // A viewBox centred on the origin gives the layer real extent while keeping
-    // world coordinates one-to-one, and JSON Canvas coordinates are routinely
-    // negative, so the origin has to sit in the middle rather than the corner.
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const EDGE_SPAN = 20000;          // half-extent, in world units
-    const edgesSvg = document.createElementNS(SVG_NS, 'svg');
-    edgesSvg.setAttribute('class', 'canvas-edges');
-    edgesSvg.setAttribute('width', String(EDGE_SPAN * 2));
-    edgesSvg.setAttribute('height', String(EDGE_SPAN * 2));
-    edgesSvg.setAttribute('viewBox',
-      `${-EDGE_SPAN} ${-EDGE_SPAN} ${EDGE_SPAN * 2} ${EDGE_SPAN * 2}`);
-    edgesSvg.style.left = `${-EDGE_SPAN}px`;
-    edgesSvg.style.top = `${-EDGE_SPAN}px`;
-    const edgesG = document.createElementNS(SVG_NS, 'g');
-    edgesSvg.appendChild(edgesG);
-    surface.appendChild(edgesSvg);
-
-    // JSON Canvas colors are either a hex string or a preset "1".."6".
-    const EDGE_PRESET = {
-      '1': '#e5484d', '2': '#f76b15', '3': '#ffb224',
-      '4': '#30a46c', '5': '#00a2c7', '6': '#8e4ec6',
-    };
-    function edgeColor(c) {
-      if (!c) return 'var(--muted)';
-      return EDGE_PRESET[String(c)] || String(c);
-    }
-
-    // The curve math lives in data.js as a pure function so it is testable in
-    // Node; everything here is just turning it into SVG.
-    function renderAllEdges() {
-      while (edgesG.firstChild) edgesG.removeChild(edgesG.firstChild);
-      const geom = window.SB_EDGE_GEOM;
-      if (typeof geom !== 'function') return;
-      const boxes = new Map();
-      for (const it of items) {
-        boxes.set(it.id, { x: it.x || 0, y: it.y || 0, w: it.w || 240, h: it.h || 220 });
-      }
-      for (const e of edges) {
-        const g = geom(e, boxes.get(e.fromNode), boxes.get(e.toNode));
-        if (!g) continue;               // an endpoint that isn't on the board
-        const color = edgeColor(e.color);
-
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', g.d);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke-width', '2');
-        path.setAttribute('stroke-linecap', 'round');
-        // Set via style, not the attribute: a CSS custom property is only
-        // guaranteed to resolve as a style declaration.
-        path.style.stroke = color;
-        edgesG.appendChild(path);
-
-        // Arrowheads. The tip sits on the anchor and the base steps back along
-        // the outward normal, so it lines up with the curve's tangent.
-        const HEAD = 9;
-        for (const p of g.arrows) {
-          const bx = p.x + p.nx * HEAD, by = p.y + p.ny * HEAD;
-          const px = -p.ny, py = p.nx;          // perpendicular, for the base
-          const tri = document.createElementNS(SVG_NS, 'polygon');
-          tri.setAttribute('points', [
-            `${p.x},${p.y}`,
-            `${bx + px * HEAD * 0.45},${by + py * HEAD * 0.45}`,
-            `${bx - px * HEAD * 0.45},${by - py * HEAD * 0.45}`,
-          ].join(' '));
-          tri.style.fill = color;
-          edgesG.appendChild(tri);
-        }
-
-        if (g.label) {
-          const text = document.createElementNS(SVG_NS, 'text');
-          text.setAttribute('x', g.label.x);
-          text.setAttribute('y', g.label.y);
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('dominant-baseline', 'middle');
-          text.setAttribute('class', 'canvas-edge-label');
-          text.textContent = g.label.text;
-          edgesG.appendChild(text);
-        }
-      }
-    }
-
-    // ── Pan + zoom ────────────────────────────────────────────────────────
-    // The surface is transformed via translate + scale; the viewport stays
-    // static (no scrollbars). Item coords are world space, never touched by
-    // zoom. Screen → world is (screen - pan) / zoom.
-    let zoomReadout;
-    let panX = 0, panY = 0, zoom = 1;
-    const ZOOM_MIN = 0.2, ZOOM_MAX = 3;
-    function applyTransform() {
-      surface.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-      if (zoomReadout) zoomReadout.textContent = Math.round(zoom * 100) + '%';
-    }
-    function zoomAt(screenX, screenY, factor) {
-      const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom * factor));
-      if (next === zoom) return;
-      const rect = viewport.getBoundingClientRect();   // keep the point stable
-      const mx = screenX - rect.left, my = screenY - rect.top;
-      panX = mx - (mx - panX) * (next / zoom);
-      panY = my - (my - panY) * (next / zoom);
-      zoom = next;
-      applyTransform();
-    }
-    function resetView() { panX = 0; panY = 0; zoom = 1; applyTransform(); }
-    function fitView() {
-      if (!items.length) { resetView(); return; }
-      const W = viewport.clientWidth, H = viewport.clientHeight;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const it of items) {
-        const x = it.x || 0, y = it.y || 0;
-        const w = it.w || 240, ht = it.h || 220;
-        if (x < minX) minX = x; if (y < minY) minY = y;
-        if (x + w > maxX) maxX = x + w; if (y + ht > maxY) maxY = y + ht;
-      }
-      const bw = maxX - minX, bh = maxY - minY;
-      const pad = 60;
-      zoom = Math.max(ZOOM_MIN, Math.min(1.2, Math.min((W - pad * 2) / bw, (H - pad * 2) / bh)));
-      panX = (W - bw * zoom) / 2 - minX * zoom;
-      panY = (H - bh * zoom) / 2 - minY * zoom;
-      applyTransform();
-    }
-
-    // Wheel: ⌘/Ctrl+wheel zooms, plain wheel pans. A card that overflows gets
-    // to scroll itself first.
-    viewport.addEventListener('wheel', (e) => {
-      const scrollable = e.target && e.target.closest && e.target.closest('.canvas-item-body');
-      if (scrollable && !(e.ctrlKey || e.metaKey)
-          && scrollable.scrollHeight > scrollable.clientHeight) return;
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey) {
-        zoomAt(e.clientX, e.clientY, e.deltaY > 0 ? 0.92 : 1.08);
-      } else {
-        panX -= e.deltaX; panY -= e.deltaY;
-        applyTransform();
-      }
-    }, { passive: false });
-
-    // ── Pointer: pan with one pointer, pinch-zoom with two ───────────────
-    // Every pointer type pans. There is no draw mode and no drag mode, so a
-    // stylus behaves exactly like a finger and cannot start an edit the board
-    // has no way to keep.
-    const touchPoints = new Map();      // pointerId → {x, y}
-    let pinchState = null;
-
-    function startPinch() {
-      const pts = Array.from(touchPoints.values());
-      pinchState = {
-        startDist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y),
-        startZoom: zoom,
-        startCenterX: (pts[0].x + pts[1].x) / 2,
-        startCenterY: (pts[0].y + pts[1].y) / 2,
-        startPanX: panX, startPanY: panY,
-      };
-    }
-    function updatePinch() {
-      if (!pinchState || touchPoints.size < 2) return;
-      const pts = Array.from(touchPoints.values());
-      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-      const cx = (pts[0].x + pts[1].x) / 2, cy = (pts[0].y + pts[1].y) / 2;
-      const newZoom = Math.max(ZOOM_MIN,
-        Math.min(ZOOM_MAX, pinchState.startZoom * (dist / pinchState.startDist)));
-      const rect = viewport.getBoundingClientRect();
-      const mx = pinchState.startCenterX - rect.left;
-      const my = pinchState.startCenterY - rect.top;
-      // Zoom anchored at the original centroid, plus drag by the centroid delta.
-      panX = mx - (mx - pinchState.startPanX) * (newZoom / pinchState.startZoom)
-             + (cx - pinchState.startCenterX);
-      panY = my - (my - pinchState.startPanY) * (newZoom / pinchState.startZoom)
-             + (cy - pinchState.startCenterY);
-      zoom = newZoom;
-      applyTransform();
-    }
-    function startPanning(e) {
-      const sx = e.clientX, sy = e.clientY;
-      const fromX = panX, fromY = panY;
-      try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
-      viewport.classList.add('panning');
-      const mv = (ev) => {
-        panX = fromX + (ev.clientX - sx);
-        panY = fromY + (ev.clientY - sy);
-        applyTransform();
-      };
-      const up = () => {
-        viewport.classList.remove('panning');
-        viewport.removeEventListener('pointermove', mv);
-        viewport.removeEventListener('pointerup', up);
-        viewport.removeEventListener('pointercancel', up);
-      };
-      viewport.addEventListener('pointermove', mv);
-      viewport.addEventListener('pointerup', up);
-      viewport.addEventListener('pointercancel', up);
-    }
-
-    viewport.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
-      if (e.target.closest('.canvas-toolbar')) return;
-      // Anything that acts on a click has to be left alone: starting a pan
-      // calls setPointerCapture, which retargets the pointerup and means the
-      // browser fires `click` on the viewport instead of the card.
-      if (e.target.closest('a, .canvas-item-clickable')) return;
-      // Text inside a card stays selectable for the same reason — a captured
-      // pointer turns every attempt to copy a line into a drag.
-      if (e.pointerType === 'mouse' && e.target.closest('.canvas-item-body')) return;
-      if (e.pointerType === 'touch') {
-        touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        if (touchPoints.size >= 2) {
-          viewport.classList.remove('panning');   // abandon the 1-finger pan
-          startPinch();
-          e.preventDefault();
-          return;
-        }
-      }
-      startPanning(e);
-    });
-
-    // Pinch tracking on `document`: listening on the viewport misses moves
-    // that stray between the two fingers.
-    const onDocMove = (e) => {
-      if (e.pointerType !== 'touch' || !touchPoints.has(e.pointerId)) return;
-      touchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pinchState) updatePinch();
-    };
-    const releaseTouch = (e) => {
-      if (e.pointerType !== 'touch' || !touchPoints.has(e.pointerId)) return;
-      touchPoints.delete(e.pointerId);
-      if (touchPoints.size < 2) pinchState = null;
-    };
-    document.addEventListener('pointermove', onDocMove);
-    document.addEventListener('pointerup', releaseTouch);
-    document.addEventListener('pointercancel', releaseTouch);
-    if (typeof onBodyTeardown === 'function') {
-      onBodyTeardown(() => {
-        document.removeEventListener('pointermove', onDocMove);
-        document.removeEventListener('pointerup', releaseTouch);
-        document.removeEventListener('pointercancel', releaseTouch);
-      });
-    }
-
-    // ── Cards ─────────────────────────────────────────────────────────────
-    function buildItem(item) {
-      const style = {
-        left: (item.x || 0) + 'px',
-        top: (item.y || 0) + 'px',
-        width: (item.w || 240) + 'px',
-      };
-      if (item.h && item.h > 60) style.height = item.h + 'px';
-      const el = h('div', {
-        className: `canvas-item canvas-item-${item.type}`,
-        style, 'data-id': item.id,
-      });
-
-      if (item.type === 'text') {
-        // JSON Canvas text nodes hold markdown, so render it as markdown —
-        // the old editor put the raw source in a textarea, which showed
-        // people their own `##` and `[[links]]` as literal characters.
-        const body = h('div', { className: 'canvas-item-body md-rendered' });
-        try {
-          body.innerHTML = SB.data().renderHtml(item.text || '').html;
-          decorateMentions(body);
-          decorateHashtags(body);
-        } catch (_) { body.textContent = item.text || ''; }
-        el.appendChild(body);
-      } else if (item.type === 'image') {
-        if (item.asset) {
-          el.appendChild(vaultImage(item.asset,
-            { className: 'canvas-item-image', alt: item.caption || '' }));
-        }
-        if (item.caption) {
-          el.appendChild(h('div', { className: 'canvas-item-caption' }, item.caption));
-        }
-      } else if (item.type === 'link') {
-        const url = item.url || '';
-        el.appendChild(h('a', {
-          className: 'canvas-item-link', href: url, target: '_blank', rel: 'noreferrer',
-        }, item.title || url));
-        // No preview fetch: a static page cannot request an arbitrary origin,
-        // and pretending otherwise is what left "fetching preview…" on screen
-        // forever. The URL itself is the preview.
-        let host = '';
-        try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (_) {}
-        if (host) el.appendChild(h('div', { className: 'canvas-item-host' }, host));
-      } else if (item.type === 'file') {
-        // A vault file pinned to the board — usually a note. Show it as the
-        // page it is and open it in the app, so a board works as an index.
-        const name = String(item.file || '').split('/').pop().replace(/\.md$/i, '');
-        // Was a `§` glyph plus the full path printed underneath. The kind
-        // icon says more than the glyph did, and the path is a tooltip —
-        // a board is an index of pages, so it should read as page titles.
-        const hitPage = pageByPath(item.file);
-        el.setAttribute('title', item.file);
-        el.appendChild(h('div', { className: 'canvas-item-file' },
-          h('span', { className: 'canvas-item-file-glyph' },
-            icon(metaForPage(hitPage || { kind: 'note' }).icon || 'file-text')),
-          h('span', { className: 'canvas-item-file-name' }, name || item.file)));
-        el.classList.add('canvas-item-clickable');
-        el.addEventListener('click', () => {
-          const hit = pageByPath(item.file);
-          if (hit) openPage(hit.id);
-        });
-      } else if (item.type === 'group') {
-        // A frame drawn around other nodes. Rendered as a labelled outline so
-        // the grouping Obsidian shows survives the trip here.
-        el.appendChild(h('div', { className: 'canvas-item-grouplabel' }, item.label || ''));
-      } else {
-        // A node type JSON Canvas gained after this was written. Say so
-        // plainly rather than drawing an empty card.
-        el.appendChild(h('div', { className: 'canvas-item-unknown' },
-          item.type || 'unknown', ' node — open in Obsidian'));
-      }
-      return el;
-    }
-
-    // ── Toolbar ───────────────────────────────────────────────────────────
-    // View controls only. Nothing here can change the board.
-    const toolbarKids = [];
-    toolbarKids.push(h('div', { className: 'canvas-toolbar-spacer' }));
-    toolbarKids.push(h('button', {
-      className: 'canvas-expand-btn',
-      title: 'expand canvas to full screen (hides app + browser chrome; Esc to exit)',
-      onClick: async () => {
-        const wantFs = !app.canvasFullscreen;
-        // The body class is the source of truth for layout; the real OS
-        // fullscreen request is best-effort on top (browsers gate it to
-        // user-gesture handlers, and not every engine allows it on any element).
-        app.canvasFullscreen = wantFs;
-        document.body.classList.toggle('canvas-fullscreen', wantFs);
-        try {
-          if (wantFs) {
-            const r = document.documentElement;
-            const req = r.requestFullscreen || r.webkitRequestFullscreen || r.mozRequestFullScreen;
-            if (req) await req.call(r);
-          } else if (document.fullscreenElement || document.webkitFullscreenElement) {
-            const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-            if (exit) await exit.call(document);
-          }
-        } catch (_) { /* denied or unsupported — in-page fullscreen still works */ }
-        setTimeout(() => { applyTransform(); }, 80);
-      },
-    }, '⛶ expand'));
-    const centerOf = () => {
-      const r = viewport.getBoundingClientRect();
-      return [r.left + viewport.clientWidth / 2, r.top + viewport.clientHeight / 2];
-    };
-    toolbarKids.push(h('div', { className: 'canvas-zoom-controls' },
-      h('button', { className: 'canvas-zoom-btn', title: 'zoom out',
-        onClick: () => zoomAt(...centerOf(), 0.85) }, '−'),
-      (zoomReadout = h('button', { className: 'canvas-zoom-readout',
-        title: 'click to reset to 100%', onClick: () => resetView() }, '100%')),
-      h('button', { className: 'canvas-zoom-btn', title: 'zoom in',
-        onClick: () => zoomAt(...centerOf(), 1.15) }, '+'),
-      h('button', { className: 'canvas-zoom-btn', title: 'fit all items',
-        onClick: () => fitView() }, 'fit')));
-    toolbarKids.push(h('div', { className: 'canvas-toolbar-hint' },
-      nOf(items.length, 'item'), ' · ',
-      edges.length ? edges.length + ' connections · ' : '',
-      'drag to pan · ⌘+scroll to zoom'));
-
-    items.forEach((it) => surface.appendChild(buildItem(it)));
-    renderAllEdges();
-    viewport.appendChild(h('div', { className: 'canvas-toolbar' }, ...toolbarKids));
-    viewport.appendChild(surface);
-
-    // Leaving the page must not strand the app in fullscreen.
-    if (typeof onBodyTeardown === 'function') {
-      onBodyTeardown(() => {
-        if (app.canvasFullscreen) {
-          app.canvasFullscreen = false;
-          document.body.classList.remove('canvas-fullscreen');
-        }
-      });
-    }
-
-    // Initial view: fit the board if there is one, otherwise sit at the origin.
-    setTimeout(() => {
-      applyTransform();
-      if (items.length) fitView();
-    }, 0);
-
-    return viewport;
-  }
   // Inspo is a bento wall now, not a board: items live in the markdown body
   // (image, caption, #tags, source url; `##` headings group them), so Obsidian
   // renders the same page as images with captions. Geometry is gone entirely —
@@ -4448,18 +4286,23 @@ function V2PageView(pageId, onChange, onDeleted) {
       side = renderTopicSide();
       extraClass = ' project-grid';
     } else if (page.kind === 'canvas') {
-      // One kind, two file formats, and the split decides who owns the scene:
-      // a `.excalidraw.md` is ours, so it mounts the editor and writes; a
-      // `.canvas` is Obsidian's, so it renders and never writes. The pill above
-      // says which (see `metaForPage`), because "can I edit this?" should be
-      // answerable from the page rather than by trying it.
+      /* One kind, one format, one editor: `kind: canvas` means a board, and a
+         board is a `.excalidraw.md`.
+
+         A page still carrying `kind: canvas` without a scene is a legacy
+         `.md` + `.canvas` pair from when this app rendered JSON Canvas. It is
+         not a broken board and it does not get an apology screen — it is a
+         markdown file with prose in it, so it renders as one, and the
+         `![[thing.canvas]]` line in its body stays exactly where its author
+         put it. Obsidian still opens the pair; nothing here has touched it. */
       if (page.meta && page.meta.excalidraw) {
         body = renderExcalidrawBody();
+        extraClass = ' canvas-grid';
       } else {
-        body = withBoardBody(renderCanvasBody());
+        body = renderMarkdownBody();
+        extraClass = ' md-grid';
       }
       side = renderTopicSide();
-      extraClass = ' canvas-grid';
     } else if (page.kind === 'inspo') {
       // No withBoardBody wrapper: the body IS the wall now, not a caption
       // under a board.
@@ -5744,6 +5587,17 @@ async function createPage(kind, name) {
 
 // Render a label for the parent-route portion of a page crumb chain.
 // Returns the array of intermediate crumbs (between `~` and the page title).
+/* A `kind:` route id is internal — `kind:drawing` is the facet the UI calls
+   Board, and the crumb used to print the raw id, so the trail read
+   "pages / drawing / Sewing Order" under a page wearing a Board pill. The
+   label comes from the same place every other label does. Lowercased because
+   the crumb row is lowercase throughout; an unknown kind falls back to its own
+   id rather than to nothing. */
+function kindCrumbLabel(kind) {
+  const meta = (kind === 'drawing') ? DRAWING_META : KIND_META[kind];
+  return ((meta && meta.label) || kind).toLowerCase();
+}
+
 function _parentCrumbsFor(parent) {
   if (!parent || parent === 'pages' || parent === 'home') {
     return [{ label: 'pages', route: 'pages' }];
@@ -5764,7 +5618,7 @@ function _parentCrumbsFor(parent) {
   if (parent.startsWith('kind:')) {
     return [
       { label: 'pages', route: 'pages' },
-      { label: parent.slice(5), route: parent },
+      { label: kindCrumbLabel(parent.slice(5)), route: parent },
     ];
   }
   if (parent.startsWith('tag:')) {
@@ -5828,7 +5682,7 @@ function crumbsFor(route) {
     return chain;
   }
   if (route.startsWith('kind:')) {
-    return [home, { label: 'pages', route: 'pages' }, route.slice(5)];
+    return [home, { label: 'pages', route: 'pages' }, kindCrumbLabel(route.slice(5))];
   }
   if (route === 'tags') return [home, 'tags'];
   if (route.startsWith('tag:')) {
@@ -5859,6 +5713,7 @@ const SB_PREF_DEFAULTS = {
   thumbCacheOn: true,
   welcomeSeen: false,      // the first-run card on the dashboard
   tagColors: {},           // tag name → hue index; absent means derive from the name
+  tourSeen: false,         // the stepped tour — runs once, replayable from Settings
 };
 function loadPrefs() {
   try {
@@ -5947,6 +5802,13 @@ function SettingsScreen() {
           window.SB_VAULT_NAME = prefs.obsidianVault || window.SB_VAULT_NAME;
         },
       }))));
+
+  wrap.appendChild(section('Getting around', 'how this app works, in seven steps',
+    row('The tour', 'Points at each control as it explains it. Runs once on a new vault.',
+      h('button', {
+        className: 'btn',
+        onClick: () => { app.route = 'home'; render(); setTimeout(() => startTour(0), 80); },
+      }, 'Take the tour'))));
 
   wrap.appendChild(section('Appearance', null,
     // The swatch row, not a dropdown: the chip paints the mode's own page and
@@ -6072,22 +5934,6 @@ function render() {
   root.appendChild(appEl);
 }
 
-// Keep our `body.canvas-fullscreen` class synced with the browser's real
-// fullscreen state. Pressing Esc to exit OS fullscreen also exits our
-// in-page fullscreen, and vice-versa.
-function _syncCanvasFullscreen() {
-  const inOsFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  // Only sync DOWN: leaving OS fullscreen also clears our class. We don't
-  // force ENTERING OS fullscreen when the user toggles in-page (that path
-  // is the click-handler's job, since requestFullscreen needs a gesture).
-  if (!inOsFs && app.canvasFullscreen) {
-    app.canvasFullscreen = false;
-    document.body.classList.remove('canvas-fullscreen');
-  }
-}
-document.addEventListener('fullscreenchange', _syncCanvasFullscreen);
-document.addEventListener('webkitfullscreenchange', _syncCanvasFullscreen);
-
 /* Arrow-key movement within a list.
    Every row is focusable now, but walking a fifty-row table by Tab is a
    chore — Tab is for moving between regions, arrows are for moving within
@@ -6186,5 +6032,8 @@ async function boot() {
   }
   app.loaded = true;
   render();
+  // Last, and only after a real screen exists: the tour points at controls,
+  // so it has to run once there are controls to point at.
+  maybeStartTour();
 }
 boot();

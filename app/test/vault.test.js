@@ -126,15 +126,21 @@ test("5.13 files with no frontmatter index, get an inferred kind, and are untouc
     "reading must never write");
 });
 
-test("5.15 a bare .canvas is a page; no .md is created until an edit", async () => {
+// A `.canvas` used to be a page here. It is not one now — one kind, one
+// format, one editor, and that editor is the board — but it is still a file
+// that owns its name, and nothing about it may be written or created.
+test("a bare .canvas is not a page, and nothing is created for it", async () => {
   const v = vault({ "canvas/board.canvas": '{"nodes":[],"edges":[]}' });
   await v.buildIndex();
-  assert.equal(v.list().length, 1);
-  assert.equal(v.list()[0].kind, "canvas");
-  assert.ok(!(await v.be.exists("canvas/board.md")));
-  await v.put({ id: v.list()[0].id, path: "canvas/board.md", body: "![[board.canvas]]" });
-  assert.ok(await v.be.exists("canvas/board.md"));
-  assert.match(await v.be.readText("canvas/board.md"), /!\[\[board\.canvas\]\]/);
+  assert.equal(v.list().length, 0, "not listed, not counted, not openable");
+  assert.ok(!(await v.be.exists("canvas/board.md")), "and reading it creates nothing");
+});
+
+test("a .canvas still owns its name, because Obsidian resolves against files", async () => {
+  const v = vault({ "canvas/board.canvas": '{"nodes":[],"edges":[]}' });
+  await v.buildIndex();
+  assert.ok(v.reservedNames.has("canvas/board.canvas"),
+    "forget this and the app writes a second file called board and breaks every [[board]]");
 });
 
 // The case above hands put() the `.md` path itself, so it never covered what
@@ -142,14 +148,17 @@ test("5.15 a bare .canvas is a page; no .md is created until an edit", async () 
 // board is the `.canvas`. That write serialized frontmatter straight over the
 // JSON — one keystroke in the title field replaced a board's nodes and edges
 // with a YAML header, and the geometry that triggered the save was dropped too.
-test("5.15 a write aimed at a bare .canvas lands on the .md, never over the JSON", async () => {
+// The app can no longer aim a write at a `.canvas` — it does not list one. The
+// redirect stays and stays tested anyway: it is the guard that stopped a
+// keystroke in the title field from serializing a YAML header over a board's
+// nodes and edges, and a guard is worth most against the call nobody planned.
+test("a write aimed at a .canvas lands on the .md, never over the JSON", async () => {
   const json = '{"nodes":[{"id":"n1","type":"text","text":"real work"}],"edges":[]}';
   const v = vault({ "canvas/Board.canvas": json });
   await v.buildIndex();
-  const entry = v.list()[0];
-  assert.equal(entry.id, "canvas:canvas/Board.canvas");
+  assert.equal(v.list().length, 0, "no page — this write can only arrive by path");
 
-  const r = await v.put({ id: entry.id, path: entry.path, title: "Board", body: "" });
+  const r = await v.put({ path: "canvas/Board.canvas", title: "Board", body: "" });
   assert.ok(r.ok);
   assert.equal(r.path, "canvas/Board.md", "the write must be redirected to the sibling");
   assert.equal(r.adopted, "canvas/Board.canvas");
@@ -189,6 +198,10 @@ test("duplicate titles are surfaced as a warning", async () => {
 test("5.17 malformed input: walk completes, page is marked, put() refuses", async () => {
   const cases = {
     "notes/unterminated.md": "---\nid: 01X\ntitle: no end\n",
+    "notes/alsobad.md": "---\nid: 01Y\ntitle: also no end\n",
+    // Not a page any more, so not parsed and not marked — and safe for a
+    // stronger reason than a marker: a write aimed at it is redirected to the
+    // `.md` sibling, so the JSON is never written over, valid or not.
     "notes/badcanvas.canvas": "{not json",
   };
   const v = vault(cases);

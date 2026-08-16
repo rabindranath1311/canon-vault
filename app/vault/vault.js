@@ -482,6 +482,10 @@ export class Vault {
     this.be = backend;
     this.index = new Map();          // id -> entry
     this.byPath = new Map();         // path -> entry
+    /* Paths that are not pages here but still own their name in the vault —
+       today, every `.canvas`. Naming reads this alongside `byPath`, because a
+       wikilink resolves against files, not against what this app can open. */
+    this.reservedNames = new Set();
     this.warnings = [];
     this.historyKeep = opts.historyKeep ?? HISTORY_KEEP;
     this.election = opts.election ?? { isWriter: true };
@@ -497,6 +501,7 @@ export class Vault {
     const nextIndex = new Map();
     const nextByPath = new Map();
     this.warnings = [];
+    this.reservedNames = new Set();   // rebuilt from disk, like the index
     let reread = 0;
 
     const canvases = new Set(files.filter((f) => f.path.endsWith(".canvas")).map((f) => f.path));
@@ -507,21 +512,29 @@ export class Vault {
       const isCanvas = f.path.endsWith(".canvas");
       if (!isMd && !isCanvas) continue;
 
-      // 5.15 — a bare .canvas with no .md is a page in its own right; no file
-      // is created for it until the user edits it through the app.
+      /* A `.canvas` is not a page.
+       *
+       * It used to be one: a bare JSON Canvas got its own index entry and its
+       * own row. Then the reader for it was deleted — one kind, one format,
+       * one editor, and that editor is the board — which left a row you could
+       * open only to be told to open it somewhere else. So it is not listed,
+       * not opened, and not counted.
+       *
+       * It is still REMEMBERED, and that part is not optional. Obsidian
+       * resolves `[[Sketches]]` against every file in the vault, so
+       * `Sketches.canvas` owns that name whether or not this app can show it.
+       * Forget it and the app writes `notes/Sketches.md` beside it and makes
+       * every `[[Sketches]]` in the vault ambiguous — silently, in files this
+       * app did not write. `reservedNames` is how naming still sees it, and
+       * `rename`/`del` still carry a sidecar along with its page.
+       */
       if (isCanvas) {
+        // A sidecar beside its own `.md` is the documented pair, not a
+        // collision — the page already owns that name, and reserving it again
+        // would report every legacy board in the vault as ambiguous with
+        // itself. Only a `.canvas` standing alone needs the reservation.
         const sibling = f.path.replace(/\.canvas$/, ".md");
-        if (mdPaths.has(sibling)) continue;
-        const entry = {
-          id: `canvas:${f.path}`, path: f.path, kind: "canvas",
-          title: f.path.split("/").pop().replace(/\.canvas$/, ""),
-          tags: [], aliases: [], mentions: [], excerpt: "",
-          updated: null, mtime: f.mtime, stamped: false, bare: true,
-        };
-        try { JSON.parse(await this.be.readText(f.path)); }
-        catch (e) { entry.unparseable = `invalid canvas JSON: ${e.message}`; }
-        nextIndex.set(entry.id, entry);
-        nextByPath.set(entry.path, entry);
+        if (!mdPaths.has(sibling)) this.reservedNames.add(f.path);
         continue;
       }
 
@@ -608,14 +621,19 @@ export class Vault {
     // Duplicate filenames. This is the collision that actually costs something:
     // Obsidian resolves `[[Name]]` by basename, so two files sharing one — in
     // any two folders, in either app — make every link to that name ambiguous.
+    // Pages FIRST, then the reserved non-page files, so the warning names the
+    // page as the one already holding the name. A `.canvas` stopped being a
+    // page here but did not stop being a file Obsidian resolves against — read
+    // only the index and `Untitled.canvas` beside `topics/Untitled.md` goes
+    // unreported, which is the one collision the warning exists for.
     const byBase = new Map();
-    for (const e of nextIndex.values()) {
-      const base = basenameOf(e.path);
+    for (const p of [...[...nextIndex.values()].map((e) => e.path), ...this.reservedNames]) {
+      const base = basenameOf(p);
       const k = base.toLowerCase();
       if (byBase.has(k)) {
         this.warnings.push(
-          `duplicate filename "${base}": ${byBase.get(k)} and ${e.path} — [[${base}]] is ambiguous`);
-      } else byBase.set(k, e.path);
+          `duplicate filename "${base}": ${byBase.get(k)} and ${p} — [[${base}]] is ambiguous`);
+      } else byBase.set(k, p);
     }
 
     // duplicate titles (SPEC §7) — cosmetic by comparison, and reported only

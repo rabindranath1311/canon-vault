@@ -1791,27 +1791,6 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 
 /* ─── Canvas board ────────────────────────────────────────────────────── */
 .page-grid.canvas-grid .page-main { padding-right: 12px; }
-.canvas-viewport {
-  position: relative;
-  flex: 1;
-  min-width: 0; min-height: 0; max-width: 100%;
-  /* Pan/zoom is handled in JS via transform on .canvas-surface — we don't
-     want native scrolling competing with it. */
-  overflow: hidden;
-  touch-action: none;
-  cursor: grab;
-  border: 1px solid var(--line-soft);
-  background:
-    radial-gradient(circle, rgba(21,24,28,0.06) 1px, transparent 1px) 0 0 / 24px 24px,
-    var(--paper-2);
-}
-.canvas-viewport.panning { cursor: grabbing; }
-.canvas-surface {
-  transform-origin: 0 0;
-  /* The transform is set inline by JS each frame; keep this just in case. */
-  will-change: transform;
-  position: relative;   /* anchor for the edges SVG layer */
-}
 /* ─── Inspo bento wall ────────────────────────────────────────────────── */
 /* Masonry via CSS columns: cards keep their aspect, columns pack tight, and
    no geometry is stored anywhere — order in the markdown is the layout. */
@@ -1896,178 +1875,6 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .excalidraw-broken strong { color: var(--fg); display: block; margin-bottom: 6px; }
 .excalidraw-broken p { margin: 4px 0; }
 
-/* Edges SVG — the connections from the `.canvas` file. Below the cards and
-   the strokes, and equally transparent to pointer events. */
-.canvas-edges {
-  position: absolute; left: 0; top: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-.canvas-edge-label {
-  font-family: var(--font-sans);
-  font-size: var(--fz-micro);
-  fill: var(--muted);
-  /* Draw the halo under the glyphs so a label stays readable where it
-     crosses its own edge. */
-  paint-order: stroke;
-  stroke: var(--bg);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-/* Canvas expand-to-fullscreen button (in the toolbar) */
-.canvas-expand-btn {
-  appearance: none; background: var(--paper); color: var(--muted);
-  border: 1px solid var(--line-soft);
-  padding: 4px 9px; font: inherit; font-size: var(--fz-mini); cursor: pointer;
-  margin-right: 6px;
-}
-.canvas-expand-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-/* Fullscreen canvas mode: hide ALL chrome so the canvas owns the screen.
-   Pairs with document.requestFullscreen() to also hide browser tabs +
-   address bar. Pressing Esc exits both layers via fullscreenchange. */
-body.canvas-fullscreen .app > .tabbar,
-body.canvas-fullscreen .app > .crumb-row,
-body.canvas-fullscreen .app > .nav,
-body.canvas-fullscreen .app > .status,
-body.canvas-fullscreen .app > .topbar,
-body.canvas-fullscreen .app > .log { display: none !important; }
-
-body.canvas-fullscreen .app {
-  grid-template-columns: 0 1fr 0;
-  grid-template-rows: 1fr;
-  grid-template-areas: "main main main";
-}
-body.canvas-fullscreen .app > .main { grid-area: main; overflow: hidden; }
-
-/* Inside the canvas page: hide chat sidebar, page header, anything that
-   isn't the canvas viewport. The viewport then fills the whole screen. */
-body.canvas-fullscreen .page-grid { grid-template-columns: 1fr !important; }
-body.canvas-fullscreen .page-hd,
-body.canvas-fullscreen .page-h,
-body.canvas-fullscreen .page-sub,
-
-body.canvas-fullscreen .page-main { padding: 0 !important; }
-body.canvas-fullscreen .canvas-viewport {
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh; max-height: 100vh;
-  z-index: 1000;
-}
-/* Once we're truly fullscreen (browser API granted), the viewport already
-   fills everything — strip its border so nothing competes with the canvas. */
-body.canvas-fullscreen .canvas-viewport,
-:fullscreen .canvas-viewport { border: 0; }
-.canvas-toolbar {
-  position: sticky; top: 0; left: 0; z-index: 6;
-  display: flex; align-items: center; gap: 4px;
-  padding: 6px 10px;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line-soft);
-  font-size: var(--fz-mini);
-}
-.canvas-toolbar button {
-  appearance: none; border: 1px solid var(--line-soft);
-  background: var(--paper); color: var(--fg);
-  font: inherit; font-size: var(--fz-mini);
-  padding: 4px 9px; cursor: default;
-  letter-spacing: var(--track-label);
-}
-.canvas-toolbar button:hover { background: var(--hover); border-color: var(--accent); color: var(--accent); }
-.canvas-toolbar-spacer { flex: 1; }
-.canvas-zoom-controls {
-  display: inline-flex; align-items: center; gap: 2px;
-  margin-right: 6px;
-  border: 1px solid var(--line-soft);
-  background: var(--paper);
-}
-.canvas-zoom-btn, .canvas-zoom-readout {
-  appearance: none; border: 0; background: transparent;
-  font: inherit; color: var(--muted); cursor: pointer;
-  padding: 3px 9px;
-  font-size: var(--fz-mini);
-  letter-spacing: var(--track-label);
-}
-.canvas-zoom-btn:hover, .canvas-zoom-readout:hover { color: var(--accent); }
-.canvas-zoom-readout {
-  min-width: 48px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  border-left: 1px solid var(--line-very-soft);
-  border-right: 1px solid var(--line-very-soft);
-  color: var(--fg);
-}
-.canvas-toolbar-hint {
-  color: var(--faint);
-  font-size: var(--fz-micro);
-  letter-spacing: var(--track-caps);
-}
-.canvas-surface {
-  position: relative;
-  width: 4000px; height: 3000px;
-}
-.canvas-item {
-  position: absolute;
-  display: flex; flex-direction: column;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-card);
-  min-width: 200px;
-  min-height: 60px;
-  /* Not resizable: the `.canvas` file owns every dimension, so a handle here
-     would offer a change that has nowhere to be saved. Obsidian resizes. */
-  overflow: hidden;
-}
-/* Image cards default to a taller starting frame so the picture has room */
-.canvas-item.canvas-item-image { min-height: 220px; }
-
-/* Rendered markdown inside a text node. Scrolls within the card when the
-   node is smaller than its content — the one place a board takes the wheel. */
-.canvas-item-body {
-  flex: 1; min-height: 0; overflow-y: auto;
-  padding: 10px 12px;
-  font-size: var(--fz-body); line-height: 1.55;
-}
-.canvas-item-body > :first-child { margin-top: 0; }
-.canvas-item-body > :last-child { margin-bottom: 0; }
-
-.canvas-item-link {
-  padding: 10px 12px 4px;
-  color: var(--accent); text-decoration: none;
-  font-size: var(--fz-body); line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.canvas-item-link:hover { text-decoration: underline; }
-.canvas-item-host {
-  padding: 0 12px 10px;
-  font-size: var(--fz-micro); color: var(--faint);
-}
-
-/* A vault file pinned to the board — usually a note, so it reads as one. */
-.canvas-item-file {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 12px 12px 2px;
-  font-size: var(--fz-body); line-height: 1.35;
-}
-.canvas-item-file-glyph { color: var(--k-mdwn); flex: 0 0 auto; }
-.canvas-item-file-name { font-weight: 500; overflow-wrap: anywhere; }
-.canvas-item-clickable { cursor: pointer; }
-.canvas-item-clickable:hover { border-color: var(--accent); }
-
-/* A JSON Canvas group is a frame around other nodes, so it draws as an
-   outline with its label — never a filled card that would hide them. */
-.canvas-item.canvas-item-group {
-  background: transparent; box-shadow: none;
-  border-style: dashed; border-color: var(--line-soft);
-}
-.canvas-item-grouplabel {
-  padding: 6px 10px;
-  font-size: var(--fz-mini); color: var(--muted);
-  letter-spacing: 0.02em;
-}
-.canvas-item-unknown {
-  padding: 10px 12px;
-  font-size: var(--fz-mini); color: var(--faint);
-}
 
 /* ─── Topic sidebar (replaces chat rail for kind: topic) ──────────────── */
 /* topic: page | chat | metadata — 3:2 ratio + fixed metadata */
@@ -2533,33 +2340,6 @@ body.canvas-fullscreen .canvas-viewport,
 .bm-context-ta {
   min-height: 180px;
   max-height: 480px;
-}
-
-/* ─── Image canvas items (inspo, also canvas) ─────────────────────────── */
-/* The <img> element inside an image-kind card. `img.canvas-item-image`
-   targets the image specifically (the card div uses the same class name). */
-img.canvas-item-image {
-  display: block;
-  flex: 1 1 0;          /* fills the remaining card height above the caption */
-  width: 100%;
-  min-height: 0;
-  max-height: none;
-  object-fit: contain;  /* show whole image, no crop, never overflow the card */
-  background: var(--paper-2);
-}
-.canvas-item-caption {
-  color: var(--fg);
-  font-size: var(--fz-mini);
-  padding: 6px 10px 8px;
-  border-top: 1px dashed var(--line-very-soft);
-  line-height: 1.5;
-}
-
-/* Inspo uses a slightly warmer tint to feel different from canvas */
-.inspo-grid .canvas-viewport {
-  background:
-    radial-gradient(circle, rgba(190,24,93,0.06) 1px, transparent 1px) 0 0 / 24px 24px,
-    var(--paper-2);
 }
 
 /* ─── Topic chat-as-main ──────────────────────────────────────────────── */
@@ -3501,20 +3281,6 @@ img.canvas-item-image {
   color: var(--faint); padding: 0.1rem 0.4rem; border-radius: 4px;
   border: 1px solid var(--border); }
 .page-meta-obs:hover { color: var(--text); border-color: var(--cta); }
-.board-readonly { display: flex; gap: 0.6rem; align-items: center; justify-content: center;
-  padding: 0.5rem 0.9rem; margin: 0 0 0.6rem; border-radius: 6px;
-  font-size: 0.8rem; color: var(--text-dim);
-  background: var(--color-graphite); border: 1px solid var(--border); }
-.board-readonly a { color: var(--text); text-decoration: none;
-  border-bottom: 1px solid var(--cta); }
-/* 6.12: geometry is Obsidian's job — the surface takes no pointer input. */
-/* The surface used to be pointer-events:none, on the theory that killing
-   events was what made a board read-only. It never was — the pan, pinch and
-   pen handlers all live on the viewport above it, so the rule blocked reading
-   (no clickable links, no selectable text) while leaving writing reachable.
-   The board is read-only because no edit handler exists now, so cards can be
-   used as cards again. */
-.board-ro .canvas-item-body { user-select: text; cursor: auto; }
 
 /* 6.10 / 6.11: wikilink embeds rendered from vault bytes */
 .vault-embed-img { max-width: 100%; border-radius: 6px; display: block; margin: 0.5rem 0; }
@@ -3780,7 +3546,7 @@ code, pre, kbd, samp {
   transition-duration: 40ms;   /* the press must not lag the finger */
 }
 
-.board-card, .obs-card, .bento-tile, .canvas-item {
+.board-card, .obs-card, .bento-tile {
   transition: transform var(--dur-2) var(--ease-out),
               box-shadow var(--dur-2) var(--ease-out),
               border-color var(--dur-1) var(--ease-out);
@@ -4401,7 +4167,6 @@ code, pre, kbd, samp {
    ═══════════════════════════════════════════════════════════════════════ */
 
 .project-body { display: flex; flex-direction: column; gap: var(--sp-4); }
-
 
 /* Cards */
 .pj-card {
@@ -6003,7 +5768,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   .sb-connect-cta, .sb-promise { transition: none; }
 }
 
-
 /* ── The front door, aurora edition ───────────────────────────────────
    Scoped to .sb-front so the non-Chromium explainer — which shares
    .sb-connect and the .sb-hero-* classes with boot.js — is untouched.
@@ -6323,7 +6087,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .am-cv-body { padding-top: var(--sp-2); }
 @media (prefers-reduced-motion: reduce) { .am-cv-chev svg { transition: none; } }
 
-
 /* Project card: the folder, legible from outside. Composition chips in the
    header — which kinds, how many — then a glimpse of the first pages. A
    name, a count and a timestamp distinguishes two projects exactly as well
@@ -6353,7 +6116,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .project-card-peek-more { color: var(--faint); }
 .project-card-peek-more::before { background: transparent; }
 .project-card-peek-empty { font-size: var(--fz-mini); color: var(--faint); font-style: italic; }
-
 
 /* ── Inspo: the wall as a place things land ────────────────────────────
    Three ways in, none of them a mode: the toolbar buttons, a paste, and
@@ -6453,7 +6215,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   .lightbox-x, .lightbox-nav { transition: none; }
 }
 
-
 /* First-run folder list: the folders ARE the kinds, so each line wears its
    kind's colour as a dot. Salvaged from uncommitted work in the main
    checkout, re-expressed against the current tokens. */
@@ -6467,3 +6228,129 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .first-run-list .frk-topic  { --frk: var(--k-topic); }
 .first-run-list .frk-canvas { --frk: var(--k-canvas); }
 .first-run-list .frk-inspo  { --frk: var(--k-desg); }
+
+/* ─── The tour ─────────────────────────────────────────────────────────────
+   A stepped card that points at the control it is describing. Fixed to the
+   viewport, above everything, and positioned from JS — the anchor rect is the
+   only thing that knows where a nav row actually is once the nav has been
+   resized or collapsed.
+
+   The scrim is deliberately faint. It exists to say "this card is talking to
+   you", not to hide the app: every step names something on screen, and dimming
+   it to unreadability would defeat the entire point of anchoring. */
+.tour {
+  position: fixed; inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+}
+.tour.tour-in { opacity: 1; }
+.tour-scrim {
+  position: absolute; inset: 0;
+  background: color-mix(in srgb, var(--ink, #1c1917) 22%, transparent);
+  pointer-events: auto;
+}
+/* The ring sits over the anchor and breathes, so the eye finds it without a
+   cut-out mask — which would need a second full-screen layer per step. */
+.tour-ring {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  transition: left 260ms var(--ease-out), top 260ms var(--ease-out),
+              width 260ms var(--ease-out), height 260ms var(--ease-out);
+  animation: tour-breathe 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes tour-breathe {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 20%, transparent); }
+  50%      { box-shadow: 0 0 0 2px var(--accent), 0 0 0 10px color-mix(in srgb, var(--accent) 8%, transparent); }
+}
+
+.tour-card {
+  position: fixed;
+  width: min(370px, calc(100vw - 24px));
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-raised);
+  padding: 18px 18px 14px;
+  /* armed by JS once the entrance is done — see startTour */
+  pointer-events: none;
+  color: var(--fg);
+}
+.tour-card.tour-armed { pointer-events: auto; }
+/* No anchor on screen: the step is about the vault as a whole, so the card
+   takes the middle rather than pointing at an arbitrary control. */
+.tour-card.tour-card-mid {
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
+.tour-step-in { animation: tour-step 260ms var(--ease-out); }
+.tour-card-mid.tour-step-in { animation: tour-step-mid 260ms var(--ease-out); }
+@keyframes tour-step {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes tour-step-mid {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 6px)) scale(0.985); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.tour-hd { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; padding-right: 20px; }
+.tour-mark {
+  flex: 0 0 auto;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.tour-t { margin: 0; font-size: var(--fz-h3, 1.02rem); font-weight: 600; line-height: 1.25; }
+.tour-b { margin: 0 0 14px; color: var(--muted); font-size: var(--fz-body); line-height: 1.55; }
+.tour-ft { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tour-dots { display: flex; gap: 6px; align-items: center; }
+.tour-dot {
+  width: 7px; height: 7px; padding: 0;
+  border-radius: 50%;
+  border: 0;
+  background: var(--line);
+  cursor: pointer;
+  transition: background var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out);
+}
+.tour-dot:hover { background: var(--faint); }
+.tour-dot.on { background: var(--accent); width: 16px; border-radius: 4px; }
+.tour-btns { display: flex; gap: 6px; align-items: center; }
+.tour-back, .tour-next {
+  font: inherit; font-size: var(--fz-mini);
+  border-radius: 7px;
+  padding: 6px 11px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.tour-back { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.tour-back:hover { color: var(--fg); border-color: var(--faint); }
+.tour-next { background: var(--fg); border: 1px solid var(--fg); color: var(--paper); }
+.tour-next:hover { opacity: 0.88; }
+.tour-next svg { width: 13px; height: 13px; }
+.tour-x {
+  position: absolute; top: 10px; right: 10px;
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--faint); font-size: 13px; line-height: 1;
+  padding: 4px;
+}
+.tour-x:hover { color: var(--fg); }
+.tour-count {
+  margin-top: 10px;
+  font-size: var(--fz-mini);
+  color: var(--faint);
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour, .tour-ring, .tour-step-in, .tour-card-mid.tour-step-in {
+    transition: none !important;
+    animation: none !important;
+  }
+}

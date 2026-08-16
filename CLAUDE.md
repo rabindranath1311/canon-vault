@@ -61,28 +61,46 @@ What the code needs to know:
 - `KIND_ORDER` in [app/app.js](app/app.js) is the *by-kind nav*, not the set of
   kinds: it carries `bookmark` and `drawing` as derived facets. Bookmark is
   inclusive (`kind === "note" && url != null` — the note count keeps them,
-  since on disk that is what they are); Board/Drawing are **disjoint** (split
-  on `isExcalidrawPath`), because the nav row says "Board" and a drawing
-  counted under it is the label lying. The four real kinds are the ones above.
+  since on disk that is what they are); the `drawing` facet is `kind ===
+  "canvas" && isExcalidrawPath`. The four real kinds are the ones above.
+  **`drawing` is the internal id of the facet the UI labels "Board"** — the id
+  is deliberately not renamed, because it is in saved routes (`#kind:drawing`)
+  and persisted tabs, and a rename would strand them.
 - `note` chrome is chosen from frontmatter, not kind — which is why bookmark,
   snippet and markdown collapsed into one.
 - `canvas` is **one kind over two formats with two different owners**, so the
   chrome is chosen from the path: `metaForPage` in [app/app.js](app/app.js)
-  labels a `.excalidraw.md` "Drawing" and a `.canvas` "Board". That label is the
+  labels a `.excalidraw.md` "Board" and a `.canvas` "Canvas". That label is the
   only thing telling a user whether their edits will be kept, so it is decided
-  in one place and never re-derived at a call site. **`metaForPage` takes the
-  page, not its `kind`** — it also resolves the bookmark facet, reading `url`
-  both hoisted (index entries) and under `meta` (full pages). Anything showing
-  a kind asks it; `KIND_META[p.kind]` at a call site is the bug.
-  - **Board** → `renderCanvasBody`, read-only: pan, pinch, zoom, fit, and the
-    nodes and edges from the `.canvas`. No handler in it can write. The editing
-    half was deleted, not disabled — see the note on the function.
-  - **Drawing** → `renderExcalidrawBody`, the vendored Excalidraw editor,
-    dynamically imported so a vault with no drawings never loads its ~8MB.
-    `window.EXCALIDRAW_ASSET_PATH` must be an **absolute** URL — the bundle
-    feeds it to `new URL(file, base)`, and a relative base throws once per text
-    element, so every drawing renders its shapes and none of its words. Derive
-    it from `document.baseURI`; never hardcode an origin.
+  in one place and never re-derived at a call site. **Two things must never
+  both be called Board** — "Board" moved from the `.canvas` reader to the
+  Excalidraw surface when that reader was deleted, and the `.canvas` form took
+  the name of its own format. **`metaForPage` takes the page, not its `kind`**
+  — it also resolves the bookmark facet, reading `url` both hoisted (index
+  entries) and under `meta` (full pages). Anything showing a kind asks it;
+  `KIND_META[p.kind]` at a call site is the bug.
+  - **`.canvas` is not a page at all.** Not listed, not opened, not counted —
+    the nodes-and-edges reader, its curve math, `SB_EDGE_GEOM` and the stub
+    screen were all **deleted**. Two things survive and are not optional:
+    `Vault.reservedNames` (a bare `.canvas` still owns its wikilink name, or
+    the app writes a second file by that name and makes every `[[Sketches]]`
+    ambiguous — in files it did not write), and the redirect in `put()` (a
+    write aimed at a `.canvas` lands on the `.md` sibling, because YAML
+    serialized over JSON destroys the geometry). `layoutFromCanvas` also
+    survives, for the "import the old board" button on an inspo wall.
+    A legacy `.md` carrying `kind: canvas` with no scene renders as markdown.
+  - **Board** (`.excalidraw.md`) → `renderExcalidrawBody`, the vendored
+    Excalidraw editor, dynamically imported so a vault with no boards ever
+    loads its ~8MB. `window.EXCALIDRAW_ASSET_PATH` must be an **absolute** URL
+    — the bundle feeds it to `new URL(file, base)`, and a relative base throws
+    once per text element, so every board renders its shapes and none of its
+    words. Derive it from `document.baseURI`; never hardcode an origin.
+    Text, element links and embedded images are **regenerated into the
+    markdown on every write** (`## Text Elements` / `## Element Links` /
+    `## Embedded Files`) so the scene is legible to Obsidian, to the backlink
+    graph and to an agent. Never parse those sections back into the scene.
+    `appState.collaborators` is a Map and must never be serialized — see
+    `cleanScene` in [app/vault/excalidraw.js](app/vault/excalidraw.js).
   - **Inspo is not a canvas.** It shares CSS class names and nothing else: a
     bento wall whose order lives in the markdown body, with no geometry at all.
 - `CONVENTION_VERSION` in `app/vault/scaffold.js` is written to `.canon-vault`
@@ -126,8 +144,8 @@ brain/               the rules and the agent prompts — the non-code half
 demo/                the "Try a demo vault" content — INVENTED, never real
                      it must cover every kind: it is the front door, and a
                      kind missing from it is a kind nobody can see working
-                     (drawings had no demo file, so a font-loader bug that
-                     blanked the text in every drawing shipped unnoticed)
+                     (boards had no demo file, so a font-loader bug that
+                     blanked the text in every board shipped unnoticed)
 docs/
   WHY.md             the argument for every constraint, and what this is bad at
   deploy.md          local run + Vercel + any static host
@@ -227,8 +245,8 @@ Three headers matter and are set in `vercel.json`:
 - **Never write on adoption.** A file with no `id:`/`kind:` is displayed but
   left untouched on disk. Stamping happens on the first edit through the app.
 - **One owner per spatial scene.** A `.canvas` board is Obsidian's — the app
-  renders it and never writes it. A `.excalidraw.md` drawing is the app's — it
-  is edited and saved here. Anything spatial the app writes is a drawing; there
+  neither renders nor writes it. A `.excalidraw.md` board is the app's — it
+  is edited and saved here. Anything spatial the app writes is a board; there
   is no third engine. **Never ship editing a surface cannot save:** a hidden
   toolbar over live handlers is how a stylus stroke came to overwrite a board.
   If a surface cannot write, it must not accept the gesture.

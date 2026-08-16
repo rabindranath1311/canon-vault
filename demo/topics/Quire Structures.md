@@ -18,7 +18,7 @@ page.** Anything that treats the page as atomic ends up fighting the object.
 
 - [[Lantern Cartography Notes]] — the same working-circle limit, different craft
 - [[Folio Gathering Notes]] — where it becomes expensive
-- [[Binding Methods]] — the board of physical approaches
+- [[Binding Methods]] — physical approaches, ranked against the fold
 - [[Bindery]] — the project this feeds
 
 ## Thread

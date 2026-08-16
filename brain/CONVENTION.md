@@ -17,7 +17,7 @@ context/         who you are — read before writing in your voice
 notes/           anything read as prose
 topics/          living hubs
 tags/            subjects — near-empty pages you link instead of #tagging
-canvas/          spatial boards (.md + .canvas)
+canvas/          spatial surfaces (.excalidraw.md, or .md + .canvas)
 inspo/           visual reference (.md + .canvas)
 projects/        a folder per project
 raw/             immutable sources the vault cites but never edits
@@ -59,7 +59,7 @@ sequence in YAML, not a link. Write `parent: "[[X]]"`.
 | --- | --- | --- |
 | `note` | `notes/` | one `.md` — anything read as prose |
 | `topic` | `topics/` | one `.md` — a hub with attachments, thread, children |
-| `canvas` | `canvas/` | a board (`.md` + `.canvas` sidecar) or a drawing (`.excalidraw.md`) |
+| `canvas` | `canvas/` | a board (`.excalidraw.md`) or a canvas file (`.md` + `.canvas` sidecar) |
 | `inspo` | `inspo/` | one `.md` — a reference wall, items in the body |
 
 `kind` is authoritative; the folder is not. **A project is not a kind** — it is a
@@ -186,40 +186,75 @@ is ordinary prose and is left alone.
 
 ## Canvas
 
-A canvas comes in two file forms. Both are `kind: canvas` — the form is chosen
-by the file extension, not by a second kind:
+`kind: canvas` means a **board**: a single `canvas/sketch.excalidraw.md`, no
+sidecar, in the format the Obsidian Excalidraw plugin writes. Its frontmatter
+carries `excalidraw-plugin: parsed`, which is the marker that makes the plugin
+open it as a drawing rather than as a note; the scene itself lives in a
+`## Drawing` block inside a `%%` comment, so Obsidian renders the file as an
+ordinary note when the plugin is not installed. A vault of boards therefore
+still opens with no plugin — you see the notes, not the pictures.
 
-**A board** — `canvas/board.md` pairs with `canvas/board.canvas` (Obsidian's
-native JSON Canvas), and the `.md` embeds its sidecar with `![[board.canvas]]`.
+> **On `.canvas`.** JSON Canvas files are Obsidian's, and they remain perfectly
+> legal in a vault — Obsidian creates and edits them, and nothing here touches
+> them. They are simply **not pages of this convention**: not a kind, not
+> listed, not opened. There was a second form (`board.md` + a `board.canvas`
+> sidecar, embedded with `![[board.canvas]]`) and a client that rendered it
+> read-only; both are gone. One kind, one format, one editor.
+>
+> A conforming client must still **know a `.canvas` exists**, because Obsidian
+> resolves `[[Sketches]]` against every file in the vault: `Sketches.canvas`
+> owns that name, so no page may be created with it. Ignore that and you make
+> every `[[Sketches]]` in the vault ambiguous, silently, in files you did not
+> write. A client must also never serialize frontmatter over one — a `.canvas`
+> holds JSON, and a YAML header written into it destroys the geometry.
+>
+> A legacy `.md` still carrying `kind: canvas` with no scene is markdown. Render
+> it as markdown; leave its `![[…canvas]]` line alone.
 
-**A drawing** — a single `canvas/sketch.excalidraw.md`, no sidecar, in the
-format the Obsidian Excalidraw plugin writes. Its frontmatter carries
-`excalidraw-plugin: parsed`, which is the marker that makes the plugin open it
-as a drawing rather than as a note; the scene itself lives in a `## Drawing`
-block inside a `%%` comment, so Obsidian renders the file as an ordinary note
-when the plugin is not installed. A vault of drawings therefore still opens
-with no plugin — you see the notes, not the pictures.
+A board has no `kind:` field of its own to read when the plugin authored it, so
+the extension is authoritative there.
 
-A drawing has no `kind:` field of its own to read when the plugin authored it,
-so the extension is authoritative there — the same exception a bare `.canvas`
-already needs.
+### A board describes itself in markdown
+
+The scene is base64 inside the `## Drawing` block, which no other client can
+read. So a board carries three **derived index sections**, regenerated from
+the scene on every write and never parsed back into it:
+
+| section | one entry per | written as |
+| --- | --- | --- |
+| `## Text Elements` | text element | `the words ^elementId` |
+| `## Element Links` | shape carrying a link | `elementId: [[Some Note]]` |
+| `## Embedded Files` | image in the scene | `fileId: [[attachments/pic.png]]` |
+
+This is what makes a board legible to everything that is not a drawing
+editor. The words are searchable; a link drawn on a shape is an ordinary
+wikilink, so it resolves in Obsidian and counts as a mention in the graph; and
+an image is a real file in `attachments/`, not a megabyte of base64 with no
+name. An agent reading the file learns what the picture says, what it points
+at, and what it shows, without decoding anything.
+
+The scene is authoritative and these are its index — never the reverse. A
+client regenerates all three from the scene it is about to write, and drops an
+entry whose element is gone. An image with no vault file is left out rather
+than named speculatively: a broken wikilink is worse than none.
 
 ### One owner per scene
 
-The two forms differ in more than their bytes: they differ in **who is allowed
-to write them**. This is the rule a client implements, and it has no exceptions.
-
-| form | geometry written by | in this app |
+| form | written by | in this app |
 | --- | --- | --- |
-| board — `.canvas` | Obsidian | rendered, never written |
-| drawing — `.excalidraw.md` | this app, and Obsidian | edited and saved here |
+| board — `.excalidraw.md` | this app, and Obsidian | edited and saved here |
+| `.canvas` | Obsidian, alone | not a page — left exactly as found |
 
-**A board is arranged in Obsidian.** JSON Canvas is Obsidian's format; a second
-editor for it would be a worse one, and two editors writing the same geometry is
-how boards get corrupted. The app draws the nodes and edges and hands off.
-
-**A drawing is edited here.** It is the one spatial thing this app owns, so
+**A board is edited here.** It is the one spatial thing this app owns, so
 freehand work has exactly one home rather than a choice of two half-editors.
+
+**A `.canvas` is Obsidian's, alone.** A second editor for JSON Canvas would be
+a worse one, and two editors writing the same geometry is how boards get
+corrupted. This app once rendered them read-only and handed off; that is gone,
+because a read-only renderer is a second spatial engine to maintain and
+"read-only" was a promise it had already broken once — the editing half sat
+behind a flag that hid the toolbar and left the handlers live, so a stylus
+stroke wrote a YAML header over somebody's board.
 
 A client must not offer editing it cannot save. Showing a disabled pen, or a
 control that quietly discards what it captures, is worse than showing nothing —

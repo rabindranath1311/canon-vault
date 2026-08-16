@@ -9,7 +9,7 @@
 // A cold open never shows an empty shell, because an empty shell reads as broken.
 
 import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, MemoryBackend, WriterElection, PERSIST_KEY } from "./vault.js";
-import { Data, noteChrome, edgeGeometry } from "./data.js";
+import { Data, noteChrome } from "./data.js";
 import { parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
 import { parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout } from "./inspo.js";
 import * as links from "./links.js";
@@ -268,7 +268,6 @@ async function build(handleVault) {
   await handleVault.buildIndex();
   window.SB_LINKS = links;
   window.SB_CHROME = noteChrome;   // 2.7      // 6.10: wikilink resolution for app.js
-  window.SB_EDGE_GEOM = edgeGeometry;          // canvas edge curves, drawn by app.js
   window.SB_EXCALIDRAW = { parse: parseExcalidraw, serialize: serializeExcalidraw };
   window.SB_INSPO = {
     parse: parseInspoBody, serialize: serializeInspoBody,
