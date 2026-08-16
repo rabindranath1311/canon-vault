@@ -30,7 +30,16 @@ const DEFAULT_LIMIT = 200;
 // that follows its title instead of answering to whatever it was called at
 // birth.
 
-/** The page extensions, longest first so `.excalidraw.md` wins over `.md`. */
+/** The extensions that OCCUPY A NAME, longest first so `.excalidraw.md` wins
+ * over `.md`.
+ *
+ * `.canvas` is in this list and is NOT a page — the two are different
+ * questions. Obsidian resolves `[[Sketches]]` against every file in the vault,
+ * so `Sketches.canvas` owns that name whether or not this app can open it.
+ * Drop it from here and the app cheerfully writes `notes/Sketches.md` beside
+ * it and makes every `[[Sketches]]` in the vault ambiguous — silently, and in
+ * somebody else's files. What the app lists as a page is decided in
+ * `vault.js`; this decides what a name costs. */
 const PAGE_EXT = /(\.excalidraw\.md|\.md|\.canvas)$/i;
 
 /** The title-derived part of a filename: `canvas/A.excalidraw.md` → `A`. */
@@ -60,7 +69,11 @@ export function stemFor(title) {
  */
 function takenStems(v, except = null) {
   const out = new Set();
-  for (const p of v.byPath.keys()) {
+  // Pages, plus the files that are not pages here but still own a name —
+  // `.canvas` is not listed anywhere in this app and still answers to
+  // `[[Sketches]]` in Obsidian. See `Vault.reservedNames`.
+  const paths = [...v.byPath.keys(), ...(v.reservedNames || [])];
+  for (const p of paths) {
     if (p === except) continue;
     out.add(pageStem(p).toLowerCase());
   }
@@ -84,8 +97,12 @@ function freeStem(v, stem, except = null) {
  * deliberately named and it would keep the default forever, which is the whole
  * complaint.
  */
+/* `Drawing` stays in the list after the label became `Board`: files named by
+   the old default are still files nobody named, and dropping the word would
+   freeze every one of them under a name its owner never chose. `Canvas` is
+   here for the same reason in advance. */
 const DEFAULT_STEM =
-  /^(?:Untitled|(?:Note|Topic|Board|Drawing|Wall|Bookmark|Project) \d{4}-\d{2}-\d{2})(?: \d+)?$/i;
+  /^(?:Untitled|(?:Note|Topic|Board|Canvas|Drawing|Wall|Bookmark|Project) \d{4}-\d{2}-\d{2})(?: \d+)?$/i;
 
 /**
  * Where a page belongs once its title changes, or null to leave it where it is.
@@ -131,8 +148,8 @@ export function renamePlan(v, cur, newTitle) {
  * renamed the moment a real title is typed.
  */
 const DEFAULT_LABEL = {
-  note: "Note", topic: "Topic", canvas: "Board",
-  drawing: "Drawing", inspo: "Wall", bookmark: "Bookmark",
+  note: "Note", topic: "Topic", canvas: "Canvas",
+  drawing: "Board", inspo: "Wall", bookmark: "Bookmark",
 };
 
 /**
@@ -158,11 +175,16 @@ export function noteChrome(page = {}) {
 const FOLDER_FOR = { note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo" };
 
 /**
- * JSON Canvas → the shape the board view reads (`meta.layout`).
+ * JSON Canvas nodes → flat items.
  *
- * The exact inverse of the migration's mapping — `text`→text, `link`→link,
- * `image`→`file` — so a board that made the round trip renders as it began.
- * Geometry stays read-only; this only lets the app *draw* what Obsidian owns.
+ * The board renderer that consumed this is gone; this parser is not. An inspo
+ * wall made under the old canvas model still has a `.canvas` sidecar, and the
+ * one-click "import the old board" button on that page is the only way its
+ * items ever reach the markdown. Deleting the reader would strand those files
+ * with no migration and no renderer — a file you can neither read nor convert.
+ *
+ * The edge parser and the curve math that lived beside this went with the
+ * renderer: they existed only to DRAW a board, and nothing draws one now.
  */
 export function layoutFromCanvas(canvasText) {
   let doc;
@@ -188,97 +210,36 @@ export function layoutFromCanvas(canvasText) {
   });
 }
 
-/**
- * JSON Canvas edges → the shape the board view reads (`meta.edges`).
- *
- * Nodes alone are a pile of cards; the edges are what make a board a board.
- * Geometry stays read-only here too — this only lets the app *draw* the
- * connections Obsidian owns.
- *
- * Defaults follow the JSON Canvas spec: an edge points at its target unless
- * told otherwise, so `toEnd` is "arrow" and `fromEnd` is "none". `fromSide`
- * and `toSide` are optional; null means "pick the facing side", which the
- * renderer decides from the two boxes.
- */
-export function edgesFromCanvas(canvasText) {
-  let doc;
-  try { doc = JSON.parse(canvasText); } catch { return []; }
-  const SIDES = new Set(["top", "right", "bottom", "left"]);
-  const side = (s) => (SIDES.has(s) ? s : null);
-  return (doc.edges || [])
-    // An edge with no endpoints has nothing to draw between.
-    .filter((e) => e && e.fromNode && e.toNode)
-    .map((e) => ({
-      id: e.id,
-      fromNode: e.fromNode,
-      toNode: e.toNode,
-      fromSide: side(e.fromSide),
-      toSide: side(e.toSide),
-      fromEnd: e.fromEnd === "arrow" ? "arrow" : "none",
-      toEnd: e.toEnd === "none" ? "none" : "arrow",
-      color: e.color || null,
-      label: e.label || "",
-    }));
-}
-
-// Outward normal per side — the direction a curve leaves the box, and
-// (negated) the direction an arrowhead points as it comes back in.
-const SIDE_NORMAL = {
-  top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0],
+/* An Excalidraw image carries its type as a MIME string; a file on disk needs
+   an extension. Only the formats the editor itself produces are listed —
+   anything else keeps `.png`, which is wrong in the name but never wrong in
+   the bytes, and the bytes are what an image viewer actually reads. */
+const EXT_FOR_MIME = {
+  "image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg",
+  "image/gif": ".gif", "image/webp": ".webp", "image/svg+xml": ".svg",
+  "image/avif": ".avif", "image/bmp": ".bmp",
 };
-const OPPOSITE_SIDE = { top: "bottom", bottom: "top", left: "right", right: "left" };
-
-/** The side of `from` that faces `to` — used when the `.canvas` omits one. */
-export function facingSide(from, to) {
-  const dx = (to.x + to.w / 2) - (from.x + from.w / 2);
-  const dy = (to.y + to.h / 2) - (from.y + from.h / 2);
-  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "right" : "left";
-  return dy >= 0 ? "bottom" : "top";
-}
 
 /**
- * One edge + its two boxes → everything needed to draw it, and nothing that
- * needs a DOM. Kept here, beside the parser, so the curve math is testable in
- * Node instead of only observable by eye in a browser.
+ * `data:image/png;base64,iVBO…` → the bytes.
  *
- * Boxes are `{x, y, w, h}` in world coords. Returns `null` when either end is
- * missing — a connection to a node that isn't on the board draws nothing,
- * which is better than a line anchored at the origin.
+ * Returns null for anything that is not a base64 data URL rather than throwing:
+ * a scene can carry an entry we do not understand, and one strange image must
+ * not cost the user the save of everything else in the drawing.
  */
-export function edgeGeometry(edge, from, to) {
-  if (!from || !to) return null;
-  const fSide = edge.fromSide || facingSide(from, to);
-  const tSide = edge.toSide || OPPOSITE_SIDE[fSide];
-  const anchor = (box, side) => {
-    const [nx, ny] = SIDE_NORMAL[side];
-    return {
-      x: box.x + box.w / 2 + nx * (box.w / 2),
-      y: box.y + box.h / 2 + ny * (box.h / 2),
-      nx, ny,
-    };
-  };
-  const a = anchor(from, fSide), b = anchor(to, tSide);
-  // Control points push straight out along each side's normal, which is what
-  // gives Obsidian's edges their shape. Clamped so short hops don't loop and
-  // long ones don't balloon.
-  const dist = Math.hypot(b.x - a.x, b.y - a.y);
-  const k = Math.max(30, Math.min(160, dist * 0.4));
-  const c1 = { x: a.x + a.nx * k, y: a.y + a.ny * k };
-  const c2 = { x: b.x + b.nx * k, y: b.y + b.ny * k };
-  const arrows = [];
-  if (edge.toEnd === "arrow") arrows.push(b);
-  if (edge.fromEnd === "arrow") arrows.push(a);
-  return {
-    d: `M ${a.x} ${a.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${b.x} ${b.y}`,
-    from: a, to: b, fromSide: fSide, toSide: tSide, arrows,
-    // Cubic Bézier at t=0.5 — (P0 + 3C1 + 3C2 + P3) / 8.
-    label: edge.label ? {
-      x: (a.x + 3 * c1.x + 3 * c2.x + b.x) / 8,
-      y: (a.y + 3 * c1.y + 3 * c2.y + b.y) / 8,
-      text: edge.label,
-    } : null,
-  };
+export function bytesFromDataURL(url) {
+  const m = String(url == null ? "" : url).match(/^data:([^;,]*);base64,([\s\S]*)$/);
+  if (!m) return null;
+  try {
+    const bin = atob(m[2].replace(/\s+/g, ""));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.length ? out : null;
+  } catch {
+    return null;
+  }
 }
+
 
 function pageOut(entry, body) {
   return {
@@ -324,7 +285,7 @@ export class Data {
     // `bookmark` is a view, not a storage kind: a note with a url. The file
     // still says `kind: note`, so Obsidian and the convention see nothing new.
     if (kind === "bookmark") items = items.filter((e) => e.kind === "note" && e.url != null);
-    /* Board and Drawing are one stored kind over two file formats with two
+    /* Board and Canvas are one stored kind over two file formats with two
        different owners, and the nav lists them as two facets. Unlike the
        bookmark facet they are DISJOINT — the nav row says "Board", and a
        drawing counted under it is the label lying. */
@@ -372,11 +333,10 @@ export class Data {
     const p = await this.v.get(id);
     if (!p) return null;
     const out = pageOut(p, p.body ?? "");
-    if (p.canvas != null) out.meta = {
-      ...out.meta,
-      layout: layoutFromCanvas(p.canvas),
-      edges: edgesFromCanvas(p.canvas),
-    };
+    // Nodes, but no edges: nothing draws a board any more. The flat item list
+    // survives for one caller only — the "import the old board" button on an
+    // inspo wall that still has a `.canvas` sidecar.
+    if (p.canvas != null) out.meta = { ...out.meta, layout: layoutFromCanvas(p.canvas) };
     if (isExcalidrawPath(p.path)) {
       // Parse from `raw`, not `body`: the plugin block lives after the
       // frontmatter and the view needs both halves — the scene to draw, and the
@@ -414,7 +374,7 @@ export class Data {
   counts() {
     const counts = {};
     for (const e of this.v.list()) {
-      // Board / Drawing split disjointly (see the pages() filter above);
+      // Board / Canvas split disjointly (see the pages() filter above);
       // bookmark stays inclusive — on disk a bookmark IS a note.
       const k = e.kind === "canvas" && isExcalidrawPath(e.path) ? "drawing" : e.kind;
       counts[k] = (counts[k] || 0) + 1;
@@ -485,6 +445,44 @@ export class Data {
     const r = await this.v.writeBlob(`attachments/${name}`, bytes);
     if (!r.ok) return r;
     return { path: `attachments/${name}`, name, url: `attachments/${name}`, bytes: bytes.length };
+  }
+
+  /**
+   * Inline drawing images → real files in `attachments/`.
+   *
+   * An image dropped into the editor lands in `scene.files` as a `dataURL`: a
+   * megabyte of base64 sealed inside the compressed blob, with no name, no
+   * path, and no way for Obsidian or an agent to know it is there. Written out
+   * as an ordinary attachment it becomes a file like any other — openable,
+   * linkable, greppable — and `serializeExcalidraw` can name it in the
+   * plugin's own `## Embedded Files` index.
+   *
+   * Takes the mapping already known from the file (so an image is written once,
+   * not once per save) and returns it extended. The dataURL is deliberately
+   * LEFT in the scene: the editor renders from it, and dropping it would mean
+   * a drawing that cannot paint its own images until something reloads them
+   * from the vault. That copy is the price of the file being readable, and it
+   * is a follow-up to load from the attachment instead.
+   */
+  async adoptDrawingImages(scene, stem, known) {
+    const paths = known instanceof Map ? new Map(known) : new Map(
+      (Array.isArray(known) ? known : []).map((e) => [e.key, e.value]));
+    const files = (scene && scene.files) || {};
+    for (const [id, f] of Object.entries(files)) {
+      if (!id || paths.has(id)) continue;
+      const bytes = bytesFromDataURL(f && f.dataURL);
+      if (!bytes) continue;
+      const ext = EXT_FOR_MIME[String((f && f.mimeType) || "").toLowerCase()] || ".png";
+      // The drawing's own name, so an attachment folder stays readable: the
+      // fileId is a 40-character hash and says nothing to anyone.
+      const base = `${String(stem || "drawing").replace(/[/\\:*?"<>|]/g, " ").trim() || "drawing"}${ext}`;
+      const r = await this.writeAsset({
+        name: base,
+        arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+      });
+      if (r && r.path) paths.set(id, r.path);
+    }
+    return paths;
   }
 
   /** Pages that link to this one. Computed from the index, not stored. */

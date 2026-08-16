@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   parseExcalidraw, serializeExcalidraw, compressScene, decompressScene,
-  textElementsOf, isExcalidrawPath, BLANK_SCENE,
+  textElementsOf, isExcalidrawPath, cleanScene, BLANK_SCENE,
 } from "../vault/excalidraw.js";
 import { Vault, MemoryBackend } from "../vault/vault.js";
 import { Data } from "../vault/data.js";
@@ -96,6 +96,138 @@ test("we can read a compressed file even though we default to writing one", () =
   assert.deepEqual(asJson.scene, asPacked.scene);
 });
 
+// ── The drawing, legible in the markdown ─────────────────────────────────
+// A link or an image added inside the editor used to live only in the base64:
+// Obsidian could not see it, the backlink graph could not see it, and an agent
+// reading the file could not see it. All three index sections are regenerated
+// from the scene now, so the markdown describes what the drawing contains.
+const LINKED = {
+  ...SCENE,
+  elements: [
+    ...SCENE.elements,
+    { id: "box1", type: "rectangle", x: 0, y: 0, link: "[[Quire Structures]]" },
+    { id: "box2", type: "rectangle", x: 0, y: 0, link: "https://example.com/folding" },
+    { id: "gone", type: "rectangle", x: 0, y: 0, link: "[[Deleted]]", isDeleted: true },
+    { id: "plain", type: "rectangle", x: 0, y: 0 },
+  ],
+};
+
+test("a link drawn on a shape is written out as a wikilink", () => {
+  const md = serializeExcalidraw(LINKED);
+  assert.match(md, /^box1: \[\[Quire Structures\]\]$/m);
+  assert.match(md, /^box2: https:\/\/example\.com\/folding$/m, "a URL is a link too");
+  assert.ok(!md.includes("gone:"), "a deleted shape's link is not a link");
+  assert.ok(!md.includes("plain:"), "a shape with no link contributes nothing");
+});
+
+test("element links are derived from the scene, never passed through stale", () => {
+  // The old serializer took these as an argument, so a link added in this app
+  // never reached the markdown and a link deleted in it never left.
+  const md = serializeExcalidraw(LINKED, {
+    elementLinks: [{ key: "ghost", value: "[[Removed Long Ago]]" }],
+  });
+  assert.ok(!md.includes("ghost"), "the scene is the truth, not the caller");
+  assert.match(md, /^box1: \[\[Quire Structures\]\]$/m);
+});
+
+test("links survive the round trip and reach the mention scanner", () => {
+  const p = parseExcalidraw(serializeExcalidraw(LINKED));
+  assert.deepEqual(p.elementLinks.find((l) => l.key === "box1"),
+    { key: "box1", value: "[[Quire Structures]]" });
+});
+
+test("an embedded image is named by the vault file it was written to", () => {
+  const withImage = {
+    ...SCENE,
+    elements: [...SCENE.elements, { id: "img1", type: "image", fileId: "f00" }],
+    files: { f00: { id: "f00", mimeType: "image/png", dataURL: "data:image/png;base64,AAAA" } },
+  };
+  const md = serializeExcalidraw(withImage, {
+    embeddedFiles: new Map([["f00", "attachments/Sewing Order.png"]]),
+  });
+  assert.match(md, /^f00: \[\[attachments\/Sewing Order\.png\]\]$/m);
+  const p = parseExcalidraw(md);
+  assert.equal(p.embeddedFiles[0].value, "[[attachments/Sewing Order.png]]");
+});
+
+test("an image with nowhere in the vault is left out, not guessed at", () => {
+  const withImage = {
+    ...SCENE,
+    files: { f00: { id: "f00", mimeType: "image/png", dataURL: "data:image/png;base64,AAAA" } },
+  };
+  assert.ok(!serializeExcalidraw(withImage).includes("Embedded Files"),
+    "a broken wikilink is worse than no wikilink");
+});
+
+test("an entry for an image no longer in the drawing is dropped", () => {
+  const md = serializeExcalidraw(SCENE, {
+    embeddedFiles: [{ key: "f00", value: "[[attachments/deleted.png]]" }],
+  });
+  assert.ok(!md.includes("deleted.png"), "the index cannot outlive what it indexes");
+});
+
+test("a path already wrapped is not wrapped twice on the way back out", () => {
+  // The parse hands back `[[path]]`; feeding that straight in used to yield
+  // `[[[[path]]]]`, which resolves to nothing at all.
+  const withImage = {
+    ...SCENE, files: { f00: { id: "f00", mimeType: "image/png", dataURL: "data:image/png;base64,AA" } },
+  };
+  const once = serializeExcalidraw(withImage, {
+    embeddedFiles: [{ key: "f00", value: "[[attachments/pic.png]]" }],
+  });
+  const twice = serializeExcalidraw(withImage, { embeddedFiles: parseExcalidraw(once).embeddedFiles });
+  assert.match(twice, /^f00: \[\[attachments\/pic\.png\]\]$/m);
+});
+
+// ── Session state never makes the trip through a file ────────────────────
+// `collaborators` is a Map in the live editor, so JSON writes it as `{}` — and
+// Excalidraw's restore() hands a supplied value straight to the editor, which
+// calls .forEach on it. A drawing that had ever been saved from this app then
+// threw on every render while still painting, so the only symptom was an
+// uncaught TypeError behind a canvas that looked fine.
+test("the editor's session state is stripped on the way out", () => {
+  const live = {
+    ...SCENE,
+    appState: {
+      ...SCENE.appState, scrollX: -40, scrollY: 88, zoom: { value: 1 },
+      collaborators: new Map(), fileHandle: {},
+    },
+  };
+  const md = serializeExcalidraw(live);
+  assert.ok(!md.includes("collaborators"), "a Map cannot survive JSON — do not write it");
+  const p = parseExcalidraw(md);
+  assert.ok(!("collaborators" in p.scene.appState));
+  assert.ok(!("fileHandle" in p.scene.appState));
+  // The framing is the whole reason this is a denylist: a drawing must reopen
+  // where the user left it.
+  assert.equal(p.scene.appState.scrollX, -40);
+  assert.equal(p.scene.appState.scrollY, 88);
+  assert.deepEqual(p.scene.appState.zoom, { value: 1 });
+});
+
+test("a file that already carries them opens without them", () => {
+  // Every drawing this app saved before the fix has `"collaborators":{}` on
+  // disk; reading one must not hand the editor the shape that throws.
+  const poisoned = serializeExcalidraw(SCENE).replace(
+    /## Drawing\n```compressed-json\n[\s\S]*?```/,
+    "## Drawing\n```json\n" + JSON.stringify({
+      ...SCENE,
+      appState: { ...SCENE.appState, collaborators: {}, fileHandle: {} },
+    }) + "\n```",
+  );
+  const p = parseExcalidraw(poisoned);
+  assert.equal(p.error, null);
+  assert.ok(!("collaborators" in p.scene.appState));
+  assert.ok(!("fileHandle" in p.scene.appState));
+  assert.deepEqual(p.scene.elements, SCENE.elements);
+});
+
+test("a scene with nothing to strip is left exactly as it is", () => {
+  assert.equal(cleanScene(SCENE), SCENE, "no needless copy");
+  assert.equal(cleanScene(null), null);
+  assert.equal(cleanScene({ elements: [] }).appState, undefined);
+});
+
 // ── The literal markers ──────────────────────────────────────────────────
 test("the file carries every marker the plugin looks for", () => {
   const md = serializeExcalidraw(SCENE);
@@ -154,8 +286,13 @@ test("the plugin's switch-view notice is not mistaken for the user's prose", () 
 
 // ── Sections ─────────────────────────────────────────────────────────────
 test("element links and embedded files parse back out", () => {
-  const md = serializeExcalidraw(SCENE, {
-    elementLinks: [{ key: "rect1", value: "[[Quire Structures]]" }],
+  const scene = {
+    ...SCENE,
+    elements: SCENE.elements.map((el) =>
+      el.id === "rect1" ? { ...el, link: "[[Quire Structures]]" } : el),
+    files: { f1: { id: "f1", mimeType: "image/png", dataURL: "data:image/png;base64,AAAA" } },
+  };
+  const md = serializeExcalidraw(scene, {
     embeddedFiles: [{ key: "f1", value: "[[attachments/leaf.png]]" }],
   });
   const p = parseExcalidraw(md);
@@ -270,4 +407,66 @@ test("a corrupt drawing still reaches the view, flagged", async () => {
   assert.equal(p.meta.excalidraw.scene, null);
   assert.ok(p.meta.excalidraw.error);
   assert.equal(p.body, "keep me", "the prose must survive an unreadable drawing");
+});
+
+// ── Images become files, not base64 ──────────────────────────────────────
+// A 1×1 red PNG, small enough to read as a literal and real enough to prove
+// the bytes survive the trip through base64.
+const PNG_1PX = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+test("a pasted image is written into attachments/ and named after the drawing", async () => {
+  const v = new Vault(new MemoryBackend({ "canvas/Sewing Order.excalidraw.md": drawing }));
+  await v.buildIndex();
+  const d = new Data(v, { renderMarkdown: (m) => m });
+  const scene = { ...SCENE, files: { abc: { id: "abc", mimeType: "image/png", dataURL: PNG_1PX } } };
+
+  const paths = await d.adoptDrawingImages(scene, "Sewing Order");
+  assert.equal(paths.get("abc"), "attachments/Sewing Order.png");
+  const bytes = await v.readBlob("attachments/Sewing Order.png");
+  assert.ok(bytes && bytes.length > 8, "the image must be real bytes on disk");
+  assert.deepEqual([...bytes.slice(1, 4)], [0x50, 0x4e, 0x47], "and a real PNG");
+
+  // …and the drawing that referenced it now says so in plain markdown.
+  const md = serializeExcalidraw(scene, { embeddedFiles: paths });
+  assert.match(md, /^abc: \[\[attachments\/Sewing Order\.png\]\]$/m);
+});
+
+test("an image already filed is not filed again on the next save", async () => {
+  const v = new Vault(new MemoryBackend({ "canvas/Sewing Order.excalidraw.md": drawing }));
+  await v.buildIndex();
+  const d = new Data(v, { renderMarkdown: (m) => m });
+  const scene = { ...SCENE, files: { abc: { id: "abc", mimeType: "image/png", dataURL: PNG_1PX } } };
+
+  const first = await d.adoptDrawingImages(scene, "Sewing Order");
+  const second = await d.adoptDrawingImages(scene, "Sewing Order", first);
+  assert.deepEqual([...second], [...first], "a save per keystroke must not fill the vault");
+  assert.equal(await v.be.exists("attachments/Sewing Order-2.png"), false);
+});
+
+test("the extension follows the image's own type", async () => {
+  const v = new Vault(new MemoryBackend({ "canvas/D.excalidraw.md": drawing }));
+  await v.buildIndex();
+  const d = new Data(v, { renderMarkdown: (m) => m });
+  const paths = await d.adoptDrawingImages({
+    files: {
+      j: { id: "j", mimeType: "image/jpeg", dataURL: "data:image/jpeg;base64,AAAA" },
+      s: { id: "s", mimeType: "image/svg+xml", dataURL: "data:image/svg+xml;base64,AAAA" },
+    },
+  }, "D");
+  assert.equal(paths.get("j"), "attachments/D.jpg");
+  assert.equal(paths.get("s"), "attachments/D.svg");
+});
+
+test("an image the scene cannot describe costs nothing but itself", async () => {
+  const v = new Vault(new MemoryBackend({ "canvas/D.excalidraw.md": drawing }));
+  await v.buildIndex();
+  const d = new Data(v, { renderMarkdown: (m) => m });
+  const paths = await d.adoptDrawingImages({
+    files: {
+      bad: { id: "bad", mimeType: "image/png", dataURL: "https://example.com/not-a-data-url.png" },
+      ok: { id: "ok", mimeType: "image/png", dataURL: PNG_1PX },
+    },
+  }, "D");
+  assert.equal(paths.has("bad"), false, "skipped, not thrown on");
+  assert.equal(paths.get("ok"), "attachments/D.png", "and the rest still saves");
 });

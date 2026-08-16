@@ -117,96 +117,23 @@ export const DEMO_FILES = {
   </g>
 </svg>
 `,
-  "canvas/Binding Methods.canvas": `{
-  "nodes": [
-    {
-      "id": "n1",
-      "type": "text",
-      "text": "# Coptic\\n\\nLies flat. Exposed spine.\\nThe fold does the work.",
-      "x": -400,
-      "y": -220,
-      "width": 300,
-      "height": 180,
-      "color": "4"
-    },
-    {
-      "id": "n2",
-      "type": "text",
-      "text": "# Case\\n\\nHides everything.\\nWill not lie flat.",
-      "x": -40,
-      "y": -220,
-      "width": 300,
-      "height": 180,
-      "color": "2"
-    },
-    {
-      "id": "n3",
-      "type": "text",
-      "text": "# Japanese stab\\n\\nIgnores the fold entirely.\\nHonest about it.",
-      "x": 320,
-      "y": -220,
-      "width": 300,
-      "height": 180,
-      "color": "5"
-    },
-    {
-      "id": "n4",
-      "type": "file",
-      "file": "topics/Quire Structures.md",
-      "x": -40,
-      "y": 60,
-      "width": 300,
-      "height": 160
-    },
-    {
-      "id": "n5",
-      "type": "text",
-      "text": "The ranking is really *how much does it fight the fold* — see the topic below.",
-      "x": -400,
-      "y": 60,
-      "width": 300,
-      "height": 160
-    }
-  ],
-  "edges": [
-    {
-      "id": "e1",
-      "fromNode": "n1",
-      "fromSide": "bottom",
-      "toNode": "n4",
-      "toSide": "left"
-    },
-    {
-      "id": "e2",
-      "fromNode": "n2",
-      "fromSide": "bottom",
-      "toNode": "n4",
-      "toSide": "top"
-    },
-    {
-      "id": "e3",
-      "fromNode": "n3",
-      "fromSide": "bottom",
-      "toNode": "n4",
-      "toSide": "right"
-    }
-  ]
-}
-`,
   "canvas/Binding Methods.md": `---
 id: 01KW71KKG0QMB8EDXJ6QP47G8K
-kind: canvas
+kind: note
 title: Binding Methods
 created: 2026-07-06T09:20:00+00:00
 updated: 2026-08-27T09:20:00+00:00
 aliases: [Binding Methods]
 ---
 
-Physical binding approaches, arranged by how much they fight the fold.
+Physical binding approaches, ranked by how much they fight the fold.
 
-Arranged in Obsidian — the app renders it and hands off.
+**Coptic** — lies flat, exposed spine, the fold does the work.
+**Case** — hides everything, will not lie flat.
+**Japanese stab** — ignores the fold entirely, and is honest about it.
 
-![[Binding Methods.canvas]]
+The ranking is really *how much does it fight the fold* — see
+[[Quire Structures]] for why that is the axis that matters.
 
 Subjects: [[bookbinding]]
 `,
@@ -564,7 +491,7 @@ page.** Anything that treats the page as atomic ends up fighting the object.
 
 - [[Lantern Cartography Notes]] — the same working-circle limit, different craft
 - [[Folio Gathering Notes]] — where it becomes expensive
-- [[Binding Methods]] — the board of physical approaches
+- [[Binding Methods]] — physical approaches, ranked against the fold
 - [[Bindery]] — the project this feeds
 
 ## Thread

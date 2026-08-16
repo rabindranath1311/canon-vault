@@ -64,6 +64,50 @@ export function isExcalidrawPath(path) {
 }
 
 /**
+ * `appState` keys that are a live editor session rather than a drawing, and so
+ * must never make the trip through a file.
+ *
+ * Both are objects JSON cannot represent, and both come back from a round trip
+ * as a bare `{}` that is the wrong *type* rather than merely the wrong value:
+ *
+ *   collaborators  a Map. Excalidraw's `restore()` passes any supplied value
+ *                  straight through — it only fills in a default when the key
+ *                  is absent — so `{}` reaches the editor, which calls
+ *                  `.forEach` on it while rendering remote pointers and throws
+ *                  `appState.collaborators.forEach is not a function` on every
+ *                  update. The drawing still paints, which is what let this
+ *                  ride: the failure is an uncaught error behind a canvas that
+ *                  looks fine.
+ *   fileHandle     a live FileSystemFileHandle, meaningless in another session.
+ *
+ * Deliberately a denylist, not an allowlist: `scrollX`/`scrollY`/`zoom` are how
+ * a drawing reopens where the user left it, and the plugin writes keys of its
+ * own that are none of our business. We drop what we know is broken and keep
+ * the rest.
+ */
+const SESSION_APPSTATE = ["collaborators", "fileHandle"];
+
+/**
+ * A scene with that session state left out of it.
+ *
+ * Applied on the way in *and* on the way out. In, because files already carry
+ * the bad keys — every drawing this app has ever saved has them, since the
+ * editor handle serializes the whole live `appState`. Out, so we stop writing
+ * more of them. Returns the scene unchanged when there is nothing to strip.
+ */
+export function cleanScene(scene) {
+  if (!scene || typeof scene !== "object") return scene;
+  const st = scene.appState;
+  if (!st || typeof st !== "object") return scene;
+  if (!SESSION_APPSTATE.some((k) => k in st)) return scene;
+  const appState = {};
+  for (const k of Object.keys(st)) {
+    if (!SESSION_APPSTATE.includes(k)) appState[k] = st[k];
+  }
+  return { ...scene, appState };
+}
+
+/**
  * Compress exactly as the plugin's worker does: base64, then 256-character
  * chunks separated by a blank line, then trimmed.
  *
@@ -160,7 +204,7 @@ export function parseExcalidraw(text) {
 
   if (raw != null && out.error == null) {
     try {
-      out.scene = JSON.parse(raw);
+      out.scene = cleanScene(JSON.parse(raw));
     } catch (e) {
       out.error = `the drawing JSON is malformed: ${e.message}`;
     }
@@ -225,19 +269,85 @@ export function textElementsOf(scene) {
 }
 
 /**
+ * Element links, regenerated from the scene.
+ *
+ * Derived for the same reason the text index is. A link attached to a shape
+ * lives in `element.link` — which is inside the compressed blob, so Obsidian
+ * cannot see it, the backlink graph cannot see it, and an agent reading the
+ * markdown cannot see it. Written out here as `elementId: [[Page]]`, it is an
+ * ordinary wikilink in an ordinary file: `vault.js` scans mentions from the
+ * whole body, `%%` block included, so a link drawn on a shape becomes a real
+ * edge in the graph with nothing else to build.
+ *
+ * The value is passed through as the user set it — `[[Page]]`, a bare page
+ * name, or an external URL are all things a link can legitimately be, and
+ * guessing which would corrupt two of the three.
+ */
+export function elementLinksOf(scene) {
+  const els = (scene && Array.isArray(scene.elements)) ? scene.elements : [];
+  return els
+    .filter((el) => el && !el.isDeleted && el.id && el.link != null && String(el.link).trim())
+    .map((el) => ({ key: el.id, value: String(el.link).trim() }));
+}
+
+/** `[[a/b.png]]` → `a/b.png`; anything else is returned unchanged. */
+function unwrapLink(value) {
+  const m = String(value == null ? "" : value).trim().match(/^!?\[\[([^\]|#]+)/);
+  return m ? m[1].trim() : String(value == null ? "" : value).trim();
+}
+
+/**
+ * Embedded files, regenerated from the scene against what we know of the vault.
+ *
+ * An image dropped into the editor arrives as a `dataURL` in `scene.files` and
+ * nothing else — a megabyte of base64 with no name, invisible to every other
+ * client. `paths` maps each `fileId` to the vault file it was written out to
+ * (see `Data.adoptDrawingImages`), and this turns that into the plugin's own
+ * `fileId: [[attachments/pic.png]]`, which Obsidian resolves and an agent can
+ * follow like any other embed.
+ *
+ * A file with no known path is left out rather than guessed at: the drawing
+ * still renders it from the blob, and a broken wikilink is worse than none.
+ */
+export function embeddedFilesOf(scene, paths) {
+  const map = paths instanceof Map
+    ? paths
+    : new Map((Array.isArray(paths) ? paths : []).map((e) => [e.key, unwrapLink(e.value)]));
+  const ids = new Set(Object.keys((scene && scene.files) || {}));
+  for (const el of (scene && Array.isArray(scene.elements)) ? scene.elements : []) {
+    if (el && !el.isDeleted && el.fileId) ids.add(el.fileId);
+  }
+  const out = [];
+  for (const id of ids) {
+    const path = map.has(id) ? unwrapLink(map.get(id)) : null;
+    if (path) out.push({ key: id, value: `[[${path}]]` });
+  }
+  return out;
+}
+
+/**
  * Scene → a `.excalidraw.md` the plugin will open as a drawing.
  *
  * `compressed` defaults to true because that is what the plugin writes out of
  * the box, so our files look native beside the ones it made.
+ *
+ * All three index sections are regenerated from the scene on every write.
+ * `elementLinks` used to be an opt the caller passed back from the parse, which
+ * meant a link added *in this app* never reached the markdown — it survived
+ * only inside the base64. Derived beats passed-through for the same reason it
+ * does for text: the scene is the truth, the sections are its index.
+ * `embeddedFiles` stays an argument because only the caller knows where in the
+ * vault an image was written — but what it names is still filtered against the
+ * scene, so a stale entry cannot outlive the image it described.
  */
 export function serializeExcalidraw(scene, opts = {}) {
   const {
     compressed = true,
     backOfNote = "",
     frontmatter = null,
-    elementLinks = [],
     embeddedFiles = [],
   } = opts;
+  const elementLinks = elementLinksOf(scene);
 
   const fmBody = frontmatter != null && String(frontmatter).trim()
     ? String(frontmatter).trim()
@@ -254,12 +364,13 @@ export function serializeExcalidraw(scene, opts = {}) {
     out += `${MD_ELEMENTLINKS}\n`;
     for (const l of elementLinks) out += `${l.key}: ${l.value}\n\n`;
   }
-  if (embeddedFiles.length) {
+  const embeds = embeddedFilesOf(scene, embeddedFiles);
+  if (embeds.length) {
     out += `${MD_EMBEDFILES}\n`;
-    for (const f of embeddedFiles) out += `${f.key}: ${f.value}\n\n`;
+    for (const f of embeds) out += `${f.key}: ${f.value}\n\n`;
   }
 
-  const json = JSON.stringify(scene == null ? BLANK_SCENE : scene);
+  const json = JSON.stringify(cleanScene(scene == null ? BLANK_SCENE : scene));
   out += compressed
     ? `${MD_DRAWING}\n\`\`\`compressed-json\n${compressScene(json)}\n\`\`\`\n%%`
     : `${MD_DRAWING}\n\`\`\`json\n${json}\n\`\`\`\n%%`;

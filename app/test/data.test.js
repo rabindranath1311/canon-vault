@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Vault, MemoryBackend } from "../vault/vault.js";
 import {
-  Data, layoutFromCanvas, edgesFromCanvas, edgeGeometry, facingSide,
+  Data, layoutFromCanvas,
 } from "../vault/data.js";
 import { serialize } from "../vault/mdfile.js";
 
@@ -247,154 +247,26 @@ test("a group keeps its label, and an unknown node type keeps its name", () => {
   assert.deepEqual([l[0].x, l[0].y], [-40, -40]);
 });
 
-// ── Edges ────────────────────────────────────────────────────────────────
-// Nodes alone made a board look like a pile of unrelated cards: every arrow
-// drawn in Obsidian was parsed away and never reached the view.
-test("edgesFromCanvas keeps endpoints, sides, ends, color and label", () => {
-  const e = edgesFromCanvas(JSON.stringify({
-    nodes: [],
-    edges: [{
-      id: "e1", fromNode: "n1", fromSide: "right", toNode: "n2", toSide: "left",
-      color: "4", label: "supersedes",
-    }],
-  }));
-  assert.equal(e.length, 1);
-  assert.deepEqual(e[0], {
-    id: "e1", fromNode: "n1", toNode: "n2",
-    fromSide: "right", toSide: "left",
-    fromEnd: "none", toEnd: "arrow",
-    color: "4", label: "supersedes",
-  });
-});
-
-test("edge ends follow the JSON Canvas defaults", () => {
-  const [plain] = edgesFromCanvas(JSON.stringify({
-    edges: [{ id: "e", fromNode: "a", toNode: "b" }],
-  }));
-  // An edge points at its target unless told otherwise.
-  assert.equal(plain.toEnd, "arrow");
-  assert.equal(plain.fromEnd, "none");
-
-  const [both] = edgesFromCanvas(JSON.stringify({
-    edges: [{ id: "e", fromNode: "a", toNode: "b", fromEnd: "arrow", toEnd: "none" }],
-  }));
-  assert.equal(both.fromEnd, "arrow");
-  assert.equal(both.toEnd, "none");
-});
-
-test("an omitted or bogus side is null, so the renderer picks the facing one", () => {
-  const [e] = edgesFromCanvas(JSON.stringify({
-    edges: [{ id: "e", fromNode: "a", toNode: "b", toSide: "sideways" }],
-  }));
-  assert.equal(e.fromSide, null);
-  assert.equal(e.toSide, null);
-});
-
-test("an edge missing an endpoint is dropped, not drawn from nowhere", () => {
-  const e = edgesFromCanvas(JSON.stringify({
-    edges: [
-      { id: "ok", fromNode: "a", toNode: "b" },
-      { id: "no-to", fromNode: "a" },
-      { id: "no-from", toNode: "b" },
-      null,
-    ],
-  }));
-  assert.deepEqual(e.map((x) => x.id), ["ok"]);
-});
-
-test("a malformed .canvas yields no edges, never a crash", () => {
-  assert.deepEqual(edgesFromCanvas("{not json"), []);
-  assert.deepEqual(edgesFromCanvas("{}"), []);
-  assert.deepEqual(edgesFromCanvas(JSON.stringify({ nodes: [] })), []);
-});
-
-// ── Edge geometry ────────────────────────────────────────────────────────
-// Pure math, kept out of the DOM so it can be checked here rather than by eye.
-const BOX = (x, y, w = 200, h = 100) => ({ x, y, w, h });
-
-test("facingSide picks the side pointing at the other box", () => {
-  const origin = BOX(0, 0);
-  assert.equal(facingSide(origin, BOX(400, 0)), "right");
-  assert.equal(facingSide(origin, BOX(-400, 0)), "left");
-  assert.equal(facingSide(origin, BOX(0, 400)), "bottom");
-  assert.equal(facingSide(origin, BOX(0, -400)), "top");
-});
-
-test("an anchor sits on its box edge, not at the corner or the centre", () => {
-  const g = edgeGeometry(
-    { fromSide: "right", toSide: "left", toEnd: "arrow", fromEnd: "none" },
-    BOX(0, 0), BOX(400, 0));
-  // right edge of a 200x100 box at the origin → (200, 50)
-  assert.deepEqual([g.from.x, g.from.y], [200, 50]);
-  // left edge of the far box → (400, 50)
-  assert.deepEqual([g.to.x, g.to.y], [400, 50]);
-  assert.match(g.d, /^M 200 50 C /);
-});
-
-test("omitted sides fall back to the facing pair", () => {
-  const g = edgeGeometry(
-    { fromSide: null, toSide: null, toEnd: "arrow", fromEnd: "none" },
-    BOX(0, 0), BOX(0, 400));
-  assert.equal(g.fromSide, "bottom");
-  assert.equal(g.toSide, "top");
-});
-
-test("negative coordinates survive — Obsidian boards routinely sit left of 0", () => {
-  const g = edgeGeometry(
-    { fromSide: "right", toSide: "left", toEnd: "arrow", fromEnd: "none" },
-    BOX(-800, -600), BOX(-300, -600));
-  assert.deepEqual([g.from.x, g.from.y], [-600, -550]);
-  assert.deepEqual([g.to.x, g.to.y], [-300, -550]);
-});
-
-test("arrowheads follow fromEnd/toEnd, not the edge's existence", () => {
-  const boxes = [BOX(0, 0), BOX(400, 0)];
-  const heads = (e) => edgeGeometry(e, ...boxes).arrows.length;
-  assert.equal(heads({ toEnd: "arrow", fromEnd: "none" }), 1);
-  assert.equal(heads({ toEnd: "arrow", fromEnd: "arrow" }), 2);
-  assert.equal(heads({ toEnd: "none", fromEnd: "none" }), 0);
-});
-
-test("a label lands between the two boxes, never on top of either", () => {
-  const g = edgeGeometry(
-    { fromSide: "right", toSide: "left", toEnd: "arrow", fromEnd: "none", label: "cites" },
-    BOX(0, 0), BOX(600, 0));
-  assert.equal(g.label.text, "cites");
-  assert.ok(g.label.x > 200 && g.label.x < 600, `label at x=${g.label.x} is inside a card`);
-});
-
-test("no label means no label object to draw", () => {
-  const g = edgeGeometry({ toEnd: "arrow", fromEnd: "none", label: "" }, BOX(0, 0), BOX(400, 0));
-  assert.equal(g.label, null);
-});
-
-test("an edge with a missing box yields nothing to draw", () => {
-  const e = { toEnd: "arrow", fromEnd: "none" };
-  assert.equal(edgeGeometry(e, undefined, BOX(0, 0)), null);
-  assert.equal(edgeGeometry(e, BOX(0, 0), undefined), null);
-});
-
-test("a canvas page carries its edges into meta.edges", async () => {
+// ── The board renderer is gone ───────────────────────────────────────────
+// One kind, one editor: a .canvas is Obsidian's and the app links out to it
+// rather than drawing it. The node list survives for the inspo migration; the
+// edges do not, because nothing draws them and a half-kept renderer is how a
+// stylus stroke once wrote over somebody's board.
+test("a board no longer carries edges, because nothing draws them", async () => {
   const be = new MemoryBackend({
     "canvas/Wired.md":
       "---\nid: 01EEEEEEEEEEEEEEEEEEEEEEEE\nkind: canvas\ntitle: Wired\n"
       + "created: 2026-07-01T00:00:00+00:00\nupdated: 2026-07-01T00:00:00+00:00\n---\n\n![[Wired.canvas]]\n",
     "canvas/Wired.canvas": JSON.stringify({
-      nodes: [
-        { id: "n1", type: "text", text: "a", x: 0, y: 0, width: 200, height: 100 },
-        { id: "n2", type: "text", text: "b", x: 400, y: 0, width: 200, height: 100 },
-      ],
+      nodes: [{ id: "n1", type: "text", text: "a", x: 0, y: 0, width: 200, height: 100 }],
       edges: [{ id: "e1", fromNode: "n1", toNode: "n2" }],
     }),
   });
   const v = new Vault(be); await v.buildIndex();
   const d = new Data(v, { renderMarkdown: (m) => m });
   const p = await d.page("01EEEEEEEEEEEEEEEEEEEEEEEE");
-  assert.ok(Array.isArray(p.meta.edges), "the connections never reached the view");
-  assert.equal(p.meta.edges.length, 1);
-  assert.equal(p.meta.edges[0].fromNode, "n1");
-  // The nodes must still be there — edges are an addition, not a replacement.
-  assert.equal(p.meta.layout.length, 2);
+  assert.equal(p.meta.edges, undefined, "edges are parsed for nobody");
+  assert.equal(p.meta.layout.length, 1, "the nodes stay: the inspo import reads them");
 });
 
 test("a two-file canvas page carries its board into meta.layout", async () => {
