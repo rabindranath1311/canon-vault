@@ -121,6 +121,38 @@ export function stripExcalidrawData(text) {
 }
 
 /**
+ * The words *inside* a drawing, as one searchable string.
+ *
+ * The plugin already writes every text element in plain text under
+ * `## Text Elements` — that section exists precisely so an indexer can read a
+ * drawing's words without understanding Excalidraw. We were throwing it away:
+ * `stripExcalidrawData` cuts from `# Excalidraw Data` onward and the section
+ * sits after the cut, so a box labelled "Fold" was invisible to search even
+ * though the word was sitting in the markdown in plain sight.
+ *
+ * Held to the same cost rule as `stripExcalidrawData` — this runs for every
+ * drawing on every vault open, so it reads the already-plain section and never
+ * decompresses the scene.
+ *
+ * READ-ONLY, like everything derived from this section: `## Drawing` is
+ * authoritative and this text is regenerated from it on write. Never feed the
+ * result back into a scene.
+ */
+export function textOfExcalidraw(text) {
+  const src = String(text == null ? "" : text);
+  const chunk = sectionText(src, MD_TEXTELEMENTS);
+  if (!chunk) return "";
+  // Drop the `^elementId` anchors — they are addressing, not words, and
+  // leaving them in means a search for a stray hex string "matches" a drawing.
+  return chunk
+    .split(/\n\n+/)
+    .map((para) => para.replace(/\s*\^(\S+)\s*$/, "").trim())
+    .filter((t) => t && t !== "_dummy!_")
+    .join(" ")
+    .trim();
+}
+
+/**
  * Read a `.excalidraw.md` into its parts.
  *
  * Returns `{ frontmatter, backOfNote, scene, compressed, textElements,

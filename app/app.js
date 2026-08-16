@@ -476,6 +476,52 @@ async function fetchAllTags() {
   return _tagsCache;
 }
 function invalidateTagsCache() { _tagsCache = null; }
+
+/* The ten tag hues, named so the picker can label them. The CSS owns the
+   actual colours (`.tag-h0` … `.tag-h9`); this is only the vocabulary. */
+const TAG_HUES = ['Lime', 'Amber', 'Rose', 'Violet', 'Sky',
+                  'Emerald', 'Fuchsia', 'Orange', 'Slate', 'Teal'];
+
+/* Chosen colours are a display preference, not vault content — they live in
+   `sb.prefs` beside the theme, never in the markdown. Two reasons: most tags
+   have no `tags/<name>.md` to write to, so colouring one would mean creating
+   a file the user never asked for; and Obsidian has no way to render the key
+   if we did. The vault stays notes, and nothing here is lost if it is dropped.
+
+   Read through a cache: a 200-row table with four tags a row would otherwise
+   parse localStorage 800 times per paint. */
+let _tagColorsCache = null;
+function tagColorMap() {
+  if (!_tagColorsCache) _tagColorsCache = loadPrefs().tagColors || {};
+  return _tagColorsCache;
+}
+function setTagColor(tag, idx) {
+  const p = loadPrefs();
+  const next = { ...(p.tagColors || {}) };
+  const key = String(tag).toLowerCase();
+  // null means "back to automatic" — the key is deleted rather than set to a
+  // sentinel, so a tag never carries a stored value it no longer uses.
+  if (idx == null) delete next[key]; else next[key] = idx;
+  p.tagColors = next;
+  savePrefs(p);
+  _tagColorsCache = null;
+}
+
+/* A tag's colour: the one you picked, or failing that one derived from its
+   name — so the same tag wears the same hue in a chip row, the cloud and
+   inline prose, with no registry to keep in sync. A hash collision just means
+   two tags share a colour, which is fine: the hue is a scent, not an
+   identifier, and now it is also overridable. */
+function tagHue(t) {
+  const s = String(t);
+  const picked = tagColorMap()[s.toLowerCase()];
+  if (Number.isInteger(picked) && picked >= 0 && picked < TAG_HUES.length) {
+    return 'tag-h' + picked;
+  }
+  let x = 0;
+  for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0;
+  return 'tag-h' + (x % TAG_HUES.length);
+}
 async function searchTags(q, exclude) {
   const all = await fetchAllTags();
   const needle = (q || '').toLowerCase();
@@ -805,7 +851,7 @@ function decorateHashtags(rootEl) {
     while ((m = re.exec(text))) {
       const start = m.index + m[1].length;
       if (start > last) frag.appendChild(document.createTextNode(text.slice(last, start)));
-      frag.appendChild(h('span', { className: 'hashtag' }, '#' + m[2]));
+      frag.appendChild(h('span', { className: 'hashtag ' + tagHue(m[2]) }, '#' + m[2]));
       last = start + 1 + m[2].length;
     }
     if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
@@ -875,11 +921,21 @@ function decorateMentions(rootEl) {
       }
       const hit = L.resolveWikilink(link.target, entries);
       const label = link.display || (hit ? hit.title : link.target);
+      /* A resolved link reads like the page it goes to: the kind's own icon
+         in the kind's own colour, then the title in body ink with a quiet
+         underline. The old arrow glyph said "this is a link" louder than it
+         said where to; the icon answers both at once. */
+      const meta = hit ? metaForPage(hit) : null;
       frag.appendChild(h('span', {
         className: 'mention-link' + (hit ? '' : ' broken'),
-        title: hit ? (hit.kind + ' · ' + hit.path) : 'unresolved — no file of that name',
+        title: hit ? (meta.label + ' · ' + hit.path) : 'unresolved — no file of that name',
         onClick: () => { if (hit) openPage(hit.id); },
-      }, label + (link.heading ? ' §' + link.heading : '')));
+      },
+        hit ? h('span', { className: 'mention-link-i',
+          style: { color: meta.color || 'var(--muted)' } },
+          icon(meta.icon || 'file-text')) : null,
+        h('span', { className: 'mention-link-t' },
+          label + (link.heading ? ' §' + link.heading : ''))));
     }
     if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
     node.parentNode.replaceChild(frag, node);
@@ -1046,7 +1102,7 @@ function TabBarSearch() {
           e.preventDefault();
           close();
           input.value = '';
-          openPage(p.id);
+          openPageTab(p.id);
         },
         onMouseEnter: () => { activeIdx = i; },
       },
@@ -1072,11 +1128,21 @@ function TabBarSearch() {
             const alias = (p.aliases || []).find((x) => String(x).toLowerCase().includes(q));
             if (tag) {
               return h('span', { className: 'tab-search-snippet' },
-                'tagged ', h('span', { className: 'tag-chip' }, markedText(tag, input.value)));
+                'tagged ', h('span', { className: 'tag-chip ' + tagHue(tag) }, markedText(tag, input.value)));
             }
             if (alias) {
               return h('span', { className: 'tab-search-snippet' },
                 'also called ', markedText(alias, input.value));
+            }
+            // A drawing matched on a word inside the picture. The excerpt is
+            // the back-of-note prose and does not contain it, so without this
+            // the row shows the wrong text or none at all.
+            const scene = String(p.sceneText || '');
+            if (scene.toLowerCase().includes(q)) {
+              const [sb, sm, sa] = snippetAround(scene, input.value, 70);
+              return h('span', { className: 'tab-search-snippet' },
+                icon(DRAWING_META.icon), ' in the drawing: ',
+                sb, sm ? h('mark', null, sm) : null, sa);
             }
           }
           return h('span', { className: 'tab-search-snippet' },
@@ -1122,7 +1188,7 @@ function TabBarSearch() {
       if (activeIdx >= 0 && lastItems[activeIdx]) {
         close();
         input.value = '';
-        openPage(lastItems[activeIdx].id);
+        openPageTab(lastItems[activeIdx].id);
       } else {
         close();
         input.value = '';
@@ -1224,7 +1290,7 @@ function SearchPanel(onClose) {
       resultsBox.appendChild(h('a', {
         className: 'search-result',
         href: '#page/' + p.id,
-        onClick: (e) => { e.preventDefault(); onClose(); openPage(p.id); },
+        onClick: (e) => { e.preventDefault(); onClose(); openPageTab(p.id); },
       },
         h('span', { className: 'search-result-kind' }, p.kind),
         h('span', { className: 'search-result-title' }, p.title || '(untitled)'),
@@ -1382,6 +1448,12 @@ function ThemePicker() {
     }));
 }
 
+/* Where the clipper lives. The only URL this app owns — everything else it
+   links to is either a page in the vault or a link the user saved. It has to
+   be one: the extension ships with the repo and not with the deploy, so a
+   hosted instance can point at it but cannot hand it over. */
+const CLIPPER_HELP = 'https://github.com/rabindranath1311/canon-vault/tree/main/extension';
+
 /* The other half of onboarding.
  *
  * The front door explains the decision; this is what happens after it. A
@@ -1435,6 +1507,18 @@ function WelcomeCard(onCreate) {
   steps.push(step(vault ? 3 : 2, 'Hand the folder to your agent',
     'The file convention is public, so a coding agent can read and write this vault the way you do.',
     agents));
+
+  // The fourth client. It is a real link out rather than a button because the
+  // clipper is not part of this deploy — `vercel.json` serves app/ and nothing
+  // else — so somebody on a hosted instance has no copy of it to install, and
+  // a button that could only say "clone the repo" would be a worse link.
+  steps.push(step(vault ? 4 : 3, 'Clip the web into it',
+    'A Chrome extension: right-click an image, drag a region out of a page, keep a link or '
+    + 'a quotation. Images land on an inspo wall, pages become bookmarks — written straight '
+    + 'into this folder, through the same safety net as anything here.',
+    h('a', {
+      className: 'welcome-go', href: CLIPPER_HELP, target: '_blank', rel: 'noopener',
+    }, 'Get the clipper', h('span', { className: 'welcome-ext' }, '↗'))));
   // A missing page RESOLVES null here rather than rejecting, so the fallback
   // has to be in both branches — putting it only in .catch() left the step
   // with no action line at all on any vault the app did not scaffold.
@@ -1455,7 +1539,7 @@ function WelcomeCard(onCreate) {
         h('h2', { className: 'welcome-t' }, 'Your vault is open.'),
         h('p', { className: 'welcome-s' },
           vault
-            ? ['Everything lives in ', h('code', null, vault), '. Three things worth knowing.']
+            ? ['Everything lives in ', h('code', null, vault), '. Four things worth knowing.']
             : 'Three things worth knowing.')),
       h('button', {
         className: 'welcome-x', title: 'Dismiss', 'aria-label': 'Dismiss',
@@ -1490,7 +1574,14 @@ function PageHeader(title, meta, sub, right) {
    whichever door they came through. So: every creatable thing is here,
    including Project and Drawing, and Project asks for its name inline
    instead of handing off to the browser. */
-const CREATABLE_KINDS = [...KIND_ORDER, 'project'];
+/* Board is deliberately absent, and it is the only nav facet that is.
+   `createPage('canvas')` writes `canvas/Board <date>.md` — a markdown file with
+   no `.canvas` sibling, so it opens as an empty board you cannot draw on,
+   because boards are read-only by design (one owner per scene). The affordance
+   promised something the app cannot do. Boards you made in Obsidian still list,
+   open and render; this app just does not pretend to start one. Drawing is the
+   spatial thing it can actually finish. */
+const CREATABLE_KINDS = [...KIND_ORDER.filter((k) => k !== 'canvas'), 'project'];
 function creatableMeta(k) {
   if (k === 'drawing') return DRAWING_META;
   if (k === 'project') return {
@@ -1661,7 +1752,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
               h('span', { className: 'pages-title' }, r.title),
               showVia ? h('span', { className: 'recent-via' }, r.via) : null,
               h('span', { className: 'pages-tags' },
-                (r.tags || []).slice(0, 2).map((t) => h('span', { className: 'tag-chip' }, t))),
+                (r.tags || []).slice(0, 2).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
               h('span', { className: 'pages-when' }, fmtDate(r.updated))))),
 
       // ── Activity buckets (replaces v1's "memory tiers") ──
@@ -1712,7 +1803,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
       (o.related_tags || []).length
         ? h('div', { className: 'obs-tags' },
             (o.related_tags || []).slice(0, 6).map((t) => h('button', {
-              className: 'tag-chip tag-chip-btn', onClick: () => setRoute('tag:' + t),
+              className: 'tag-chip tag-chip-btn ' + tagHue(t), onClick: () => setRoute('tag:' + t),
             }, t)))
         : null,
       h('div', { className: 'obs-members' },
@@ -1905,7 +1996,7 @@ function ListView_Board(pages, onOpen) {
           h('span', { className: 'board-card-line' },
             firstLineOf(p.excerpt || '', 60) || (drawing ? 'Excalidraw' : 'JSON Canvas')),
           h('span', { className: 'board-card-tags' },
-            (p.tags || []).slice(0, 3).map((t) => h('span', { className: 'tag-chip' }, t)))));
+            (p.tags || []).slice(0, 3).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t)))));
     }));
 }
 
@@ -1944,7 +2035,7 @@ function ListView_List(pages, onOpen) {
         h('div', { className: 'list-row-snippet' }, firstLineOf(p.body))),
       h('div', { className: 'list-row-meta' },
         h('span', { className: 'list-row-tags' },
-          (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip' }, t))),
+          (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
         h('span', { className: 'list-row-when' }, fmtDate(p.updated))));
     rows.push(row);
     if (depth < SUBPAGE_MAX_DEPTH - 1) {
@@ -1985,7 +2076,7 @@ function ListView_Table(pages, onOpen) {
       h('span', null, KindChip(p)),
       h('span', { className: 'pages-title' }, p.title || '(untitled)'),
       h('span', { className: 'pages-tags' },
-        (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip' }, t))),
+        (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
       h('span', { className: 'pages-when' }, fmtDate(p.updated)))));
 }
 
@@ -2018,8 +2109,12 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
     let view;
     if (!filtered.length) {
       if (!pages.length) {
-        view = EmptyState(`No ${meta ? meta.label.toLowerCase() : ''} pages yet.`,
-          'Click "new" above to create one.');
+        view = kind === 'canvas'
+          ? EmptyState('No boards yet.',
+              'A board is a .canvas file — make one in Obsidian and it appears here, '
+              + 'rendered read-only. For a spatial page this app can edit, make a Drawing.')
+          : EmptyState(`No ${meta ? meta.label.toLowerCase() : ''} pages yet.`,
+              'Click "new" above to create one.');
       } else {
         view = EmptyState('No matches for "' + query + '"',
           'Try a different keyword, or clear the filter.');
@@ -2045,10 +2140,16 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
     },
   });
 
+  /* Board is the one list with nothing to offer here — see CREATABLE_KINDS.
+     A screen whose primary action would write a board it cannot then let you
+     edit is worse than a screen with no primary action, so it says where
+     boards come from instead. */
   append(wrap, PageHeader(title, null,
     meta ? meta.hint : (nOf(pages.length, 'page') + ' total'),
-    h('button', { className: 'btn-primary', onClick: onCreate },
-      '+ new ' + (meta ? meta.label.toLowerCase() : 'page'))));
+    kind === 'canvas'
+      ? h('span', { className: 'screen-hd-note' }, 'Arranged in Obsidian · read-only here')
+      : h('button', { className: 'btn-primary', onClick: onCreate },
+          '+ new ' + (meta ? meta.label.toLowerCase() : 'page'))));
   wrap.appendChild(h('div', { className: 'list-search-row' },
     searchInput, h('span', { className: 'list-search-count' }, countEl)));
   wrap.appendChild(listSlot);
@@ -3398,7 +3499,7 @@ function V2PageView(pageId, onChange, onDeleted) {
           it.caption || '',
           (it.tags || []).length
             ? h('span', { className: 'lightbox-tags' },
-                it.tags.map((t) => h('span', { className: 'tag-chip' }, t)))
+                it.tags.map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t)))
             : null));
         capBar.appendChild(h('div', { className: 'lightbox-meta' },
           it.url ? h('a', { className: 'lightbox-src', href: it.url, target: '_blank',
@@ -3489,7 +3590,7 @@ function V2PageView(pageId, onChange, onDeleted) {
             (item.tags || []).length
               ? h('div', { className: 'bento-tags-view' },
                   item.tags.map((t) => h('button', {
-                    className: 'tag-chip tag-chip-btn',
+                    className: 'tag-chip tag-chip-btn ' + tagHue(t),
                     onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
                   }, t)))
               : h('span'),
@@ -4020,9 +4121,12 @@ function V2PageView(pageId, onChange, onDeleted) {
       backBody.className = 'side-card-body';
       const list = h('div', { className: 'side-children' });
       items.forEach((b) => list.appendChild(h('button', {
-        className: 'side-link',
+        className: 'side-link side-link-hasg',
         onClick: () => { app.openPageId = b.id; app.route = 'page'; render(); },
       },
+        h('span', { className: 'side-link-g',
+          style: { color: metaForPage(b).color || 'var(--muted)' } },
+          icon(metaForPage(b).icon || 'file-text')),
         h('span', { className: 'side-link-title' }, b.title),
         h('span', { className: 'side-link-meta' }, metaForPage(b).label || b.kind))));
       backBody.appendChild(list);
@@ -4250,7 +4354,7 @@ function V2PageView(pageId, onChange, onDeleted) {
          quiet until used. */
       isProjectNote ? null : h('div', { className: 'page-chips-row' },
         page.tags.map((t, i) => h('span', {
-          className: 'tag-chip rm tag-chip-click',
+          className: 'tag-chip rm tag-chip-click ' + tagHue(t),
           title: 'Click to see all pages with #' + t,
           onClick: (e) => {
             if (e.target.tagName === 'BUTTON') return;  // remove btn handled separately
@@ -4451,38 +4555,156 @@ function V2PageView(pageId, onChange, onDeleted) {
 // ── Tags index: every page-level tag, click to filter ─────────────
 // Note: PageHeader returns an *array* of two elements, so use append(wrap, …)
 // helpers (which flatten) — wrap.appendChild on an array would throw.
+/* The colour menu for one tag. Anchored to the chip that opened it, dismissed
+   by Escape, by an outside click, or by choosing — the three ways anyone
+   expects a menu to close. Only one is ever open: opening a second closes the
+   first, so a screen of chips cannot end up wearing a trail of popovers. */
+let _tagPopClose = null;
+function openTagColorPicker(anchor, tag, onDone) {
+  if (_tagPopClose) _tagPopClose();
+  const current = tagColorMap()[String(tag).toLowerCase()];
+
+  const pop = h('div', { className: 'tag-pop', role: 'menu',
+    'aria-label': 'Colour for ' + tag });
+  pop.appendChild(h('div', { className: 'tag-pop-hd' }, 'Colour for #' + tag));
+
+  const grid = h('div', { className: 'tag-pop-grid' });
+  TAG_HUES.forEach((label, i) => {
+    const on = current === i;
+    grid.appendChild(h('button', {
+      className: 'tag-pop-sw tag-h' + i + (on ? ' on' : ''),
+      role: 'menuitemradio', 'aria-checked': String(on),
+      title: label, 'aria-label': label,
+      onClick: () => { setTagColor(tag, i); close(); onDone(); },
+    }));
+  });
+  pop.appendChild(grid);
+  pop.appendChild(h('button', {
+    className: 'tag-pop-auto' + (current == null ? ' on' : ''),
+    role: 'menuitem',
+    // Named for what it does rather than "Default": the colour is derived
+    // from the tag's own name, and saying so explains why it is already
+    // different from its neighbour's.
+    onClick: () => { setTagColor(tag, null); close(); onDone(); },
+  }, current == null ? '✓ Automatic — from the name' : 'Automatic — from the name'));
+
+  function close() {
+    if (_tagPopClose !== close) return;
+    _tagPopClose = null;
+    document.removeEventListener('mousedown', onOutside, true);
+    document.removeEventListener('keydown', onKey, true);
+    pop.remove();
+  }
+  function onOutside(e) { if (!pop.contains(e.target) && !anchor.contains(e.target)) close(); }
+  function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+
+  _tagPopClose = close;
+  anchor.appendChild(pop);
+  document.addEventListener('mousedown', onOutside, true);
+  document.addEventListener('keydown', onKey, true);
+  // Keep it on screen: a chip near the right edge would otherwise open its
+  // menu into the gutter, where the last two swatches are unreachable.
+  const box = pop.getBoundingClientRect();
+  if (box.right > window.innerWidth - 8) pop.classList.add('tag-pop-right');
+  const first = pop.querySelector('.tag-pop-sw');
+  if (first) first.focus();
+}
+
 function TagsIndexScreen() {
   const wrap = h('div', { className: 'screen' });
   append(wrap, PageHeader('Tags', null,
     'Every tag used across your pages. Click any to see the pages using it.', null));
   wrap.appendChild(Skeleton('cards', 8));
-  Promise.resolve(SB.data().tags()).then(({ tags }) => {
-    clear(wrap);
-    append(wrap, PageHeader('Tags', null,
-      nOf((tags || []).length, 'tag') + ' in the vault. Click any to filter.', null));
-    if (!tags || !tags.length) {
-      wrap.appendChild(EmptyState('No tags yet.', 'Add tags to your pages — they\'ll show up here.'));
-      return;
-    }
-    const cloud = h('div', { className: 'tags-cloud' });
-    const sorted = [...tags].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
-    sorted.forEach((t) => {
+
+  /* Search and create live on the screen itself: a tag you cannot find is one
+     keystroke from existing. Creating one writes the CONVENTION's subject page
+     — `tags/<name>.md`, empty on purpose — so it survives reload and Obsidian
+     sees it too; it shows in the cloud at zero until a page carries it. */
+  let all = [];
+  const cloud = h('div', { className: 'tags-cloud' });
+  const input = h('input', {
+    className: 'list-search tags-filter', type: 'search',
+    placeholder: 'filter tags — or type a new one…',
+    autocomplete: 'off', spellcheck: false,
+  });
+  const createBtn = h('button', { className: 'btn-primary tags-create' });
+  const toolbar = h('div', { className: 'tags-toolbar' }, input, createBtn);
+
+  const paint = () => {
+    const q = input.value.trim().toLowerCase();
+    clear(cloud);
+    const subset = all.filter((t) => !q || t.tag.toLowerCase().includes(q));
+    subset.forEach((t) => {
       /* A tag is a tag wherever it appears. This screen drew grey outlined
-         boxes while every other surface draws lime pills, so the one screen
+         boxes while every other surface draws chips, so the one screen
          devoted to tags was the one that did not look like it.
 
          Frequency used to be carried by font-size — an inline em value that
          sat off the type scale entirely, and redundant besides, since the
-         count is printed right there. It rides on the count badge now. */
-      cloud.appendChild(h('button', {
-        className: 'tag-chip tag-chip-btn tag-cloud-chip',
-        title: nOf(t.count, 'page'),
+         count is printed right there. It rides on the count badge now.
+
+         Two targets in one chip: the swatch edits the colour, the rest
+         filters. They cannot nest — a button inside a button is not a thing
+         the DOM will give you — so the chip is a wrapper that only looks
+         like one control. */
+      const item = h('span', { className: 'tag-chip tag-cloud-chip ' + tagHue(t.tag) });
+      item.appendChild(h('button', {
+        className: 'tag-swatch',
+        title: 'Change the colour of #' + t.tag,
+        'aria-label': 'Change the colour of ' + t.tag,
+        onClick: (e) => { e.stopPropagation(); openTagColorPicker(item, t.tag, paint); },
+      }));
+      item.appendChild(h('button', {
+        className: 'tag-cloud-go',
+        title: t.count ? nOf(t.count, 'page') : 'not on any page yet',
         onClick: () => setRoute('tag:' + t.tag),
       },
         h('span', { className: 'tag-cloud-name' }, t.tag),
-        h('span', { className: 'tag-cloud-count' }, String(t.count))));
+        h('span', { className: 'tag-cloud-count' }, t.count ? String(t.count) : 'new')));
+      cloud.appendChild(item);
     });
+    if (!subset.length) {
+      cloud.appendChild(h('div', { className: 'tags-cloud-empty' },
+        all.length
+          ? (q ? 'No tag matches — create it?' : 'No tags yet.')
+          : 'No tags yet — type a name above to make the first one.'));
+    }
+    const exact = all.some((t) => t.tag.toLowerCase() === q);
+    createBtn.style.display = q && !exact ? '' : 'none';
+    createBtn.textContent = '+ create "' + input.value.trim() + '"';
+  };
+
+  const create = async () => {
+    const name = input.value.trim();
+    if (!name) return;
+    try {
+      const r = await SB.data().createTag(name);
+      if (!r.ok) throw new Error(r.message || r.reason || 'refused');
+      invalidateTagsCache();
+      toast('#' + r.tag + ' created — apply it from any page.');
+      render();   // rebuild the screen, so the header count agrees with the cloud
+    } catch (e) {
+      toast('Could not create that tag — ' + e.message, { tone: 'error' });
+    }
+  };
+  createBtn.addEventListener('click', create);
+  input.addEventListener('input', paint);
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const q = input.value.trim().toLowerCase();
+    if (!q) return;
+    if (all.some((t) => t.tag.toLowerCase() === q)) setRoute('tag:' + q);
+    else create();
+  });
+
+  Promise.resolve(SB.data().tags()).then(({ tags }) => {
+    clear(wrap);
+    all = [...(tags || [])].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+    append(wrap, PageHeader('Tags', null,
+      nOf(all.length, 'tag') + ' in the vault. Click any to filter.', null));
+    wrap.appendChild(toolbar);
     wrap.appendChild(cloud);
+    paint();
   }).catch((e) => {
     clear(wrap);
     wrap.appendChild(EmptyState('Failed to load tags.', String(e.message || e)));
@@ -5430,6 +5652,16 @@ function submitSearch(q) {
   setRoute('pages');
 }
 
+/* Search opens its results in their own tab: the tab you searched from keeps
+   what it had. If some tab already shows the page, focus that one instead of
+   minting a duplicate — searching for the same page twice should not cost two
+   tabs. */
+function openPageTab(id) {
+  const existing = app.tabs.find((t) => t.route === 'page' && t.openPageId === id);
+  if (existing) { switchTab(existing.id); return; }
+  newTab('page', id, { switchTo: true });
+}
+
 function openPage(id, opts) {
   opts = opts || {};
   // Cmd / Ctrl click → open the page in a new tab without disturbing this one.
@@ -5626,6 +5858,7 @@ const SB_PREF_DEFAULTS = {
   obsidianVault: '',       // blank = derive from the picked folder
   thumbCacheOn: true,
   welcomeSeen: false,      // the first-run card on the dashboard
+  tagColors: {},           // tag name → hue index; absent means derive from the name
 };
 function loadPrefs() {
   try {

@@ -299,6 +299,10 @@ function pageOut(entry, body) {
     meta: entry.meta || {},
     path: entry.path,
     excerpt: entry.excerpt || "",
+    // Surfaced so a search result can say WHY it matched. A drawing hit is
+    // otherwise the one result with nothing to show: the words are in the
+    // scene, not in the excerpt the row prints.
+    ...(entry.sceneText ? { sceneText: entry.sceneText } : {}),
     // List endpoints return the excerpt here on purpose: SPEC §7 forbids holding
     // full bodies in the index. `page(id)` reads the real body from disk.
     body: body !== undefined ? body : (entry.excerpt || ""),
@@ -347,7 +351,11 @@ export class Data {
         (e.title || "").toLowerCase().includes(n) ||
         (e.tags || []).some((t) => t.toLowerCase().includes(n)) ||
         (e.aliases || []).some((a) => a.toLowerCase().includes(n)) ||
-        (e.excerpt || "").toLowerCase().includes(n));
+        (e.excerpt || "").toLowerCase().includes(n) ||
+        // The words inside a drawing. They live in the `.md` already — the
+        // plugin writes them there for exactly this — but nothing read them,
+        // so a drawing was findable by its title and by nothing it said.
+        (e.sceneText || "").toLowerCase().includes(n));
     }
     const sorted = items.sort((a, b) =>
       String(b.updated || "").localeCompare(String(a.updated || "")));
@@ -426,11 +434,51 @@ export class Data {
   tags() {
     const n = new Map();
     for (const e of this.v.list()) for (const t of e.tags || []) n.set(t, (n.get(t) || 0) + 1);
+    // CONVENTION: a subject lives as a page in `tags/`. It is a tag before
+    // anything carries it, so it shows at zero rather than nowhere — without
+    // this, a tag made on the Tags screen would vanish from the one screen
+    // that made it.
+    const have = new Set([...n.keys()].map((t) => t.toLowerCase()));
+    for (const e of this.v.list()) {
+      const p = String(e.path || "");
+      if (!p.startsWith("tags/") || p.slice(5).includes("/")) continue;
+      const name = pageStem(p).toLowerCase();
+      if (name && !have.has(name)) { n.set(name, 0); have.add(name); }
+    }
     return {
       tags: [...n.entries()]
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([tag, count]) => ({ tag, count })),
     };
+  }
+
+  /**
+   * A tag created before anything carries it. CONVENTION's shape for that is
+   * the subject page — `tags/<name>.md`, lowercase basename, standard
+   * frontmatter, empty body; emptiness is the design. A taken name is refused
+   * rather than suffixed: a filename is addressing, and "economy 2" is not a
+   * tag anyone meant.
+   */
+  async createTag(name) {
+    const tag = String(name || "").toLowerCase().replace(/#/g, "").trim()
+      .replace(/[/\\:*?"<>|]/g, "").replace(/\s+/g, "-")
+      .replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+    if (!tag) return { ok: false, reason: "empty", message: "a tag needs a name" };
+    if (this.tags().tags.some((t) => t.tag.toLowerCase() === tag)) {
+      return { ok: false, reason: "exists", message: `#${tag} already exists` };
+    }
+    if (takenStems(this.v).has(tag)) {
+      return { ok: false, reason: "name-taken",
+               message: `a page named "${tag}" already exists — tags share the vault's one namespace` };
+    }
+    const r = await this.v.put({
+      path: `tags/${tag}.md`, kind: "note", title: tag,
+      frontmatter: { kind: "note", title: tag },
+      body: "",
+    });
+    if (!r.ok) return r;
+    await this.v.buildIndex();
+    return { ok: true, tag };
   }
 
   suggestMentions(q = "", limit = 8) {

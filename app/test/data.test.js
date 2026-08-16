@@ -42,6 +42,25 @@ test("6.18 tags aggregate client-side, inline tags included", async () => {
   assert.ok(tags.some((t) => t.tag === "inline"), "inline #tags must be aggregated too");
 });
 
+test("createTag writes a subject page in tags/, and tags() surfaces it at zero", async () => {
+  const d = await fixture();
+  const r = await d.createTag("  Letterpress Grids ");
+  assert.equal(r.ok, true);
+  assert.equal(r.tag, "letterpress-grids", "lowercase hyphenated basename, per CONVENTION");
+  const entry = d.v.list().find((e) => e.path === "tags/letterpress-grids.md");
+  assert.ok(entry, "the tag is a file the other clients can see");
+  const tags = (await d.tags()).tags;
+  assert.deepEqual(tags.find((t) => t.tag === "letterpress-grids"),
+    { tag: "letterpress-grids", count: 0 },
+    "unused subject shows at zero rather than nowhere");
+  // A tag already in use aggregates normally and cannot be created twice…
+  assert.equal((await d.createTag("cartography")).ok, false);
+  // …and a name any page holds is refused, not suffixed: filenames are addressing.
+  const clash = await d.createTag("Alpha");
+  assert.equal(clash.ok, false);
+  assert.equal(clash.reason, "name-taken");
+});
+
 test("6.18 mention-suggest works offline and ranks prefixes first", async () => {
   const d = await fixture();
   const items = (await d.suggestMentions("be")).items;

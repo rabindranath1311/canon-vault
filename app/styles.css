@@ -3277,21 +3277,35 @@ img.canvas-item-image {
   font-family: var(--font-mono);
 }
 
-/* ─── [[id]] mention links (rendered markdown) ────────────────────────── */
+/* ─── [[wikilinks]] in rendered markdown ──────────────────────────────────
+   A link to a page reads like the page: the kind's icon in the kind's colour,
+   the title in body ink, a quiet underline that firms on hover, and a soft
+   pill behind the whole thing when the pointer arrives. The arrow prefix and
+   the accent colouring are gone — an inline link is furniture, not signage. */
 .mention-link {
-  color: var(--accent);
-  border-bottom: 1px solid var(--accent-bg);
-  cursor: default;
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%;
+  padding: 1px 4px; margin: -1px -2px;
+  border-radius: 5px;
+  color: var(--fg);
+  font-weight: 500;
+  cursor: pointer;
   white-space: nowrap;
+  vertical-align: baseline;
 }
-.mention-link:hover { border-bottom-color: var(--accent); background: var(--accent-bg); }
-.mention-link::before { content: '↪ '; opacity: 0.5; font-size: 0.85em; }
-.mention-link.mtag::before { content: ''; }
-.mention-link.broken {
-  color: var(--faint);
-  border-bottom: 1px dotted var(--faint);
+.mention-link:hover { background: var(--hover); }
+.mention-link-i { display: inline-flex; flex: none; }
+.mention-link-i svg { width: 13px; height: 13px; }
+.mention-link-t {
+  overflow: hidden; text-overflow: ellipsis;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 }
-.mention-link.broken::before { content: '⚠ '; opacity: 0.6; }
+.mention-link:hover .mention-link-t { border-bottom-color: currentColor; }
+/* A broken link is quiet, not alarming: nothing failed, the page just is not
+   there yet. Muted ink, dashed underline, and the tooltip says why. */
+.mention-link.broken { color: var(--muted); font-weight: inherit; cursor: help; }
+.mention-link.broken:hover { background: transparent; }
+.mention-link.broken .mention-link-t { border-bottom-style: dashed; }
 
 /* ═══ work mode (design architecture) ═══════════════════════════════════ */
 
@@ -3507,8 +3521,7 @@ img.canvas-item-image {
 .vault-embed-canvas { font-size: 0.85rem; color: var(--text-dim); }
 .vault-embed-canvas a { color: var(--text); text-decoration: none;
   border-bottom: 1px solid var(--cta); }
-.mention-link.broken { color: var(--signal-alert); border-bottom: 1px dotted currentColor;
-  cursor: help; }
+.mention-link.broken { color: var(--muted); cursor: help; }
 
 /* — Settings (6.17). Local preferences only; nothing here touches the vault. */
 .screen.settings { max-width: 46rem; padding: 2rem 2.5rem; }
@@ -4301,6 +4314,11 @@ code, pre, kbd, samp {
 .side-link:hover { background: var(--hover); }
 .side-link-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side-link-meta  { font-size: var(--fz-micro); color: var(--faint); white-space: nowrap; }
+/* Rows that lead with a kind glyph (backlinks) get a third column for it —
+   opting in per row, so glyphless rows keep their two-column grid. */
+.side-link-hasg { grid-template-columns: auto minmax(0,1fr) auto; align-items: center; }
+.side-link-g { display: inline-flex; }
+.side-link-g svg { width: 13px; height: 13px; }
 /* Actions are buttons, so they look like buttons rather than like links that
    happen to start with a glyph. */
 .side-action {
@@ -4600,6 +4618,11 @@ code, pre, kbd, samp {
    in the product. */
 .screen.settings h1 { font-size: var(--fz-h1); letter-spacing: var(--track-display); }
 .screen-sub        { font-size: var(--fz-mini); color: var(--muted); }
+/* Sits where a screen's primary action would, on the one screen that has no
+   primary action to offer. Deliberately not styled as a disabled button: there
+   is nothing here to enable. */
+.screen-hd-note    { font-size: var(--fz-micro); color: var(--faint);
+                     letter-spacing: var(--track-label); white-space: nowrap; }
 .set-sec-hd b      { font-size: var(--fz-micro); }
 .set-sec-sub,
 .set-row-hint      { font-size: var(--fz-mini); color: var(--faint); }
@@ -4964,24 +4987,69 @@ input[type="checkbox"], input[type="radio"] {
   --brand-deep: #4338ca;
 }
 
-/* ── Tag — a label you apply. Pill, lime, mono, hash-prefixed. ────────── */
+/* ── Tag — a label you apply. Rectangle, mono, coloured by its own name.
+   Tighter-cornered than a mention on purpose: the mention is a node
+   (--radius-badge), the tag is a label, and the crisper corner is what
+   tells them apart at a glance now that both carry colour. ─────────────── */
 .tag-chip {
   display: inline-flex; align-items: center; gap: 1px;
   font-family: var(--font-mono);
   font-size: var(--fz-micro);
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
-  background: var(--lime-bg);
-  border: 1px solid var(--lime-line);
-  color: var(--lime-ink);
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: var(--tag-bg, var(--lime-bg));
+  border: 1px solid var(--tag-line, var(--lime-line));
+  color: var(--tag-ink, var(--lime-ink));
   white-space: nowrap;
+}
+/* Ten hues, dealt by name-hash in tagHue() unless the user picked one. Every
+   swatch is a MID-TONE — dark enough to read as ink on paper, saturated
+   enough to stay a colour when lightened on a dark ground. That is what lets
+   one palette serve all four colour modes: the ink mixes the hue with the
+   theme's own foreground, so a light theme deepens it and a dark theme lifts
+   it, with no second ramp to hand-tune. A chip with no hue class keeps lime. */
+.tag-h0 { --tag-hue: #65a30d; }   /* lime — the house colour stays in the deck */
+.tag-h1 { --tag-hue: #d97706; }   /* amber */
+.tag-h2 { --tag-hue: #e11d48; }   /* rose */
+.tag-h3 { --tag-hue: #7c3aed; }   /* violet */
+.tag-h4 { --tag-hue: #0284c7; }   /* sky */
+.tag-h5 { --tag-hue: #059669; }   /* emerald */
+.tag-h6 { --tag-hue: #c026d3; }   /* fuchsia */
+.tag-h7 { --tag-hue: #ea580c; }   /* orange */
+.tag-h8 { --tag-hue: #64748b; }   /* slate — the quiet one, for tags you file by */
+.tag-h9 { --tag-hue: #0d9488; }   /* teal */
+/* The fill was 13% of the hue over the page, which on paper is barely a tint:
+   the chips read as grey boxes that happened to have coloured text. At 22%
+   with a 55% edge and ink two-thirds of the way to full hue, a tag is a
+   coloured object — which is the point of giving it a colour at all. */
+.tag-h0, .tag-h1, .tag-h2, .tag-h3, .tag-h4,
+.tag-h5, .tag-h6, .tag-h7, .tag-h8, .tag-h9 {
+  --tag-bg:   color-mix(in srgb, var(--tag-hue) 22%, transparent);
+  --tag-line: color-mix(in srgb, var(--tag-hue) 55%, transparent);
+  --tag-ink:  color-mix(in srgb, var(--tag-hue) 68%, var(--fg) 32%);
+}
+/* On a dark ground the same fill disappears into the page and the same ink
+   goes muddy, because both are mixing toward a near-black paper. Lift them. */
+[data-theme="dark"] .tag-h0, [data-theme="midnight"] .tag-h0,
+[data-theme="dark"] .tag-h1, [data-theme="midnight"] .tag-h1,
+[data-theme="dark"] .tag-h2, [data-theme="midnight"] .tag-h2,
+[data-theme="dark"] .tag-h3, [data-theme="midnight"] .tag-h3,
+[data-theme="dark"] .tag-h4, [data-theme="midnight"] .tag-h4,
+[data-theme="dark"] .tag-h5, [data-theme="midnight"] .tag-h5,
+[data-theme="dark"] .tag-h6, [data-theme="midnight"] .tag-h6,
+[data-theme="dark"] .tag-h7, [data-theme="midnight"] .tag-h7,
+[data-theme="dark"] .tag-h8, [data-theme="midnight"] .tag-h8,
+[data-theme="dark"] .tag-h9, [data-theme="midnight"] .tag-h9 {
+  --tag-bg:   color-mix(in srgb, var(--tag-hue) 30%, transparent);
+  --tag-line: color-mix(in srgb, var(--tag-hue) 62%, transparent);
+  --tag-ink:  color-mix(in srgb, var(--tag-hue) 42%, var(--fg) 58%);
 }
 .tag-chip-h { opacity: 0.65; }
 .tag-chip-click { cursor: pointer; }
 .tag-chip-click:hover, .tag-chip-btn:hover {
-  border-color: var(--lime-ink);
-  background: color-mix(in srgb, var(--lime) 26%, transparent);
-  color: var(--lime-ink);
+  border-color: var(--tag-ink, var(--lime-ink));
+  background: color-mix(in srgb, var(--tag-hue, var(--lime)) 24%, transparent);
+  color: var(--tag-ink, var(--lime-ink));
 }
 .tag-chip.rm button { color: currentColor; opacity: 0.55; }
 .tag-chip.rm button:hover { opacity: 1; color: var(--signal-alert); }
@@ -5004,10 +5072,14 @@ input[type="checkbox"], input[type="radio"] {
 .mention-chip.rm button { color: currentColor; opacity: 0.55; }
 .mention-chip.rm button:hover { opacity: 1; color: var(--signal-alert); }
 
-/* The same language wherever the two appear in rendered prose, so a #tag in a
-   note body and a #tag in the chip strip are recognisably the same object. */
-.hashtag { color: var(--lime-ink); }
-.mention-link { color: var(--indigo); }
+/* The same language wherever the two appear in rendered prose: a #tag in a
+   note body wears the same name-hashed hue as its chip, and a [[link]] wears
+   body ink with the kind's icon — see the .mention-link block. */
+.hashtag {
+  color: var(--tag-ink, var(--lime-ink));
+  background: color-mix(in srgb, var(--tag-hue, var(--lime)) 12%, transparent);
+}
+.mention-link { color: var(--fg); }
 
 /* ── Kind mark — icon only ─────────────────────────────────────────────
    A bordered, tinted, labelled box on every row was the loudest thing in a
@@ -5524,24 +5596,93 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
    sizing by count put this screen's type off the scale and repeated a number
    that was already printed beside it. */
 .tags-cloud { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.tag-cloud-chip { gap: 2px; padding: 4px 6px 4px 9px; }
+/* The chip is a wrapper around two buttons now — swatch and name — so it has
+   to stop being a button itself and start being their frame. `relative` is
+   what the colour popover anchors to. */
+.tag-cloud-chip { position: relative; gap: 0; padding: 0; overflow: visible; }
+.tag-cloud-go {
+  appearance: none; background: none; border: 0;
+  display: inline-flex; align-items: center; gap: 2px;
+  font: inherit; color: inherit; cursor: pointer;
+  padding: 4px 7px 4px 3px;
+  border-radius: 0 2px 2px 0;
+}
+.tag-cloud-go:hover { background: color-mix(in srgb, var(--tag-hue, var(--lime)) 18%, transparent); }
+/* The swatch is the colour control and reads as one: a filled dot, the only
+   solid use of the hue anywhere, so it looks like the source of the colour
+   rather than more of it. */
+.tag-swatch {
+  appearance: none; border: 0; cursor: pointer;
+  padding: 0; margin: 0 1px 0 6px;
+  width: 10px; height: 10px; flex: none;
+  border-radius: 2px;
+  background: var(--tag-hue, var(--lime));
+  opacity: 0.9;
+}
+.tag-swatch:hover { opacity: 1; box-shadow: 0 0 0 2px color-mix(in srgb, var(--tag-hue, var(--lime)) 35%, transparent); }
+.tag-swatch:focus-visible { outline: 2px solid var(--tag-ink, var(--fg)); outline-offset: 1px; }
 .tag-cloud-name { font-weight: 500; }
+
+/* ── The colour menu ──────────────────────────────────────────────────── */
+.tag-pop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+  width: max-content;
+  padding: var(--sp-2);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  box-shadow: 0 10px 28px -8px rgba(0,0,0,0.28), 0 2px 6px -2px rgba(0,0,0,0.16);
+  font-family: var(--font-sans);
+}
+.tag-pop-right { left: auto; right: 0; }
+.tag-pop-hd {
+  font-size: var(--fz-micro); color: var(--muted);
+  letter-spacing: var(--track-label);
+  padding: 0 2px var(--sp-2);
+}
+.tag-pop-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;
+  margin-bottom: var(--sp-2);
+}
+.tag-pop-sw {
+  appearance: none; cursor: pointer;
+  width: 20px; height: 20px; padding: 0;
+  border-radius: 3px;
+  background: var(--tag-hue);
+  border: 1px solid color-mix(in srgb, var(--tag-hue) 70%, var(--fg));
+}
+.tag-pop-sw:hover { transform: scale(1.12); }
+.tag-pop-sw.on { outline: 2px solid var(--fg); outline-offset: 2px; }
+.tag-pop-sw:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.tag-pop-auto {
+  appearance: none; width: 100%; cursor: pointer; text-align: left;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-badge);
+  background: var(--paper);
+  font: inherit; font-size: var(--fz-micro); color: var(--muted);
+}
+.tag-pop-auto:hover { background: var(--hover); color: var(--fg); }
+.tag-pop-auto.on { color: var(--fg); border-color: var(--i-3); }
 .tag-cloud-count {
   margin-left: 5px; padding: 1px 6px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--lime-ink) 14%, transparent);
+  border-radius: 2px;   /* squarer than the chip it sits in, never rounder */
+  background: color-mix(in srgb, currentColor 14%, transparent);
   font-variant-numeric: tabular-nums;
   font-size: 0.92em;
 }
 
-/* The hash belongs to the chip, not to three of its call sites. It was an
-   explicit span in three places and absent in the rest, so the same tag read
-   "#current" in a page's chip row and "current" in the table beside it. */
-.tag-chip::before {
-  content: '#';
-  opacity: 0.55;
-  margin-right: 1px;
+/* No hash on the chip: the pill shape and the hue already say "tag", so the
+   marker was the chip announcing itself twice. Inline prose keeps its # —
+   there, the text is the only thing carrying the meaning. */
+
+/* Search + create sit on the Tags screen itself. */
+.tags-toolbar {
+  display: flex; gap: var(--sp-2); align-items: center;
+  max-width: 40rem; margin-bottom: var(--sp-4);
 }
+.tags-create { white-space: nowrap; }
+.tags-cloud-empty { color: var(--muted); font-size: var(--fz-mini); padding: var(--sp-2) 0; }
 
 /* ── Page bodies scroll their own content ──────────────────────────────
    `.page-body` is a flex column with `flex: 1; min-height: 0` inside an
@@ -5950,6 +6091,10 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px;
   font-size: var(--fz-mini); color: var(--muted); letter-spacing: var(--track-label); }
 .sb-connect-meta li { display: inline-flex; align-items: center; gap: 8px; }
+/* The odd one out. Four claims pair off into two rows; a fifth would sit alone
+   in half a row and read as a wrap accident, so it takes the whole row and
+   reads as a line. */
+.sb-connect-meta-wide { grid-column: 1 / -1; }
 .sb-connect-meta i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 .sb-connect-meta b { color: var(--fg); font-weight: 550; }
 
@@ -6111,7 +6256,12 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .welcome-steps {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: var(--sp-5);
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  /* 19rem, not 15. With the clipper there are FOUR steps, and 15rem fits three
+     of them across a desk-width window — stranding the fourth alone on a row,
+     where it reads as an afterthought rather than as a step. At 19rem the four
+     pair off two-and-two at that width, go four-across on a wide monitor, and
+     stack on a narrow one. */
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
 }
 /* The numbers are real: this is a sequence, and the second step depends on
    having done nothing and the third on having a folder. */

@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   parseExcalidraw, serializeExcalidraw, compressScene, decompressScene,
-  textElementsOf, isExcalidrawPath, BLANK_SCENE,
+  textElementsOf, isExcalidrawPath, textOfExcalidraw, BLANK_SCENE,
 } from "../vault/excalidraw.js";
 import { Vault, MemoryBackend } from "../vault/vault.js";
 import { Data } from "../vault/data.js";
@@ -129,6 +129,51 @@ test("rawText wins over text, as the plugin stores wrapped lines separately", ()
     { id: "t", type: "text", text: "wrap\nped", rawText: "wrapped", originalText: "wrapped" },
   ] };
   assert.deepEqual(textElementsOf(scene), [{ id: "t", raw: "wrapped" }]);
+});
+
+// ── The words inside the picture ─────────────────────────────────────────
+test("textOfExcalidraw reads the words out of a drawing, without the anchors", () => {
+  const md = serializeExcalidraw(SCENE);
+  const words = textOfExcalidraw(md);
+  assert.equal(words, "quire structures");
+  // The `^elementId` is addressing, not language: leaving it in would let a
+  // search for a stray id string "match" the drawing.
+  assert.doesNotMatch(words, /abc123/);
+});
+
+test("textOfExcalidraw stays cheap — it never decompresses the scene", () => {
+  // Corrupt the compressed payload. The words still come back, which is the
+  // proof: this reads the plain `## Text Elements` section and nothing else.
+  const md = serializeExcalidraw(SCENE).replace(/```compressed-json\n[\s\S]*?```/, "```compressed-json\n!!!broken!!!\n```");
+  assert.equal(parseExcalidraw(md).scene, null, "the scene really is unreadable");
+  assert.equal(textOfExcalidraw(md), "quire structures");
+});
+
+test("a file with no drawing data yields no words rather than throwing", () => {
+  assert.equal(textOfExcalidraw("---\ntitle: x\n---\n\njust prose"), "");
+  assert.equal(textOfExcalidraw(""), "");
+  assert.equal(textOfExcalidraw(null), "");
+});
+
+test("a drawing is findable by a word inside it", async () => {
+  const scene = { ...SCENE, elements: [
+    { id: "t1", type: "text", rawText: "Fold", isDeleted: false },
+    { id: "t2", type: "text", rawText: "unmaking the ones before it", isDeleted: false },
+  ] };
+  const v = new Vault(new MemoryBackend({
+    "canvas/Sewing.excalidraw.md": serializeExcalidraw(scene, {
+      frontmatter: "id: 01SEWING0000000000000000AA\nkind: canvas\ntitle: Sewing",
+      backOfNote: "A sketch I keep redrawing.",
+    }),
+  }));
+  await v.buildIndex();
+  const d = new Data(v, { renderMarkdown: (m) => m });
+  const titles = (q) => d.pages({ q }).items.map((p) => p.title);
+  assert.deepEqual(titles("unmaking"), ["Sewing"], "the drawing's own words must be searchable");
+  assert.deepEqual(titles("Fold"), ["Sewing"]);
+  // The excerpt is what a list row prints, and it stays the user's prose —
+  // a row reading "Fold unmaking the ones before it" describes the picture.
+  assert.equal(v.index.get("01SEWING0000000000000000AA").excerpt, "A sketch I keep redrawing.");
 });
 
 // ── The user's own writing ───────────────────────────────────────────────

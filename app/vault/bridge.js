@@ -169,6 +169,7 @@ function firstRun(onPick, onDemo) {
     '      <li><i style="background:var(--k-mdwn)"></i><b>[[Wikilinks]]</b>&nbsp;build the graph</li>',
     '      <li><i style="background:var(--k-topic)"></i>Works offline, folder remembered</li>',
     '      <li><i style="background:var(--k-desg)"></i>Any <b>agent</b> reads it directly</li>',
+    '      <li class="sb-connect-meta-wide"><i style="background:var(--k-book)"></i>A Chrome <b>clipper</b> drops images, screenshots and links straight in</li>',
     '    </ul>',
     '  </section>',
     '  <aside class="sb-connect-vis" aria-hidden="true">',

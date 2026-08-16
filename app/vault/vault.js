@@ -7,7 +7,7 @@
 // under `node --test` with no browser and no npm install (task 5.11).
 
 import { serialize, parse, escapeUser, unescapeUser, REQUIRED } from "./mdfile.js";
-import { isExcalidrawPath, stripExcalidrawData } from "./excalidraw.js";
+import { isExcalidrawPath, stripExcalidrawData, textOfExcalidraw } from "./excalidraw.js";
 import { basenameOf } from "./links.js";
 
 export const IGNORED_DIRS = [".git", ".obsidian", ".trash", ".history"];
@@ -574,6 +574,10 @@ export class Vault {
         aliases: Array.isArray(fm.aliases) ? fm.aliases : fm.aliases ? [fm.aliases] : [],
         mentions: [...new Set([...String(body).matchAll(/!?\[\[([^\]|#]+)/g)].map((m) => m[1].trim()))],
         excerpt: excerptOf(unescapeUser(isExcalidraw ? stripExcalidrawData(body) : body)),
+        // The drawing's own words, kept OUT of the excerpt on purpose: the
+        // excerpt is what a list row shows, and a row reading "Fold Gather Sew"
+        // describes the picture rather than the page. Searchable, not visible.
+        sceneText: isExcalidraw ? textOfExcalidraw(body) : "",
         // Indexed so "bookmarks" can be a list without opening every note:
         // a bookmark IS a note with a url, and the list must know which ones.
         url: fm.url || null,
