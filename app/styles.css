@@ -6309,6 +6309,45 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 }
 .tour-t { margin: 0; font-size: var(--fz-h3, 1.02rem); font-weight: 600; line-height: 1.25; }
 .tour-b { margin: 0 0 14px; color: var(--muted); font-size: var(--fz-body); line-height: 1.55; }
+/* Chip demos inside a tour step — the linking model shown, not described. */
+.tour-demo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -4px 0 14px; }
+.tour-chip {
+  font-family: var(--font-mono); font-size: 11.5px; padding: 4px 10px;
+  border-radius: 999px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--i-5);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tour-chip.node { border-radius: 7px; }
+.tour-chip.node i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.tour-chip.mt {
+  color: var(--k-canvas);
+  border-color: color-mix(in srgb, var(--k-canvas) 35%, transparent);
+  background: color-mix(in srgb, var(--k-canvas) 7%, transparent);
+}
+.tour-chip.hh {
+  color: var(--k-topic);
+  border-color: color-mix(in srgb, var(--k-topic) 32%, transparent);
+  background: color-mix(in srgb, var(--k-topic) 10%, transparent);
+}
+.tour-chip.arrow { border: 0; background: none; color: var(--i-3); padding: 0 1px; }
+/* The two model steps wear the model's colours: a mono eyebrow, a wash of the
+   tint down from the top, and the title set in the tint's own gradient. The
+   ink endpoints are kind tokens, so all four colour modes carry it. */
+.tour-k {
+  display: block; margin: 2px 0 8px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.tour-tint-links { background: linear-gradient(180deg, color-mix(in srgb, var(--k-canvas) 9%, var(--paper)), var(--paper) 72%); }
+.tour-tint-tags  { background: linear-gradient(180deg, color-mix(in srgb, var(--k-topic) 11%, var(--paper)), var(--paper) 72%); }
+.tour-tint-links .tour-k { color: var(--k-canvas); }
+.tour-tint-tags  .tour-k { color: var(--k-topic); }
+.tour-tint-links .tour-t, .tour-tint-tags .tour-t {
+  font-size: 21px; letter-spacing: -.02em; line-height: 1.15;
+  background-clip: text; -webkit-background-clip: text; color: transparent;
+}
+.tour-tint-links .tour-t { background-image: linear-gradient(90deg, var(--k-canvas), var(--k-locl)); }
+.tour-tint-tags  .tour-t { background-image: linear-gradient(90deg, var(--k-topic), var(--k-desg)); }
 .tour-ft { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .tour-dots { display: flex; gap: 6px; align-items: center; }
 .tour-dot {

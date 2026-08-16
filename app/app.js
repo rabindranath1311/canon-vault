@@ -1592,50 +1592,68 @@ function WelcomeCard(onCreate) {
  * needs it most.
  */
 const TOUR_STEPS = [
+  /* The linking model leads — it is the idea underneath, and on the
+     marketing site's embedded demo this first card IS the pitch. */
+  {
+    id: 'links', icon: 'files', anchor: '[data-tour="nav:pages"]',
+    k: 'Wikilinks \u2192 structure', tint: 'links',
+    title: 'Links are the edges',
+    body: 'Type [[ and a page name anywhere. Links resolve by filename, and every page lists what points back at it.',
+    demo: 'links',
+  },
+  {
+    id: 'tags', icon: 'tag', anchor: '[data-tour="nav:tags"]',
+    k: 'Tags \u2192 facets', tint: 'tags',
+    title: 'Tags are the colour',
+    body: 'A #tag marks state and filters the vault. A subject is a page you link, never a tag.',
+    demo: 'tags',
+  },
   {
     id: 'files', icon: 'folder', anchor: null,
     title: 'Your notes are files',
-    body: 'Plain markdown in the folder you picked — no database, no account, nothing uploaded. '
-        + 'Close this app and everything is still there, readable in any editor.',
+    body: 'Plain markdown in the folder you picked. Close the app and everything is still there.',
   },
   {
     id: 'create', icon: 'plus', anchor: '[data-tour="create"]',
     title: 'Four kinds, one picker',
-    body: 'Note, topic, drawing, wall. A bookmark is just a note carrying a url — the kind decides '
-        + 'how a page looks, and the frontmatter does the rest. Nothing depends on which folder it lands in.',
-  },
-  {
-    id: 'links', icon: 'files', anchor: '[data-tour="nav:pages"]',
-    title: 'Double brackets make the graph',
-    body: 'Type [[ and a page name anywhere — in prose, or on a shape inside a drawing. Links resolve '
-        + 'by filename, so Obsidian follows exactly the same ones, and every page lists what points back at it.',
-  },
-  {
-    id: 'tags', icon: 'tag', anchor: '[data-tour="nav:tags"]',
-    title: 'Tags slice, links connect',
-    body: 'A #tag is a label you can filter the whole vault by. A link is a relationship between two '
-        + 'particular pages. Tags live in the frontmatter, so they are ordinary text in an ordinary file.',
+    body: 'Note, topic, board, wall. A bookmark is a note carrying a url; the kind decides the look.',
   },
   {
     id: 'drawing', icon: 'shapes', anchor: '[data-tour="nav:kind:drawing"]',
     title: 'One place for anything spatial',
-    body: 'A board is the app’s own editor — shapes, arrows, handwriting — saved as .excalidraw.md, '
-        + 'the format the Obsidian Excalidraw plugin reads. Words, links and images on a board are '
-        + 'written into the markdown too, so search, your backlinks and your agent all see what is in it.',
+    body: 'Shapes, arrows and handwriting, saved as .excalidraw.md. Words on a board land in the markdown too.',
   },
   {
     id: 'obsidian', icon: 'arrow-right', anchor: null,
     title: 'Obsidian and your agent, same folder',
-    body: 'Not an export and not a sync. Point Obsidian at this folder and both are live at once. '
-        + 'Hand the folder to a coding agent and CONVENTION.md, sitting beside your notes, tells it the rules.',
+    body: 'Point Obsidian at the same folder; both stay live at once. CONVENTION.md tells your agent the rules.',
   },
   {
     id: 'clipper', icon: 'bookmark', anchor: '[data-tour="nav:settings"]',
     title: 'Capture from the browser',
-    body: 'The Chrome clipper writes straight into the vault — a page, a quotation or an image becomes '
-        + 'a file, through the same save safety as anything you type here. Load it unpacked from extension/.',
-  },
+    body: 'Right-click a page, an image or a selection in Chrome and it lands here, through the same save safety as typing.',
+  }
 ];
+
+/* The two-card visual the marketing site used to carry — shown here instead,
+   where the behaviour lives. Invented placeholder names, deliberately: these
+   render in anyone's vault, so they must belong to nobody's. */
+function tourDemo(kind) {
+  if (kind === 'links') {
+    return h('div', { className: 'tour-demo' },
+      h('span', { className: 'tour-chip mt' }, '[[typography]]'),
+      h('span', { className: 'tour-chip arrow' }, '↳'),
+      h('span', { className: 'tour-chip node' },
+        h('i', { style: { background: 'var(--k-canvas)' } }), 'Type Scale Study'),
+      h('span', { className: 'tour-chip node' },
+        h('i', { style: { background: 'var(--k-topic)' } }), 'Serif Shortlist'));
+  }
+  if (kind === 'tags') {
+    return h('div', { className: 'tour-demo' },
+      ['draft', 'current', 'to-build'].map((t) => h('span', { className: 'tour-chip hh' }, '#' + t)));
+  }
+  return null;
+}
 
 /** Is the tour on screen right now? Keeps ⌘N and friends from fighting it. */
 let _tourEl = null;
@@ -1723,15 +1741,23 @@ function startTour(startAt = 0) {
   function paint() {
     const step = TOUR_STEPS[i];
     const last = i === TOUR_STEPS.length - 1;
-    card.replaceChildren(
+    // The tint is per-step state on a reused element, so clear before set.
+    card.classList.remove('tour-tint-links', 'tour-tint-tags');
+    if (step.tint) card.classList.add('tour-tint-' + step.tint);
+    // replaceChildren stringifies a null argument into the literal text
+    // "null" (unlike h(), which skips them) — so the optional pieces are
+    // filtered, not passed.
+    card.replaceChildren(...[
       h('button', {
         className: 'tour-x', title: 'Close', 'aria-label': 'Close the tour',
         onClick: finish,
       }, '✕'),
+      step.k ? h('span', { className: 'tour-k' }, step.k) : null,
       h('div', { className: 'tour-hd' },
-        h('span', { className: 'tour-mark' }, icon(step.icon)),
+        step.k ? null : h('span', { className: 'tour-mark' }, icon(step.icon)),
         h('h2', { className: 'tour-t' }, step.title)),
       h('p', { className: 'tour-b' }, step.body),
+      tourDemo(step.demo),
       h('div', { className: 'tour-ft' },
         h('div', { className: 'tour-dots' }, TOUR_STEPS.map((s, n) => h('button', {
           className: 'tour-dot' + (n === i ? ' on' : ''),
@@ -1744,7 +1770,7 @@ function startTour(startAt = 0) {
           h('button', { className: 'tour-next', onClick: () => go(i + 1) },
             last ? 'Done' : 'Next', last ? null : icon('arrow-right')))),
       h('div', { className: 'tour-count' }, `${i + 1} of ${TOUR_STEPS.length}`),
-    );
+    ].filter(Boolean));
     // Re-run the entrance on each step so the move reads as a step, not a jump.
     card.classList.remove('tour-step-in');
     void card.offsetWidth;                    // restart the animation
@@ -1779,7 +1805,14 @@ function maybeStartTour() {
   if (!prefs.welcomeSeen && !window.SB_DEMO) return;
   // Wait for the nav to exist, or every anchor resolves to null and the whole
   // tour centres itself in the middle of the screen saying nothing about where.
-  setTimeout(() => { if (document.querySelector('[data-tour="create"]')) startTour(0); }, 400);
+  // POLL rather than check once: a deep link into a board pays the Excalidraw
+  // import before the nav paints, and a single 400ms check raced it — the
+  // site's embedded demo opens exactly that way, and its tour never fired.
+  let tries = 0;
+  const t = setInterval(() => {
+    if (document.querySelector('[data-tour="create"]')) { clearInterval(t); startTour(0); }
+    else if (++tries > 16) clearInterval(t);
+  }, 300);
 }
 
 function PageHeader(title, meta, sub, right) {
