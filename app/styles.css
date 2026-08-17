@@ -141,6 +141,9 @@ body {
   --radius-input: 7px;
   --radius-badge: 5px;
   --radius-pill: 9999px;
+  /* The ink on a selected tag. Fixed across themes on purpose — see
+     .tag-chip.is-on: the fill it sits on is a mid-tone, not a surface. */
+  --tag-on-ink: #ffffff;
 
   /* Elevation that does NOT vary by family — these reference the ramps, so
      they follow the mode on their own. The shadow ramp itself is a direction
@@ -1201,18 +1204,46 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 
 /* Pages list table */
 .pages-table {
-  display: grid; gap: 0;
+  /* minmax(0, 1fr), not the implicit `auto`: a grid track sized `auto` takes
+     its min-content width from its children, so a long excerpt pushed the
+     tags and the date straight out through the card's right edge instead of
+     making the title column give way. */
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
   border: 1px solid var(--line);
   background: var(--paper);
 }
-.pages-th, .pages-row {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) 220px 90px;
-  gap: 14px;
-  padding: 9px 14px;
-  align-items: center;
+/* A row is a thing, not a record. The four-column grid put a 110px column
+   around one glyph and a 220px column around tags most rows do not have, so
+   two thirds of every row was empty and the title — the only thing you were
+   reading — was small and hemmed in. Flex, so the columns that have nothing
+   in them take no space. */
+.pages-row {
+  display: flex; align-items: flex-start; gap: var(--sp-3); min-width: 0;
+  padding: 11px 14px;
   font-size: var(--fz-mini);
 }
+.pages-row .row-g { flex: none; display: inline-flex; padding-top: 1px; }
+.pages-row .row-g .lucide { width: 15px; height: 15px; }
+.pages-row .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pages-row .row-t {
+  font-size: var(--fz-body); font-weight: 550; color: var(--fg);
+  letter-spacing: var(--track-title);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The page's first line. This is what tells two notes apart when their
+   titles do not, and it is the whole reason the row is two lines tall. */
+.pages-row .row-x {
+  font-size: var(--fz-mini); color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pages-row .row-tags { flex: none; display: flex; gap: 4px; align-items: center; }
+.pages-row .row-w {
+  flex: none; align-self: center;
+  color: var(--faint); font-size: var(--fz-micro);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  min-width: 72px; text-align: right;
+}
+.pages-row:hover .row-t { color: var(--accent); }
 .pages-th {
   color: var(--faint);
   letter-spacing: var(--track-caps);
@@ -1227,19 +1258,8 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 }
 .pages-row:last-child { border-bottom: 0; }
 .pages-row:hover { background: var(--hover); }
-.pages-title {
-  font-weight: 500; color: var(--fg);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.pages-tags {
-  display: flex; gap: 4px; flex-wrap: wrap;
-  overflow: hidden;
-}
-.pages-when {
-  color: var(--faint);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
+/* .pages-title / .pages-tags / .pages-when were the old grid's cells. The
+   row builds .row-t / .row-tags / .row-w instead — see .pages-row above. */
 
 /* ── canvas board view ─────────────────────────────────────────── */
 .pages-board {
@@ -1443,22 +1463,43 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   font-size: var(--fz-micro);
   white-space: nowrap;
 }
-.tag-chip.rm button {
-  appearance: none; border: 0; background: transparent;
-  color: var(--faint); cursor: default;
-  padding: 0 0 0 2px; font: inherit; line-height: 1;
-}
-.tag-chip.rm button:hover { color: var(--signal-alert); }
+/* The remove control is `.tag-chip-x` now, styled with the chip. These two
+   rules targeted `button` inside the chip, which outranked it on specificity
+   and kept the × visible at rest — the exact thing the redesign removes. */
+/* The same pill as a tag, wearing its target's KIND rather than a hue — so
+   a header row of links reads as one kind of object, and you can tell a
+   linked board from a linked note without opening either. It was a mono box
+   outlined in the accent with a permanent ×, which made one row of chips
+   look like two unrelated systems. */
 .mention-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 1px 6px;
-  border: 1px solid var(--accent);
-  background: var(--accent-bg, transparent);
-  color: var(--accent);
-  font-size: var(--fz-micro);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px 4px 9px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--fz-mini);
+  letter-spacing: var(--track-body);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
+  max-width: 26ch;
 }
-.mention-chip.rm button {
+.mention-chip .mention-chip-i { flex: none; display: inline-flex; color: var(--muted); }
+.mention-chip .mention-chip-i .lucide { width: 12px; height: 12px; }
+.mention-chip .mention-chip-t { overflow: hidden; text-overflow: ellipsis; }
+.mention-chip-click { cursor: pointer; }
+.mention-chip-click:hover { background: var(--paper-2); border-color: var(--i-3, var(--line)); }
+.mention-chip-x {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  color: inherit; font: inherit; line-height: 1; padding: 0; margin-left: 1px;
+  width: 0; opacity: 0; overflow: hidden;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+.mention-chip.rm:hover .mention-chip-x,
+.mention-chip-x:focus-visible { width: auto; opacity: 0.6; }
+.mention-chip-x:hover { opacity: 1; color: var(--signal-alert); }
+/* superseded by .mention-chip-x */
+.mention-chip-dead-rm {
   appearance: none; border: 0; background: transparent;
   color: currentColor; cursor: default;
   padding: 0 0 0 2px; font: inherit; line-height: 1;
@@ -1564,9 +1605,41 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   min-width: 0; min-height: 0; overflow: hidden;
   padding-right: 20px;
 }
+/* ─── The masthead ─────────────────────────────────────────────────────
+   Identity (kind, title, tags) and content are different registers, and a
+   1px rule between them is the least a design can say about that. So the
+   header is a card, like every other surface in this app — and it takes the
+   kind wash DESIGN.md already specifies, so a Board reads differently from
+   a Note without anything shouting.
+
+   ── It uses the system's wash, not a private one ──
+   The first version mixed its own linear gradient at 13% and 5% of --k-c.
+   That is two to three times --wash-edge, it ran on an axis nothing else in
+   the app uses, and it ignored `--wash-strength` / `--wash-edge` entirely —
+   the two variables that exist precisely so the depth layer tunes from one
+   place and stays honest across all four modes. It looked like a different
+   product's component. This is the same radial corner wash as `.cv-wash`
+   and the same 42px sheen as every other card, at the system's own numbers.
+   "If a gradient is noticed rather than felt, it is too strong."
+
+   ── Why this is an ordinary padded box ──
+   Two earlier passes painted the wash with a pseudo-element on negative
+   insets, so the region could look wider than the text column while the
+   title stayed aligned with the body. It could never work: `.page-main` is
+   `overflow: hidden`, so every pixel of that bleed was CLIPPED at the
+   content edge — which is exactly why the panel appeared to touch the pill
+   and the tags however much padding the rule claimed. Measuring the element
+   agreed with the CSS and disagreed with the screen, which is the tell.
+
+   So: real padding, one value, all four sides. */
 .page-hd {
-  display: flex; flex-direction: column; gap: 10px;
-  margin-bottom: 18px;
+  display: flex; flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background-color: var(--paper);
 }
 .page-hd-row {
   display: flex; align-items: center; gap: 12px;
@@ -1797,12 +1870,15 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .inspo-bento { display: flex; flex-direction: column; gap: 14px; }
 .bento-toolbar { display: flex; flex-direction: column; gap: 10px; }
 .bento-tagstrip { display: flex; flex-wrap: wrap; gap: 6px; }
+/* The filter strip is a row of the same chips, so it looks like one. Its ON
+   state is the shared selected fill (see .tag-chip.is-on) rather than a
+   private "darker border" convention nothing else in the app used. */
 .bento-tag {
-  font-size: var(--fz-mini); padding: 3px 10px; border-radius: 999px;
-  border: 1px solid var(--line); background: transparent;
-  color: var(--muted); cursor: pointer;
+  font-size: var(--fz-mini); padding: 4px 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line); background: var(--paper);
+  color: var(--fg); cursor: pointer;
 }
-.bento-tag.on { color: var(--fg); border-color: var(--fg); }
+.bento-tag:hover { background: var(--paper-2); }
 .bento-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .bento-groups { display: flex; flex-direction: column; gap: 22px; }
 .bento-group-h {
@@ -1910,10 +1986,13 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   font-style: italic;
   line-height: 1.5;
 }
+/* A label column wide enough for the longest word in it, and a real line
+   height — 3px of padding on a 5-row block made the rail read as a receipt. */
 .side-row {
-  display: grid; grid-template-columns: 70px 1fr;
-  gap: 8px;
-  padding: 3px 0;
+  display: grid; grid-template-columns: 62px minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: 5px 0;
+  align-items: baseline;
   font-size: var(--fz-micro);
 }
 .side-row-l {
@@ -2242,58 +2321,82 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .ac-row-r { color: var(--faint); font-size: var(--fz-micro); }
 
 /* Multi-link bookmark cards */
-.bm-links { display: flex; flex-direction: column; gap: 14px; }
-.bm-link-card {
-  border: 1px dashed var(--line-soft);
-  background: var(--paper-2);
-  padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 6px;
-  border-radius: 2px;
+/* ─── Bookmark links ───────────────────────────────────────────────────
+   A row, not a card. Each link used to be a bordered panel with a header,
+   a number, a text input and an "Open" button beside it — five pieces of
+   chrome around one address, and the row read as a form you had to fill in
+   rather than a link you could follow.
+
+   Now the link IS the control: click it and it opens, the way it does
+   everywhere else. Edit and remove stay out of the way until you hover. */
+.bm-links { display: flex; flex-direction: column; gap: 1px; }
+.bm-link {
+  display: flex; align-items: center; gap: 2px;
+  border-radius: var(--radius-badge);
+  min-height: 34px;
+  transition: background var(--dur-1) var(--ease-out);
 }
-.bm-link-card-hd {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: var(--fz-micro); color: var(--faint); letter-spacing: var(--track-caps);
+.bm-link:hover { background: var(--paper-2); }
+.bm-link-a {
+  flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 7px 8px;
+  text-decoration: none; color: var(--fg);
+  font-size: var(--fz-body);
+  overflow: hidden;
 }
-.bm-link-card-n { }
-.bm-link-card-rm {
-  appearance: none; border: 0; background: none; cursor: pointer;
-  color: var(--faint); font-size: var(--fz-body); padding: 0;
+.bm-link-g {
+  display: inline-flex; align-self: center; flex: none;
+  color: var(--faint);
 }
-.bm-link-card-rm:hover { color: var(--signal-alert); }
+.bm-link-g .lucide { width: 14px; height: 14px; }
+.bm-link:hover .bm-link-g { color: var(--accent); }
+/* The site in full strength, the path after it quieter — the host is what
+   you are scanning for, the path only disambiguates. */
+.bm-link-host { flex: none; font-weight: 550; letter-spacing: var(--track-body); }
+.bm-link-rest {
+  min-width: 0; color: var(--muted); font-size: var(--fz-mini);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bm-link-a:hover .bm-link-host { color: var(--accent); text-decoration: underline;
+  text-underline-offset: 2px; }
+/* Present but silent until the row is hovered or the control is focused —
+   a row of always-visible action buttons is the clutter this replaced. */
+.bm-link-act {
+  appearance: none; border: 0; background: transparent;
+  color: var(--faint); cursor: default;
+  padding: 6px; flex: none; border-radius: var(--radius-badge);
+  opacity: 0; transition: opacity var(--dur-1) var(--ease-out),
+                          color var(--dur-1) var(--ease-out);
+}
+.bm-link-act .lucide { width: 14px; height: 14px; display: block; }
+.bm-link:hover .bm-link-act, .bm-link-act:focus-visible { opacity: 1; }
+.bm-link-act:hover { color: var(--fg); background: var(--paper); }
+.bm-link-rm:hover { color: var(--signal-alert); }
+.bm-link-editing { background: transparent; }
+.bm-link-input {
+  flex: 1; min-width: 0;
+  appearance: none;
+  background: var(--paper); color: var(--fg);
+  font-family: var(--font-mono); font-size: var(--fz-mini);
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-input);
+}
+.bm-link-input:focus { outline: none; box-shadow: 0 0 0 3px var(--accent-bg); }
+.bm-link-input::placeholder { color: var(--faint); font-family: var(--font-sans); }
 .bm-link-add {
   align-self: flex-start;
-  appearance: none; border: 1px dashed var(--line-soft);
-  background: var(--paper);
-  color: var(--muted); cursor: pointer;
-  font-family: inherit; font-size: var(--fz-mini);
-  padding: 6px 12px;
-  letter-spacing: var(--track-label);
-}
-.bm-link-add:hover { border-color: var(--accent); color: var(--accent); }
-.bm-url-row {
-  display: flex; gap: 6px; align-items: center;
-}
-.bm-url-input {
-  flex: 1; min-width: 0;
   appearance: none; border: 0;
-  background: transparent; color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--fz-body);
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--line-soft);
+  background: transparent;
+  color: var(--muted); cursor: default;
+  font-family: inherit; font-size: var(--fz-mini);
+  padding: 7px 8px; margin-top: 2px;
+  letter-spacing: var(--track-label);
+  border-radius: var(--radius-badge);
 }
-.bm-url-input:focus { outline: none; border-bottom-color: var(--accent); }
-.bm-url-input::placeholder { color: var(--faint); }
-.bm-refresh, .bm-open {
-  appearance: none; border: 1px solid var(--line-soft);
-  background: var(--paper); color: var(--muted);
-  font: inherit; font-size: var(--fz-micro);
-  padding: 4px 8px; cursor: default;
-  text-decoration: none; letter-spacing: var(--track-label);
-}
-.bm-refresh:hover, .bm-open:hover {
-  border-color: var(--accent); color: var(--accent);
-}
+.bm-link-add:hover { color: var(--accent); background: var(--paper-2); }
+.bm-link-add .lucide { width: 13px; height: 13px; }
 .bm-preview {
   display: flex; gap: 12px;
   padding: 10px;
@@ -2603,6 +2706,219 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .att-chat-trigger { /* inherits .topic-att-actions button styling */ }
 
 /* Topic description (collapsible, secondary) */
+/* ─── The orbit ────────────────────────────────────────────────────────
+   Everything that says this topic's name, grouped by kind. It is not a
+   card and not a table: a card would make it a thing you file, a table
+   would make it a list you scan. It is a constellation you read — so the
+   groups are quiet, the titles carry the weight, and the "why" sits in
+   between at label size. */
+.topic-orb-sec {
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line-soft);
+}
+.topic-orb-hd {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
+  text-transform: uppercase; font-weight: 550; color: var(--muted);
+}
+.topic-orb-n {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  color: var(--faint); letter-spacing: 0;
+}
+.topic-orb-body { display: flex; flex-direction: column; gap: var(--sp-4); }
+.topic-orb-grp { display: flex; flex-direction: column; }
+.topic-orb-grp-hd {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fz-mini); color: var(--k-c, var(--muted));
+  padding-bottom: 4px;
+}
+.topic-orb-grp-g { display: inline-flex; }
+.topic-orb-grp-g .lucide { width: 13px; height: 13px; }
+.topic-orb-grp-n {
+  font-family: var(--font-mono); font-size: var(--fz-micro);
+  color: var(--faint); margin-left: 2px;
+}
+.topic-orb-row {
+  appearance: none; border: 0; background: transparent;
+  font: inherit; text-align: left; cursor: default;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline; gap: var(--sp-3);
+  padding: 7px 8px 7px 19px;   /* aligns titles under the group label's text */
+  border-radius: var(--radius-badge);
+}
+.topic-orb-row:hover { background: var(--paper-2); }
+.topic-orb-row-t {
+  font-size: var(--fz-body); color: var(--fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.topic-orb-row:hover .topic-orb-row-t { color: var(--accent); }
+/* A link you wrote is stronger evidence than a tag you sprinkled, so the
+   two do not look alike. Both stay quieter than the title they qualify. */
+.topic-orb-via {
+  font-size: var(--fz-micro); letter-spacing: var(--track-label);
+  color: var(--faint); padding: 1px 6px;
+  border: 1px solid var(--line-soft); border-radius: 999px;
+  white-space: nowrap;
+}
+.topic-orb-via-link, .topic-orb-via-both { color: var(--muted); border-color: var(--line); }
+.topic-orb-row-w {
+  font-size: var(--fz-micro); color: var(--faint);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.topic-orb-empty {
+  font-size: var(--fz-mini); color: var(--faint);
+  display: flex; flex-direction: column; gap: 4px;
+  padding: var(--sp-3) 0;
+}
+.topic-orb-empty-how code {
+  font-family: var(--font-mono); font-size: 0.95em;
+  background: var(--paper-2); padding: 1px 5px;
+  border-radius: var(--radius-badge); color: var(--muted);
+}
+
+/* ─── Topics list: cards ───────────────────────────────────────────────
+   A topic is worth a card because it has something to show — a position and
+   a gravity. Notes get a table because a note's identity is its title. */
+.topic-cards {
+  display: grid; gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.topic-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: var(--sp-4);
+  border: 1px solid var(--line); border-radius: var(--radius-card, 8px);
+  background: var(--paper);
+  cursor: default;
+  transition: border-color var(--dur-2) var(--ease-out),
+              background var(--dur-2) var(--ease-out);
+}
+.topic-card:hover { border-color: var(--i-3); background: var(--paper-2); }
+.topic-card-hd { display: flex; align-items: baseline; gap: var(--sp-3); }
+.topic-card-t {
+  flex: 1; min-width: 0;
+  font-size: var(--fz-body); font-weight: 600; color: var(--fg);
+  letter-spacing: var(--track-title);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.topic-card:hover .topic-card-t { color: var(--accent); }
+.topic-card-when {
+  font-size: var(--fz-micro); color: var(--faint);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* The thesis, two lines of it. This is the line that tells you whether the
+   topic is thought-through or still a stub, so it gets real prose framing. */
+.topic-card-thesis {
+  font-size: var(--fz-mini); line-height: 1.55; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 2.9em;
+}
+.topic-card-ft {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-2); margin-top: auto;
+}
+.topic-card-orb {
+  font-size: var(--fz-micro); color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.topic-card-orb.is-zero { color: var(--faint); font-style: italic; }
+.topic-card-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ─── Bookmark drop ────────────────────────────────────────────────────
+   The intake for the one kind you acquire rather than write. It sits above
+   the list because it is the reason you came, and it is quiet because it is
+   a box you paste into, not a form you fill in. */
+.bm-drop {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: var(--sp-4);
+}
+.bm-drop-row { display: flex; align-items: flex-start; gap: var(--sp-2); }
+.bm-drop-ta {
+  flex: 1; min-width: 0;
+  appearance: none; resize: none; overflow: hidden;
+  min-height: 38px; padding: 9px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-input);
+  background: var(--paper-2);
+  color: var(--fg);
+  font-family: var(--font-mono); font-size: var(--fz-mini);
+  line-height: 1.5;
+  transition: border-color var(--dur-2) var(--ease-out),
+              background var(--dur-2) var(--ease-out);
+}
+/* Dashed until you commit to it, solid once you do — the border is the
+   affordance: an empty dashed box reads as "drop something here". */
+.bm-drop-ta:focus {
+  outline: none;
+  border-style: solid; border-color: var(--accent);
+  background: var(--paper);
+}
+.bm-drop-ta::placeholder { color: var(--faint); font-family: var(--font-sans); }
+.bm-drop .btn-primary { flex: none; padding: 9px 14px; }
+.bm-drop-status {
+  font-size: var(--fz-micro); color: var(--muted);
+  min-height: 1em; padding-left: 2px;
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.bm-drop-status.is-ok   { color: var(--muted); }
+.bm-drop-status.is-warn { color: var(--signal-alert); }
+.bm-drop-open {
+  appearance: none; border: 0; background: transparent;
+  font: inherit; font-size: var(--fz-micro); color: var(--accent);
+  text-decoration: underline; text-underline-offset: 2px;
+  padding: 0; cursor: default;
+}
+
+/* A settings panel that is not a setting. The clipper is software you
+   install, so it carries an accent edge and does not sit flush with the
+   preference cards above and below it. */
+.set-sec-feature { border-left: 2px solid var(--accent); }
+.set-sec-feature .set-sec-hd b { color: var(--accent); }
+/* Arriving from the sidebar. One pulse — enough to answer "which panel?",
+   short enough not to become the thing you are looking at. */
+@keyframes set-sec-flash {
+  0%   { background: var(--accent-bg); }
+  100% { background: transparent; }
+}
+.set-sec-feature.is-flash { animation: set-sec-flash 1.5s var(--ease-out); }
+@media (prefers-reduced-motion: reduce) {
+  .set-sec-feature.is-flash { animation: none; background: var(--accent-bg); }
+}
+
+/* ─── Settings: the clipper's steps ────────────────────────────────────
+   A numbered list, because the order is the whole content — this is the one
+   place in the app where the user has to leave it and do something in the
+   browser's own chrome, and a step skipped is a broken install. */
+.set-steps {
+  list-style: none; counter-reset: step;
+  margin: 0; padding: var(--sp-2) var(--sp-5) var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.set-steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr);
+  gap: 2px var(--sp-3); align-items: baseline;
+}
+.set-steps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  font-family: var(--font-mono); font-size: var(--fz-micro);
+  color: var(--faint);
+  border: 1px solid var(--line); border-radius: 999px;
+  width: 20px; height: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.set-step-t { font-size: var(--fz-mini); color: var(--fg); font-weight: 550; }
+.set-step-d { font-size: var(--fz-micro); color: var(--muted); line-height: 1.5; }
+.set-code {
+  font-family: var(--font-mono); font-size: 0.92em;
+  background: var(--paper-2); border: 1px solid var(--line-soft);
+  padding: 1px 5px; border-radius: var(--radius-badge); color: var(--muted);
+}
+/* An <a> styled as the primary button needs the button's own box back. */
+a.set-dl { display: inline-flex; align-items: center; text-decoration: none; }
+
 .topic-desc-sec {
   display: flex; flex-direction: column; gap: 0;
   flex: 1; min-height: 0;   /* grow to fill remaining height in left column */
@@ -2834,30 +3150,44 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .md-body.md-mode-view .md-edit-ta { display: none; }
 .md-body.md-mode-edit .md-article { display: none; }
 
-/* The EDITOR stays mono, deliberately. You are editing raw markdown here —
-   the syntax is aligned, `##` and `-` and `[[…]]` are structure you need to
-   see as characters, and a proportional face makes indentation lie. Mono in
-   the editor / proportional in the rendered view is the whole point. */
+/* ── One surface, two states ───────────────────────────────────────────
+   The editor used to be mono, 14% smaller, in a bordered sunken box with a
+   focus ring, sitting where proportional 15.5px prose had just been. The
+   argument for that was real — you are editing raw markdown, and `##`, `-`
+   and `[[…]]` are structure you want to see as characters. But the cost was
+   that reading and writing were visibly two different places: every toggle
+   reflowed the text, moved the first line, and changed the width of the
+   column, so a one-word fix meant leaving the document and coming back.
+
+   The text is the same text. So it is set the same way in both states —
+   same family, same size, same leading, same measure, same origin — and the
+   only thing that changes between reading and writing is a caret. What is
+   lost is monospaced alignment inside the source; what is bought is that
+   there is no longer a mode to enter. Code and fences keep mono where it
+   actually carries meaning, in the rendered view.
+
+   Every value below is `inherit`-or-match against .md-rendered on purpose.
+   If one of them drifts, the text jumps on toggle, which is the whole bug. */
 .md-edit-ta {
-  min-height: 480px;
-  background: var(--paper-2);
+  display: block; width: 100%;
+  background: transparent;
   color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: calc(var(--fz-prose) * 0.86);
+  font-family: var(--font-sans);
+  font-size: var(--fz-prose);
   line-height: 1.7;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-input);
-  resize: vertical;
+  letter-spacing: var(--track-body);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  resize: none;               /* it grows to its content instead */
+  overflow: hidden;
   tab-size: 2;
-  transition: border-color var(--dur-2) var(--ease-out),
-              box-shadow var(--dur-2) var(--ease-out);
 }
-.md-edit-ta:focus {
-  outline: none;
-  border-color: var(--i-3);
-  box-shadow: 0 0 0 3px var(--accent-bg);
-}
+/* No ring, no border, no colour change. The caret is the affordance — a
+   focus ring here would redraw the box the rest of this rule exists to
+   stop redrawing. Focus is still obvious: it is where the cursor is. */
+.md-edit-ta:focus { outline: none; }
+.md-edit-ta::placeholder { color: var(--faint); }
 
 /* Article body */
 .md-article {
@@ -3038,6 +3368,40 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 
 /* Grid variant for markdown (sidebar fits) */
 .md-grid .page-main { max-width: none; }
+
+/* The measure caps the line, but nothing said where the column SITS. It sat
+   flush left, so on a wide viewport a note was a strip down the left edge
+   with a dead zone between it and the metadata rail — capped and centered is
+   the book layout; capped and left-pinned is a bug that looks like one.
+   The header rides the same column so the title aligns with the prose.
+
+   NOT var(--measure): `ch` resolves against each element's own font, so the
+   header (label size) and the body (prose size) would compute two different
+   "same" widths and sit 60px apart. 42.8em of the prose size IS the prose
+   68ch, in units both columns agree on — and it tracks the density setting
+   the way the measure does. */
+/* The masthead is a padded box, so the prose column is given the SAME box:
+   identical padding, identical cap. Widening the header's cap alone was not
+   enough — when the container is narrower than either cap (which it is at
+   most window sizes) neither one binds, both columns become full width, and
+   the header's padding pushes its title 23px off the paragraph below it.
+   Two boxes with the same geometry align at every width, capped or not. */
+.md-grid .page-hd,
+.md-grid .page-body.md-body {
+  width: 100%;
+  max-width: calc(42.8 * var(--fz-prose) + 2 * var(--sp-5) + 2px);
+  margin-inline: auto;
+}
+/* Same padding AND the same 1px edge — transparent, so it is invisible but
+   occupies the width the header's real border does. Without it the two boxes
+   differ by 2px and the title sits one pixel off its own paragraph. */
+.md-grid .page-body.md-body {
+  padding-inline: var(--sp-5);
+  border-inline: 1px solid transparent;
+}
+/* One cap per column. The inner measure would re-cap at a slightly different
+   width and re-introduce the misalignment this rule exists to remove. */
+.md-grid .md-body .md-rendered { max-width: none; }
 
 /* ─── Inline content #hashtags ────────────────────────────────────────── */
 .hashtag {
@@ -3409,7 +3773,10 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
 .list-row .id,
 .kbd,
 .md-frontmatter,
-.md-edit-ta,
+/* `.md-edit-ta` was in this list. It is prose being written, not machine
+   text being read, and mono here made the editor a visibly different place
+   from the view — see the note on .md-edit-ta. Mono stays where it carries
+   meaning: identifiers, frontmatter, code. */
 code, pre, kbd, samp {
   font-family: var(--font-mono);
   letter-spacing: var(--track-title);
@@ -3720,14 +4087,40 @@ code, pre, kbd, samp {
      every field the sunken well plus its inset ring so "you can type here"
      is legible without a heavy box. — */
 .sb-field, .sb-input, .sb-textarea, .sb-select,
+/* Fields are wells, not boxes.
+   A 1px outline around every input turns a metadata panel into a grid of
+   rectangles competing with the text inside them. A soft fill and no border
+   says "you can type here" just as clearly and draws nothing — the border
+   comes back on focus, where it means something. */
 .page-body-ta, .filter-input, .search-input, .set-input {
   background: var(--input-bg);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius-input);
   color: var(--fg);
 }
+.filter-input:hover, .set-input:hover { background: var(--paper-2); }
 .search-input { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--paper); }
 .page-body-ta { background: var(--paper-2); }
+
+/* …except the prose editor, which is not a form field.
+   It carries `.page-body-ta` for the shared caret and selection behaviour,
+   and that class also hands it a sunken background, a border, a radius and
+   a focus ring from the three rules above — every one of which redraws the
+   box the moment you click into the text. Restated here with a tag selector
+   so it wins on specificity rather than on where it happens to sit in the
+   file, since a later section had already quietly re-enabled `resize`. */
+textarea.md-edit-ta,
+.pj-note textarea.md-edit-ta {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  resize: none;
+}
+textarea.md-edit-ta:focus {
+  box-shadow: none;
+  border-color: transparent;
+}
 
 /* — Buttons. The secondary button was white-on-white with a hairline; it
      needs a real edge and a hover that moves. The primary stays the
@@ -3755,13 +4148,38 @@ code, pre, kbd, samp {
 }
 .btn-danger:hover { background: var(--signal-alert); border-color: var(--signal-alert); filter: brightness(1.1); }
 
-/* — Chips. Small uppercase text needs more room to breathe on a light
-     ground than it did on a dark one, where the fill did the separating. — */
+/* — Chips. Pills, in the reading face.
+     They were 3px-radius boxes set in JetBrains Mono with a permanent ×.
+     Three things wrong with that: mono is this app's signal for MACHINE
+     text and a tag is a word the user chose; a square chip reads as a
+     button; and a delete control on every one turns a row of labels into a
+     row of things to be careful around. Pill, sans, and the × only when the
+     pointer is on the chip that owns it. — */
 .tag, .tag-chip, .mention-chip, .kind-chip {
-  border-radius: var(--radius-badge);
-  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  padding: 4px 12px 4px 9px;
   line-height: 1.45;
+  font-family: var(--font-sans);
+  letter-spacing: var(--track-body);
+  font-feature-settings: normal;      /* the mono rule's slashed zero, undone */
 }
+/* Every chip carries a mark, so a row of them lines up on its glyphs: the
+   tag's emoji if it has been given one, a dot in its own hue if not. */
+.tag-chip-e { font-size: 0.95em; line-height: 1; flex: none; }
+.tag-chip-d {
+  width: 6px; height: 6px; flex: none; border-radius: 50%;
+  background: currentColor; opacity: 0.55;
+}
+.tag-chip-x {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  color: inherit; font: inherit; line-height: 1;
+  padding: 0; margin-left: 1px;
+  width: 0; opacity: 0; overflow: hidden;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+.tag-chip.rm:hover .tag-chip-x,
+.tag-chip-x:focus-visible { width: auto; opacity: 0.6; }
+.tag-chip-x:hover { opacity: 1; color: var(--signal-alert); }
 .tag-chip { background: var(--paper-2); border-color: var(--line); color: var(--muted); }
 .mention-chip { background: var(--accent-bg); border-color: transparent; color: var(--fg); }
 
@@ -3865,7 +4283,9 @@ code, pre, kbd, samp {
 .sect-hd       { margin: var(--sp-6) 0 var(--sp-3); padding-bottom: var(--sp-2); }
 .screen > .sect-hd:first-of-type { margin-top: var(--sp-5); }
 .dash-hd       { padding-bottom: var(--sp-4); margin-bottom: var(--sp-2); }
-.page-hd       { gap: var(--sp-3); margin-bottom: var(--sp-5); }
+/* .page-hd's gap and margin are set with the rest of the masthead, above —
+   this pass used to re-set them here, half a file away from the block they
+   belong to, and the two quietly disagreed. */
 .page-chips-row { gap: var(--sp-2); }
 
 /* Card interiors. 14px was the file's most common padding and it is one step
@@ -3873,9 +4293,8 @@ code, pre, kbd, samp {
 .obs-card, .tier-card, .board-card,
 .am-sect, .kind-card, .pj-card     { padding: var(--sp-4); gap: var(--sp-3); }
 .card-b                            { padding: var(--sp-4); }
-.pages-th, .pages-row, .recent-th, .recent-row {
-  padding: var(--sp-3) var(--sp-4);
-}
+.recent-th, .recent-row { padding: var(--sp-3) var(--sp-4); }
+.pages-row               { padding: 11px var(--sp-4); }
 .list-row                          { padding: var(--sp-3) var(--sp-4); }
 .obs-grid, .tier-grid, .pages-board { gap: var(--sp-3); }
 
@@ -3890,11 +4309,16 @@ code, pre, kbd, samp {
   align-items: baseline;
   padding: var(--sp-2) 0;
 }
+/* Sentence case, like the legend above them.
+   The rail read FILE / KIND / CREATED / UPDATED / ID in tracked-out caps
+   under a legend that says "Metadata" in sentence case — two label styles a
+   centimetre apart, and the shoutier one belonged to the values nobody
+   looks at. Caps at 11px is a shout; these are captions. */
 .side-row-l, .aside-block .b .row-i label, .am-lbl {
   font-size: var(--fz-micro);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  font-weight: 550;
+  letter-spacing: var(--track-label);
+  text-transform: none;
+  font-weight: 500;
   color: var(--faint);
 }
 .side-row-v, .aside-block .b .row-i .v {
@@ -4494,6 +4918,22 @@ input[type="checkbox"], input[type="radio"] {
   background-image: linear-gradient(180deg, var(--sheen) 0, transparent 42px);
 }
 
+/* The page masthead is the hero card of a page, so it takes the kind wash at
+   full edge strength — it is the one surface whose whole job is to say what
+   kind of thing you are looking at. */
+.page-hd { background-image:
+  radial-gradient(120% 130% at 0% 0%, color-mix(in srgb, var(--k-c, var(--accent)) var(--wash-edge), transparent) 0%, transparent 58%),
+  linear-gradient(180deg, var(--sheen) 0, transparent 42px); }
+
+/* The metadata rail belongs to the same page, so it is tinted by the same
+   kind — the header and the rail read as two halves of one object rather
+   than a coloured panel next to a grey one.
+   At --wash-strength, not --wash-edge: there are three to five of these
+   stacked down the column, and a tint that is right once is loud five times. */
+.side-card { background-image:
+  radial-gradient(130% 140% at 0% 0%, color-mix(in srgb, var(--k-c, var(--accent)) var(--wash-strength), transparent) 0%, transparent 62%),
+  linear-gradient(180deg, var(--sheen) 0, transparent 42px); }
+
 /* Hero cards additionally take the kind wash. */
 .obs-card { background-image:
   radial-gradient(120% 130% at 0% 0%, color-mix(in srgb, var(--accent) var(--wash-edge), transparent) 0%, transparent 58%),
@@ -4752,19 +5192,27 @@ input[type="checkbox"], input[type="radio"] {
   --brand-deep: #4338ca;
 }
 
-/* ── Tag — a label you apply. Rectangle, mono, coloured by its own name.
-   Tighter-cornered than a mention on purpose: the mention is a node
-   (--radius-badge), the tag is a label, and the crisper corner is what
-   tells them apart at a glance now that both carry colour. ─────────────── */
+/* ── Tag — a label you apply, coloured by its own name.
+   It used to be a 3px rectangle in mono, on the argument that the crisper
+   corner separated a tag (label) from a mention (node). It separated them
+   by making the tag look like a keycap: mono is this app's signal for
+   MACHINE text, and a tag is a word a person chose. The two are told apart
+   by what they carry instead — a tag wears a hue and its own mark, a
+   mention wears a link glyph and the accent — which is a difference you
+   can read rather than one you have to be told. ───────────────────────── */
+/* Sized to be read, not squinted at. --fz-micro (11px) with 2px of vertical
+   padding made a chip you had to lean toward; a tag is a label you scan a
+   wall of, so it gets the body size and room around the word. */
 .tag-chip {
-  display: inline-flex; align-items: center; gap: 1px;
-  font-family: var(--font-mono);
-  font-size: var(--fz-micro);
-  padding: 3px 8px;
-  border-radius: 3px;
-  background: var(--tag-bg, var(--lime-bg));
-  border: 1px solid var(--tag-line, var(--lime-line));
-  color: var(--tag-ink, var(--lime-ink));
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-sans);
+  font-size: var(--fz-mini);
+  letter-spacing: var(--track-body);
+  padding: 4px 12px 4px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--tag-bg, var(--paper));
+  border: 1px solid var(--tag-line, var(--line));
+  color: var(--tag-ink, var(--fg));
   white-space: nowrap;
 }
 /* Ten hues, dealt by name-hash in tagHue() unless the user picked one. Every
@@ -4783,15 +5231,26 @@ input[type="checkbox"], input[type="radio"] {
 .tag-h7 { --tag-hue: #ea580c; }   /* orange */
 .tag-h8 { --tag-hue: #64748b; }   /* slate — the quiet one, for tags you file by */
 .tag-h9 { --tag-hue: #0d9488; }   /* teal */
-/* The fill was 13% of the hue over the page, which on paper is barely a tint:
-   the chips read as grey boxes that happened to have coloured text. At 22%
-   with a 55% edge and ink two-thirds of the way to full hue, a tag is a
-   coloured object — which is the point of giving it a colour at all. */
+/* ── The chip is NEUTRAL. The hue lives in its dot. ──────────────────────
+   Ten tinted pills in a row is ten things claiming to be important, and on
+   a page with six tags in the header, six on a card and eight in a filter
+   strip it reads as confetti — you cannot tell which chip is ON, because
+   they are all coloured already.
+
+   DESIGN.md said so before this did: "colour is reserved for meaning" and
+   "monochrome emphasis is the system". A per-tag hue is decoration; SELECTED
+   is meaning. So the chip rests neutral and the hue survives at the size it
+   is actually useful — the 6px dot, which is enough to recognise a tag you
+   know without competing with the word next to it.
+
+   The fill comes back for the one state that earns it, below. */
 .tag-h0, .tag-h1, .tag-h2, .tag-h3, .tag-h4,
 .tag-h5, .tag-h6, .tag-h7, .tag-h8, .tag-h9 {
-  --tag-bg:   color-mix(in srgb, var(--tag-hue) 22%, transparent);
-  --tag-line: color-mix(in srgb, var(--tag-hue) 55%, transparent);
-  --tag-ink:  color-mix(in srgb, var(--tag-hue) 68%, var(--fg) 32%);
+  --tag-bg:   var(--paper);
+  --tag-line: var(--line);
+  --tag-ink:  var(--fg);
+  /* Kept, and used by the dot and by the selected fill. */
+  --tag-dot:  var(--tag-hue);
 }
 /* On a dark ground the same fill disappears into the page and the same ink
    goes muddy, because both are mixing toward a near-black paper. Lift them. */
@@ -4805,37 +5264,55 @@ input[type="checkbox"], input[type="radio"] {
 [data-theme="dark"] .tag-h7, [data-theme="midnight"] .tag-h7,
 [data-theme="dark"] .tag-h8, [data-theme="midnight"] .tag-h8,
 [data-theme="dark"] .tag-h9, [data-theme="midnight"] .tag-h9 {
-  --tag-bg:   color-mix(in srgb, var(--tag-hue) 30%, transparent);
-  --tag-line: color-mix(in srgb, var(--tag-hue) 62%, transparent);
-  --tag-ink:  color-mix(in srgb, var(--tag-hue) 42%, var(--fg) 58%);
+  --tag-bg:   var(--paper);
+  --tag-line: var(--line);
+  --tag-ink:  var(--fg);
+  --tag-dot:  var(--tag-hue);
 }
 .tag-chip-h { opacity: 0.65; }
 .tag-chip-click { cursor: pointer; }
+/* Hover lifts the surface, it does not colour it — the coloured state means
+   "selected", and hover must not look like a weak version of that. */
 .tag-chip-click:hover, .tag-chip-btn:hover {
-  border-color: var(--tag-ink, var(--lime-ink));
-  background: color-mix(in srgb, var(--tag-hue, var(--lime)) 24%, transparent);
-  color: var(--tag-ink, var(--lime-ink));
+  background: var(--paper-2);
+  border-color: var(--i-3, var(--line));
 }
-.tag-chip.rm button { color: currentColor; opacity: 0.55; }
-.tag-chip.rm button:hover { opacity: 1; color: var(--signal-alert); }
+/* The dot carries the tag's own hue at every state except selected, where
+   the fill has taken the colour and the dot goes to the fill's ink. */
+.tag-chip .tag-chip-d { background: var(--tag-dot, currentColor); opacity: 1; }
 
-/* ── Mention — a link to another page. Squared, indigo, with a link mark. ─ */
-.mention-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-family: var(--font-mono);
-  font-size: var(--fz-micro);
-  padding: 3px 8px;
-  border-radius: var(--radius-badge);      /* squared: it is a node, not a label */
-  background: var(--indigo-bg);
-  border: 1px solid var(--indigo-line);
-  color: var(--indigo);
-  white-space: nowrap;
+/* ── Selected ───────────────────────────────────────────────────────────
+   The one state that gets a fill. Inversion, which is this system's way of
+   saying primary — and it is unmistakable next to a neutral chip, which a
+   tinted-on-tinted pair never was. */
+.tag-chip.is-on, .tag-chip-btn.is-on, .bento-tag.on {
+  background: var(--tag-hue, var(--accent));
+  border-color: transparent;
+  /* NOT --paper. The fill is a saturated mid-tone in every theme, so the ink
+     on it has to be light in every theme too — on a dark ground --paper is
+     near-black, which would put near-black text on teal. The ten hues are
+     tuned to carry white; this is the one place the chip does not flip. */
+  color: var(--tag-on-ink);
 }
-.mention-chip:hover { border-color: var(--indigo); background: color-mix(in srgb, var(--indigo) 14%, transparent); }
-.mention-chip-i { display: inline-flex; opacity: 0.75; font-size: var(--fz-mini); }
+.tag-chip.is-on .tag-chip-d, .bento-tag.on .tag-chip-d { background: currentColor; opacity: 0.7; }
+.tag-chip.is-on:hover, .bento-tag.on:hover {
+  background: var(--tag-hue, var(--accent));
+  border-color: transparent;
+  filter: brightness(1.08);
+}
+
+
+/* ── Mention — a link to another page. ────────────────────────────────
+   It was squared, indigo and mono, on the reasoning that a mention is a
+   NODE and a tag is a LABEL, so they should not look alike. But they sit in
+   the same row, do the same thing when clicked, and are removed the same
+   way — making them two shapes in two fonts and two colours did not teach
+   the distinction, it just made one row look like two systems bolted
+   together. They are one pill now, and the difference is carried where it
+   is actually legible: a tag wears its own hue as a dot, a mention wears
+   its target's KIND glyph in that kind's colour. See .mention-chip above. */
+.mention-chip-i { display: inline-flex; opacity: 0.9; }
 .mention-chip-t { max-width: 22ch; overflow: hidden; text-overflow: ellipsis; }
-.mention-chip.rm button { color: currentColor; opacity: 0.55; }
-.mention-chip.rm button:hover { opacity: 1; color: var(--signal-alert); }
 
 /* The same language wherever the two appear in rendered prose: a #tag in a
    note body wears the same name-hashed hue as its chip, and a [[link]] wears
@@ -4937,6 +5414,21 @@ input[type="checkbox"], input[type="radio"] {
 .prose-editor .md-edit-ta { display: none; width: 100%; }
 .prose-editor.is-editing .md-rendered { display: none; }
 .prose-editor.is-editing .md-edit-ta { display: block; }
+/* The prose is the control, so it says so on hover — a text caret over text
+   you can type into. Only a caret: a background or an outline would be the
+   view drawing a box that the editor then has to draw differently, which is
+   the mode boundary coming back in through the hover state. */
+.prose-editor:not(.is-editing) .md-rendered { cursor: text; }
+/* The Edit button is now a fallback for keyboard and for the empty case, not
+   the way in. It stays out of the way until the block is hovered or it is
+   itself focused. */
+.prose-editor .md-mode-btn {
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.prose-editor:hover .md-mode-btn,
+.prose-editor.is-editing .md-mode-btn,
+.prose-editor .md-mode-btn:focus-visible { opacity: 1; }
 .prose-empty { color: var(--faint); font-size: var(--fz-mini); padding: var(--sp-3) 0; }
 /* Prose is measure-capped by default; a surface can opt out when it sits in
    a column that is already narrow. */
@@ -5061,8 +5553,395 @@ body.cv-settled .screen, body.cv-settled .page {
 .bento-card .bento-cap-view.is-empty { opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
 .bento-card:hover .bento-cap-view.is-empty,
 .bento-card:focus-within .bento-cap-view.is-empty { opacity: 1; }
-.bento-tags-view { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+/* ─── The note: why this is on the wall ────────────────────────────────
+   Set apart from the caption, because they answer different questions —
+   the caption says what the thing is, the note says what it is FOR. A left
+   rule rather than a box: it is the same idiom markdown uses for a
+   blockquote, which is exactly what it is on disk. */
+.bento-note {
+  margin-top: 6px;
+  padding: 2px 0 2px 9px;
+  border-left: 2px solid var(--line);
+  font-size: var(--fz-micro); line-height: 1.55; color: var(--muted);
+  cursor: text; border-radius: 0 3px 3px 0;
+  transition: border-color var(--dur-1) var(--ease-out),
+              background var(--dur-1) var(--ease-out);
+}
+.bento-note:hover { border-left-color: var(--accent); background: var(--hover); }
+.bento-note p { margin: 0 0 0.35em; }
+.bento-note p:last-child { margin-bottom: 0; }
+.bento-note a { color: var(--accent); }
+/* A citation inside a note is the cross-wall link. It sits in micro type, so
+   the chip's own padding would make the line lumpy — it reads as a coloured
+   word with its kind glyph, nothing more. */
+.bento-note .mention-link {
+  display: inline; padding: 0; border: 0; background: none;
+  color: var(--accent); cursor: pointer;
+}
+.bento-note .mention-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.bento-note .mention-link .lucide { width: 10px; height: 10px; vertical-align: -1px; }
+/* Empty, it is only an invitation — so it behaves like the empty caption
+   and stays out of the way until the card is hovered. */
+.bento-note.is-empty { border-left-color: transparent; padding-left: 0; }
+.bento-card .bento-note.is-empty { opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
+.bento-card:hover .bento-note.is-empty,
+.bento-card:focus-within .bento-note.is-empty { opacity: 1; }
+.bento-note-add {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--faint); font-style: italic;
+}
+.bento-note-add .lucide { width: 11px; height: 11px; }
+.bento-note-ta, .bento-note-in {
+  display: block; width: 100%; margin-top: 6px;
+  appearance: none; resize: none; overflow: hidden;
+  background: var(--paper-2); color: var(--fg);
+  border: 1px solid var(--accent); border-radius: var(--radius-input);
+  padding: 7px 9px;
+  font-family: var(--font-sans); font-size: var(--fz-micro); line-height: 1.55;
+}
+.bento-note-ta:focus, .bento-note-in:focus {
+  outline: none; box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.bento-note-in { border-color: var(--line); }
+
+/* ─── Dragging a card into a group ─────────────────────────────────────
+   Grouping is the thinking, so it is a gesture and not a form field. */
+.bento-card[draggable="true"] { cursor: grab; }
+.bento-card.is-dragging { opacity: 0.4; cursor: grabbing; }
+/* The destination says so, and says it as a whole region — the card is
+   joining a group, not landing at a position. */
+.bento-group.is-dropzone {
+  outline: 2px dashed var(--accent);
+  outline-offset: 6px;
+  border-radius: var(--radius-card);
+  background: var(--accent-bg);
+}
+.bento-group.is-dropzone .bento-empty { color: var(--accent); }
+
+.bento-tags-view { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
 .bento-tags-view .tag-chip { cursor: pointer; }
+
+/* ─── The expanded card ────────────────────────────────────────────────
+   Not a lightbox. The old one put the picture on near-black with its
+   caption printed underneath as a label — a slideshow, in an app whose
+   point is what you wrote about the picture. This is the card itself,
+   larger, on the app's own paper, with its real controls on the right.
+   The scrim is only dark enough to say "this is on top". */
+/* The app's own scrim, not a blackout — `.modal-bg` already carries it, so
+   this only needs to centre the frame rather than pin it near the top. */
+.xp-bg { align-items: center; padding-top: 0; }
+.xp-frame {
+  width: min(1080px, 94vw); max-height: 90vh;
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+.xp-hd {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  flex: none;
+}
+.xp-count {
+  flex: 1; font-size: var(--fz-micro); color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.xp-steps { display: flex; gap: 2px; }
+.xp-step, .xp-x {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  color: var(--muted); padding: 5px; border-radius: var(--radius-badge);
+  display: inline-flex;
+}
+.xp-step .lucide, .xp-x .lucide { width: 15px; height: 15px; display: block; }
+.xp-step:hover, .xp-x:hover { background: var(--paper-2); color: var(--fg); }
+/* Image left, the writing right — and on a narrow window they stack, image
+   first, because the picture is still what you are identifying. */
+.xp-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) 320px;
+  min-height: 0; overflow: hidden;
+}
+.xp-stage {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper-2);
+  padding: var(--sp-5); min-width: 0; min-height: 0;
+  overflow: auto;
+}
+/* The image takes the stage, at its own aspect and never cropped — this is
+   the one surface where seeing the whole thing is the point. `width: 100%`
+   rather than `auto` so a small capture actually gets bigger: an "expand"
+   that leaves a 260px thumbnail sitting in the middle of a 700px panel has
+   not expanded anything. */
+.xp-img {
+  width: 100%; height: auto;
+  max-height: calc(90vh - 150px);
+  object-fit: contain;
+  border-radius: var(--radius-badge);
+}
+.xp-side {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: var(--sp-5); overflow-y: auto; min-height: 0;
+  border-left: 1px solid var(--line-soft);
+}
+.xp-l {
+  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
+  text-transform: uppercase; font-weight: 550; color: var(--faint);
+  margin-top: var(--sp-3);
+}
+.xp-side > .xp-l:first-child { margin-top: 0; }
+.xp-cap, .xp-url, .xp-group {
+  appearance: none; width: 100%;
+  background: var(--paper-2); color: var(--fg);
+  border: 1px solid var(--line); border-radius: var(--radius-input);
+  font: inherit; font-size: var(--fz-mini); padding: 7px 9px;
+}
+.xp-note {
+  appearance: none; width: 100%; resize: none; overflow: hidden;
+  background: var(--paper-2); color: var(--fg);
+  border: 1px solid var(--line); border-radius: var(--radius-input);
+  font-family: var(--font-sans); font-size: var(--fz-mini); line-height: 1.55;
+  padding: 7px 9px; min-height: 96px;
+}
+.xp-cap:focus, .xp-url:focus, .xp-note:focus, .xp-group:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.xp-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.xp-open {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fz-micro); color: var(--accent); text-decoration: none;
+  margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.xp-open .lucide { width: 12px; height: 12px; flex: none; }
+@media (max-width: 860px) {
+  .xp-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; overflow-y: auto; }
+  .xp-side { border-left: 0; border-top: 1px solid var(--line-soft); }
+  .xp-img { max-height: 46vh; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SECTIONS — the legend on the border
+   ═══════════════════════════════════════════════════════════════════════
+   Every grouped region in this app used the same device: a filled header
+   bar across the top with a rule under it. Stack four of them down a rail
+   and you get four grey bands, each as loud as the content it introduces,
+   and the eye reads the bands before it reads anything inside them.
+
+   This is the other way round, and it is the one reference managers and
+   design tools have converged on: the region is a quiet outline, and its
+   name sits ON that outline — small, in the page's own background, so it
+   interrupts the border rather than occupying a strip of its own. The
+   label costs no height, the region gains no fill, and what you notice
+   first is the content.
+
+   `--s-page` on the legend, not `--paper`: it is punched out of the border
+   of a card that sits on the page, so it has to be painted in the page's
+   colour to look like a gap rather than a white sticker. */
+.cv-fs {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background-color: var(--paper);
+  /* Room for the legend, which straddles the top edge. */
+  margin-top: 11px;
+  overflow: visible;              /* a clipped legend is an invisible legend */
+}
+/* The three families that were all header-bars, now all legends. Retrofitted
+   onto the existing class names so no markup changes and nothing that
+   references them elsewhere breaks. */
+.side-card, .bm-section, .set-sec {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background-color: var(--paper);
+  margin-top: 11px;
+  overflow: visible;
+}
+/* left: 9px, not 14 — the legend carries 7px of its own side padding, so
+   this is what puts its TEXT on the same 16px line as the content below.
+   Aligning the box instead of the glyphs is the tell of a legend bolted on. */
+.side-card-hd, .bm-section-l, .set-sec-hd,
+.bm-section-context .prose-editor-l {
+  position: absolute; top: 0; left: 9px;
+  transform: translateY(-50%);
+  display: inline-flex; align-items: baseline; gap: 7px;
+  max-width: calc(100% - 28px);
+  background: var(--s-page);
+  padding: 0 7px;
+  font-size: var(--fz-micro);
+  letter-spacing: var(--track-label);
+  text-transform: none;
+  font-weight: 550;
+  color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 0; border-bottom: 0; border-radius: 0;
+}
+.set-sec-hd b { font-size: var(--fz-micro); letter-spacing: var(--track-label);
+                text-transform: none; font-weight: 600; color: var(--fg); }
+/* The Context section's label comes from ProseEditor, so it is not one of
+   the three header classes — but it names a section, so it sits where the
+   others do rather than being the one uppercase strip left inside a box. */
+.bm-section-context .prose-editor-hd { min-height: 0; justify-content: flex-end; }
+/* The bodies lose the padding the header bar used to justify. */
+.side-card-body { padding: var(--sp-4) var(--sp-4) var(--sp-4); }
+.bm-section { padding: var(--sp-5) var(--sp-4) var(--sp-4); }
+.set-sec > .set-row:first-of-type { padding-top: var(--sp-4); }
+
+.cv-fs-l {
+  position: absolute; top: 0; left: 14px;
+  transform: translateY(-50%);
+  display: inline-flex; align-items: baseline; gap: 7px;
+  max-width: calc(100% - 28px);
+  background: var(--s-page);
+  padding: 0 7px;
+  font-size: var(--fz-micro);
+  letter-spacing: var(--track-label);
+  text-transform: none;           /* uppercase in a 10px legend is a shout */
+  font-weight: 550;
+  color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* The old header-bar look, unset — these rules are retrofitted onto the
+     existing header elements rather than requiring new markup. */
+  border: 0; border-radius: 0;
+}
+
+/* The emoji row in the tag popover. */
+.tag-pop-emoji {
+  display: flex; flex-wrap: wrap; gap: 3px; align-items: center;
+  padding: var(--sp-2) 0 var(--sp-3);
+}
+.tag-pop-e {
+  appearance: none; border: 1px solid transparent; background: none;
+  cursor: pointer; font-size: 15px; line-height: 1;
+  padding: 4px; border-radius: var(--radius-badge);
+}
+.tag-pop-e:hover { background: var(--paper-2); }
+.tag-pop-e.on { border-color: var(--accent); background: var(--accent-bg); }
+.tag-pop-e-clear { font-size: 13px; color: var(--faint); }
+.tag-pop-ein {
+  appearance: none; width: 7ch;
+  background: var(--input-bg); color: var(--fg);
+  border: 1px solid transparent; border-radius: var(--radius-badge);
+  font: inherit; font-size: var(--fz-mini); padding: 3px 6px;
+}
+.tag-pop-ein:focus { outline: none; border-color: var(--accent); }
+.tag-pop-sub {
+  font-size: var(--fz-micro); color: var(--faint);
+  letter-spacing: var(--track-label);
+  padding-bottom: var(--sp-2);
+  border-top: 1px solid var(--line-soft); padding-top: var(--sp-3);
+}
+
+/* ─── The picker ───────────────────────────────────────────────────────
+   One panel for tags and for pages, anchored to whatever opened it. Fixed
+   position because `.page-main` is `overflow: hidden` and would clip an
+   absolutely-positioned dropdown at the column edge. */
+.pk-pop {
+  position: fixed; z-index: 90;
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+.pk-search {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--faint); flex: none;
+}
+.pk-search .lucide { width: 13px; height: 13px; flex: none; }
+.pk-input {
+  flex: 1; min-width: 0;
+  appearance: none; border: 0; background: transparent; color: var(--fg);
+  font: inherit; font-size: var(--fz-mini); padding: 0;
+}
+.pk-input:focus { outline: none; }
+.pk-input::placeholder { color: var(--faint); }
+.pk-list { overflow-y: auto; padding: 4px; min-height: 0; }
+.pk-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--radius-badge);
+  font-size: var(--fz-mini); color: var(--fg);
+  cursor: pointer;
+}
+/* Hover and keyboard highlight are the SAME state — two different-looking
+   "current row"s in one list is how you lose track of what Enter will do. */
+.pk-row.is-hl { background: var(--paper-2); }
+.pk-row-g { display: inline-flex; flex: none; color: var(--faint); }
+.pk-row-g .lucide { width: 13px; height: 13px; }
+.pk-swatch {
+  width: 9px; height: 9px; flex: none; border-radius: 3px;
+  background: currentColor; opacity: 0.85;
+}
+.pk-row-l {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pk-row-l mark { background: var(--accent-bg); color: inherit; border-radius: 2px; }
+.pk-row-h {
+  flex: none; font-size: var(--fz-micro); color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.pk-row-create .pk-row-g { color: var(--accent); }
+.pk-row-create .pk-row-l { color: var(--accent); }
+.pk-empty { padding: 12px 10px; font-size: var(--fz-mini); color: var(--faint); }
+.pk-hint {
+  flex: none; padding: 6px 11px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fz-micro); color: var(--faint);
+}
+
+/* The trigger. Chip-shaped, because it lives at the end of a row of chips
+   and adds one — the same control whether it adds a tag or links a page. */
+.chip-add {
+  appearance: none; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px dashed var(--line); border-radius: var(--radius-pill);
+  color: var(--faint); font: inherit; font-size: var(--fz-mini);
+  padding: 2px 9px 2px 7px;
+  transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.chip-add .lucide { width: 12px; height: 12px; }
+.chip-add:hover { color: var(--accent); border-color: var(--accent); }
+.chip-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ─── Tagging on the card ──────────────────────────────────────────────
+   The wall's chips WERE their own idiom — `.bento-tag-chip` with a name
+   button and an × button of its own. They are `TagChip` now, like every
+   other chip in the app, so the emoji, the hue dot, the pill and the
+   hover-only × all arrive here for free and cannot drift from the rest.
+   Only the card's own "add" affordance is still its own control. */
+
+/* The way in. Quiet on a tagged card — the chips already show the shape of
+   the row — and labelled on an untagged one, where nothing else says that
+   tagging is possible here at all. */
+.bento-tag-add {
+  appearance: none; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 3px;
+  border: 1px dashed var(--line); border-radius: var(--radius-pill, 999px);
+  color: var(--faint); font: inherit; font-size: var(--fz-micro);
+  padding: 2px 7px 2px 5px;
+  transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out),
+              opacity var(--dur-1) var(--ease-out);
+}
+.bento-tag-add .lucide { width: 11px; height: 11px; }
+.bento-tag-add:hover { color: var(--accent); border-color: var(--accent); }
+/* On a card that already has tags it waits for a hover, like the empty
+   caption and the empty note do. */
+.bento-card .tag-chip ~ .bento-tag-add { opacity: 0; }
+.bento-card:hover .bento-tag-add,
+.bento-card:focus-within .bento-tag-add { opacity: 1; }
+.bento-tag-in {
+  appearance: none; width: 9ch; min-width: 9ch;
+  background: var(--paper); color: var(--fg);
+  border: 1px solid var(--accent); border-radius: var(--radius-pill, 999px);
+  font: inherit; font-size: var(--fz-micro);
+  padding: 2px 8px;
+}
+.bento-tag-in:focus { outline: none; box-shadow: 0 0 0 3px var(--accent-bg); }
 .bento-src {
   display: inline-flex; align-items: center; gap: 5px; flex: none;
   font-size: var(--fz-micro); color: var(--muted); text-decoration: none;
@@ -5205,18 +6084,9 @@ body.cv-settled .screen, body.cv-settled .page {
   border-top: 1px solid var(--line); margin-top: 4px;
 }
 
-/* ── Bookmark links ────────────────────────────────────────────────────
-   The card led with "#1" when there was one link, and its controls were
-   unicode glyphs. */
-.bm-link-card-n-mute {
-  color: var(--faint); font-weight: 550;
-  font-size: var(--fz-micro); letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-}
-.bm-refresh, .bm-open {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: var(--fz-mini);
-}
+/* The link card, its "#1" counter, its url input and its Open button are all
+   gone — see the .bm-link rows above. Only the layout rule that survived
+   the change is kept. */
 .bm-link-add { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Every kind now carries the metadata rail, so every kind needs the two-column
@@ -5510,7 +6380,6 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
    of nothing under the URL. It only exists when the clipper saved an og
    payload. */
 .bm-preview:empty { display: none; }
-.bm-link-card { gap: var(--sp-2); }
 
 /* The file path is the one value in the rail where the END matters most —
    ellipsizing it hides the filename and keeps the folder. So it wraps, and it
@@ -6146,74 +7015,9 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
 .bento-dropzone-d { font-size: var(--fz-mini); color: var(--muted); max-width: 44ch; line-height: 1.6; }
 .bento-dropzone-d b { font-weight: 550; color: var(--fg); }
 
-/* ── The lightbox ──────────────────────────────────────────────────────
-   Near-black in every mode, because the subject is a picture and any paper
-   tone would tint it. The one deliberately single-look surface. */
-.lightbox-bg {
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(9, 9, 11, 0.92);
-}
-.lightbox-frame {
-  display: flex; flex-direction: column; gap: var(--sp-3);
-  max-width: min(92vw, 1400px); max-height: 92vh;
-  /* A floor, because a small image is shown at natural size (upscaling a
-     200px crop to fill a monitor is just blur) — without it the frame
-     shrank to hug a tiny image and the caption bar floated in the dark. */
-  min-width: min(560px, 90vw);
-}
-.lightbox-stage { display: grid; place-items: center; min-height: 180px; }
-.lightbox-img {
-  max-width: min(90vw, 1400px); max-height: 78vh;
-  width: auto; height: auto; object-fit: contain;
-  border-radius: var(--radius-badge);
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-}
-.lightbox-bar {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: var(--sp-4); min-height: 22px;
-}
-.lightbox-cap {
-  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
-  color: #fafafa; font-size: var(--fz-mini); min-width: 0;
-}
-.lightbox-tags { display: inline-flex; gap: 4px; }
-.lightbox-meta {
-  display: inline-flex; align-items: baseline; gap: var(--sp-4); flex: none;
-  color: rgba(250,250,250,0.6); font-size: var(--fz-micro);
-  font-variant-numeric: tabular-nums;
-}
-.lightbox-src {
-  display: inline-flex; align-items: center; gap: 5px;
-  color: rgba(250,250,250,0.8); text-decoration: none;
-}
-.lightbox-src:hover { color: #fff; }
-.lightbox-src svg { width: 12px; height: 12px; }
-.lightbox-x {
-  position: fixed; top: 18px; right: 22px;
-  appearance: none; cursor: pointer;
-  width: 36px; height: 36px; border-radius: var(--radius-pill);
-  border: 1px solid rgba(250,250,250,0.25);
-  background: rgba(9,9,11,0.5); color: #fafafa;
-  font-size: var(--fz-body); line-height: 1;
-  transition: background var(--dur-1) var(--ease-out);
-}
-.lightbox-x:hover { background: rgba(250,250,250,0.15); }
-.lightbox-nav {
-  position: fixed; top: 50%; transform: translateY(-50%);
-  appearance: none; cursor: pointer;
-  width: 44px; height: 44px; border-radius: var(--radius-pill);
-  border: 1px solid rgba(250,250,250,0.25);
-  background: rgba(9,9,11,0.5); color: #fafafa;
-  display: grid; place-items: center;
-  transition: background var(--dur-1) var(--ease-out);
-}
-.lightbox-nav:hover { background: rgba(250,250,250,0.15); }
-.lightbox-nav svg { width: 20px; height: 20px; }
-.lightbox-prev { left: 22px; }
-.lightbox-next { right: 22px; }
-@media (prefers-reduced-motion: reduce) {
-  .lightbox-x, .lightbox-nav { transition: none; }
-}
+/* The lightbox is gone — the expanded card replaced it. See .xp-* above:
+   the same job done on the app's own paper, with the item's real controls
+   instead of a read-only caption printed under a picture. */
 
 /* First-run folder list: the folders ARE the kinds, so each line wears its
    kind's colour as a dot. Salvaged from uncommitted work in the main

@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import {
   addItemToWall, applyCapture, attachmentName, canonicalUrl, captureToBookmark,
   captureToItem, captureToQuote, clipFrontmatter, itemKey, normalizeTags,
-  safeCaption, safeStem, safeUrl, targetFor, wallPath,
+  safeCaption, safeStem, safeUrl, targetFor, urlsFromText, wallPath,
 } from "../vault/clip.js";
 import { parseInspoBody } from "../vault/inspo.js";
 import { parse } from "../vault/mdfile.js";
@@ -310,4 +310,31 @@ test("bytes are written once, even when the page write has to be retried", async
   const pngs = (await be.listAll()).filter((f) => f.path.endsWith(".png"));
   assert.equal(pngs.length, 2, "one file per clip, not one per attempt");
   assert.equal(seen.length, 2);
+});
+
+test("urlsFromText reads links out of whatever shape the paste arrives in", () => {
+  // A column out of a spreadsheet, a markdown list, and prose all mean the
+  // same thing: these links.
+  assert.deepEqual(
+    urlsFromText("https://a.test/one\nhttps://b.test/two"),
+    ["https://a.test/one", "https://b.test/two"]);
+  assert.deepEqual(
+    urlsFromText("- [Two](https://b.test/two)\n- <https://c.test/three>"),
+    ["https://b.test/two", "https://c.test/three"]);
+  // Sentence punctuation is not part of the address…
+  assert.deepEqual(urlsFromText("see https://a.test/x, then https://b.test/y."),
+    ["https://a.test/x", "https://b.test/y"]);
+  // …but a balanced bracket inside one is (the Wikipedia case).
+  assert.deepEqual(urlsFromText("https://en.wikipedia.org/wiki/Fold_(geology)"),
+    ["https://en.wikipedia.org/wiki/Fold_(geology)"]);
+  assert.deepEqual(urlsFromText("(see https://a.test/x)"), ["https://a.test/x"]);
+  // The same link twice is one link, even dressed differently.
+  assert.deepEqual(
+    urlsFromText("https://a.test/x?utm_source=news\nhttps://a.test/x"),
+    ["https://a.test/x?utm_source=news"]);
+  // Not links.
+  assert.deepEqual(urlsFromText("just some prose about http and https"), []);
+  assert.deepEqual(urlsFromText("ftp://a.test/x file:///etc/passwd"), []);
+  assert.deepEqual(urlsFromText(""), []);
+  assert.deepEqual(urlsFromText(null), []);
 });

@@ -128,6 +128,9 @@ app/                 the whole product — no framework, no bundler, no build st
     brain-text.js    GENERATED mirror of brain/*.md — never edit by hand
     demo-vault.js    GENERATED mirror of demo/ — dynamically imported, never edit
     bridge.js        stands the vault up, exposes window.SB_DATA, loads app.js
+  clipper/           the in-app "download the extension" build — NOT the data layer
+    zip.js           a STORE-only ZIP writer, ~100 lines, no dependency
+    bundle.js        GENERATED mirror of extension/ (base64) — never edit
   vendor/            js dependencies, vendored — markdown-it, Inter, JetBrains Mono
   test/              node --test, no npm install
 extension/           the Chrome clipper — MV3, loaded unpacked, NOT deployed
@@ -161,6 +164,15 @@ scripts/
   sync-extension.mjs   mirrors app/vault/ into extension/vault/ — byte-exact,
                        enforced by app/test/extension.test.js. Run it after
                        ANY change under app/vault/.
+  sync-clipper.mjs     mirrors extension/ into app/clipper/bundle.js, so the
+                       app can hand over a zip of JUST the extension with no
+                       server and no build step. **Runs AFTER sync-extension**
+                       — it packs `extension/`, which sync-extension writes
+                       into. Reverse the order and you ship a bundle holding
+                       the previous data layer.
+                       The bundle lives outside `app/vault/` on purpose: it is
+                       what sync-extension mirrors FROM, so a bundle inside it
+                       would be packed into the next bundle, and the next.
   serve.mjs            dependency-free dev server; see "Running it"
 bin/                 macOS capture scripts that write straight into the vault
 ```
@@ -195,9 +207,11 @@ node scripts/sync-convention.mjs           # after editing brain/*.md
 node scripts/sync-demo.mjs                 # after editing demo/
 node scripts/bump-version.mjs              # before shipping ANY app/ change
 node scripts/sync-extension.mjs            # after editing app/vault/*.js
+node scripts/sync-clipper.mjs              # after that, and after ANY extension/ edit
 node scripts/sync-convention.mjs --check    # what CI runs
 node scripts/sync-demo.mjs --check
 node scripts/sync-extension.mjs --check
+node scripts/sync-clipper.mjs --check
 node scripts/bump-version.mjs --check
 ```
 

@@ -19,7 +19,7 @@
 import { computeDashboard } from "./dashboard.js";
 import { listImages, filterImages, isImagePath } from "./images.js";
 import { isExcalidrawPath, parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
-import { clipFrontmatter } from "./clip.js";
+import { clipFrontmatter, urlsFromText, findByUrl, titleFromUrl } from "./clip.js";
 
 const DEFAULT_LIMIT = 200;
 
@@ -174,6 +174,41 @@ export function noteChrome(page = {}) {
 }
 const FOLDER_FOR = { note: "notes", topic: "topics", canvas: "canvas", inspo: "inspo" };
 
+/* `note` is the fallback bucket: inferKind sends anything it cannot place
+   there, and scaffold stamps the root contract docs `kind: note`. Left
+   unfiltered, the Note list fills with plumbing — raw/ sources (which carry
+   no frontmatter by convention), tags/ role stubs, projects/ folder notes,
+   CONVENTION/AGENTS/CLAUDE — until "your notes" means "everything else".
+   Kind-filtered lists and the nav counts exclude these; All pages, search
+   and wikilinks keep them, because excluded is not the same as gone. */
+/** A title as the tag it would be. One rule, so `createTag` and `orbit` agree. */
+export function tagSlug(name) {
+  return String(name || "").toLowerCase().replace(/#/g, "").trim()
+    .replace(/[/\\:*?"<>|]/g, "").replace(/\s+/g, "-")
+    .replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+const CONTRACT_DOCS = new Set(["CONVENTION.md", "AGENTS.md", "CLAUDE.md"]);
+
+/** The two root pages CONVENTION gives every vault: the catalog and the log. */
+const ROOT_STRUCTURAL = new Set(["index.md", "log.md"]);
+
+/** Never the user's content: the format contract, raw sources, tag stubs. */
+export function isPlumbing(e) {
+  const p = String((e && e.path) || "");
+  return CONTRACT_DOCS.has(p) || p.startsWith("raw/") || p.startsWith("tags/");
+}
+
+/** `projects/X/X.md` — the folder note that fronts the Projects screen. */
+export function isProjectNote(e) {
+  const m = String((e && e.path) || "").match(/^projects\/([^/]+)\/([^/]+)\.md$/);
+  return !!m && m[1] === m[2];
+}
+
+export function isSystemEntry(e) {
+  return isPlumbing(e) || isProjectNote(e);
+}
+
 /**
  * JSON Canvas nodes → flat items.
  *
@@ -286,6 +321,8 @@ export class Data {
 
   pages({ q = "", kind = "", tag = "", mention = "", limit = DEFAULT_LIMIT } = {}) {
     let items = this.v.list();
+    // A kind list answers "show me my Xs" — system entries are nobody's Xs.
+    if (kind) items = items.filter((e) => !isSystemEntry(e));
     // `bookmark` is a view, not a storage kind: a note with a url. The file
     // still says `kind: note`, so Obsidian and the convention see nothing new.
     if (kind === "bookmark") items = items.filter((e) => e.kind === "note" && e.url != null);
@@ -382,6 +419,10 @@ export class Data {
   counts() {
     const counts = {};
     for (const e of this.v.list()) {
+      // The nav count must match the list it opens, so the same system-entry
+      // exclusion applies here — a row saying "Note 94" over a list of 31 is
+      // the sidebar lying.
+      if (isSystemEntry(e)) continue;
       // Board / Canvas split disjointly (see the pages() filter above);
       // bookmark stays inclusive — on disk a bookmark IS a note.
       const k = e.kind === "canvas" && isExcalidrawPath(e.path) ? "drawing" : e.kind;
@@ -420,9 +461,7 @@ export class Data {
    * tag anyone meant.
    */
   async createTag(name) {
-    const tag = String(name || "").toLowerCase().replace(/#/g, "").trim()
-      .replace(/[/\\:*?"<>|]/g, "").replace(/\s+/g, "-")
-      .replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+    const tag = tagSlug(name);
     if (!tag) return { ok: false, reason: "empty", message: "a tag needs a name" };
     if (this.tags().tags.some((t) => t.tag.toLowerCase() === tag)) {
       return { ok: false, reason: "exists", message: `#${tag} already exists` };
@@ -533,6 +572,43 @@ export class Data {
     return paths;
   }
 
+  /**
+   * Paste → bookmarks. The whole point is that one gesture is the whole
+   * gesture: no picker, no blank page, no title to invent.
+   *
+   * Takes arbitrary text — a bare link, a column of them, a markdown list, a
+   * paragraph with links in it — and saves every link it finds that is not
+   * already saved.
+   *
+   * Dedupe is by CANONICAL url (tracking params stripped), because the same
+   * article arrives with a different `?utm_source=` every time and two cards
+   * for one page is exactly the duplication the vault is meant to prevent.
+   * A duplicate is REPORTED, not silently dropped: the caller shows what
+   * already existed so the paste does not look like it failed.
+   *
+   * Titles come from the URL alone. Nothing here fetches the page — the app
+   * makes no network requests at all, by contract; the clipper is what gets
+   * a real title and an `og_image`, because it runs inside the page.
+   */
+  async addBookmarks(text, { tags = [], project = null } = {}) {
+    const urls = urlsFromText(text);
+    const added = [];
+    const duplicates = [];
+    for (const url of urls) {
+      const existing = findByUrl(this.v, url);
+      if (existing) { duplicates.push(pageOut(existing)); continue; }
+      const p = await this.createPage({
+        kind: "bookmark", url, title: titleFromUrl(url),
+        tags, ...(project && { project }),
+      });
+      // A refusal (a name collision the freeStem walk could not resolve, a
+      // read-only folder) must not abort the rest of the paste — twelve links
+      // where one fails should still save eleven.
+      if (p && p.id) added.push(p);
+    }
+    return { added, duplicates, found: urls.length };
+  }
+
   /** Pages that link to this one. Computed from the index, not stored. */
   backlinks(id) {
     const target = this.v.index.get(id);
@@ -542,6 +618,50 @@ export class Data {
       .filter((e) => e.id !== id && (e.mentions || []).some((m) => m.toLowerCase() === title))
       .map((e) => pageOut(e));
     return { items, count: items.length };
+  }
+
+  /**
+   * A topic's orbit: everything that says its name.
+   *
+   * A project OWNS its pages — they are files in its folder. A topic ATTRACTS
+   * them, and owns nothing. That is the whole difference between the two, and
+   * it is why "put these notes in a topic" never moves a file: a page lives in
+   * one project and can orbit any number of topics.
+   *
+   * Two ways a page says the name, and both count because both are how the
+   * vault already works: a `[[wikilink]]` (a mention) and the matching tag.
+   * Deliberately NOT "every tag this topic carries" — a topic tagged #current
+   * would then swallow everything else tagged #current, and the orbit would
+   * stop meaning anything.
+   *
+   * Derived live from the index on every call. Nothing is stored, so the file
+   * on disk stays a plain topic page and Obsidian sees no new syntax.
+   */
+  orbit(id) {
+    const target = this.v.index.get(id);
+    if (!target) return { items: [], count: 0, tag: null };
+    const title = (target.title || "").toLowerCase();
+    const tag = tagSlug(target.title || "");
+    const seen = new Map();
+    for (const e of this.v.list()) {
+      // isPlumbing, not isSystemEntry: a PROJECT that cites this topic is the
+      // most interesting thing in the orbit — it is the difference between
+      // owning and attracting, made visible. Only true plumbing is dropped…
+      if (e.id === id || isPlumbing(e)) continue;
+      // …plus the catalog and the log. `index` links to every page in the
+      // vault by definition, so its presence proves nothing about this idea,
+      // and an orbit is only worth reading if every row is evidence.
+      if (ROOT_STRUCTURAL.has(e.path)) continue;
+      const mentioned = (e.mentions || []).some((m) => m.toLowerCase() === title);
+      const tagged = tag && (e.tags || []).some((t) => tagSlug(t) === tag);
+      if (!mentioned && !tagged) continue;
+      // `via` is what lets the UI say WHY a page is in the orbit — a link you
+      // wrote reads differently from a tag you sprinkled.
+      seen.set(e.id, { ...pageOut(e), via: mentioned && tagged ? "both" : (mentioned ? "link" : "tag") });
+    }
+    const items = [...seen.values()].sort((a, b) =>
+      String(b.updated || "").localeCompare(String(a.updated || "")));
+    return { items, count: items.length, tag };
   }
 
   /** Markdown → HTML, locally (S9). */

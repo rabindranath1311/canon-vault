@@ -29,6 +29,9 @@ jobs:
       - name: app/vault and extension/vault are in sync
         run: node scripts/sync-extension.mjs --check
 
+      - name: extension/ and app/clipper/bundle.js are in sync
+        run: node scripts/sync-clipper.mjs --check
+
       - name: The two cache-bust markers are coherent
         run: node scripts/bump-version.mjs --check
 

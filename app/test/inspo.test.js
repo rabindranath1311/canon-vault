@@ -95,3 +95,57 @@ test("canvas items migrate: images and links carry over, text nodes do not", () 
   assert.equal(items[0].image, "attachments/a.png");
   assert.equal(items[1].url, "https://e.com/x");
 });
+
+test("an item carries a note, and it round-trips as an ordinary blockquote", () => {
+  // The heading is its own block, so a blank line follows it — that is the
+  // canonical shape the serializer has always written.
+  const body = [
+    "## Endpapers",
+    "",
+    "![[attachments/a.png]]",
+    "Indigo and gilt",
+    "> Works because the marbling is low-contrast.",
+    "> Reach for it when a cover needs depth without a second colour.",
+    "#marbled #indigo",
+    "https://example.test/a",
+  ].join("\n");
+  const m = parseInspoBody(body);
+  const it = m.groups[1].items[0];
+  assert.equal(it.caption, "Indigo and gilt");
+  assert.equal(it.note,
+    "Works because the marbling is low-contrast.\n"
+    + "Reach for it when a cover needs depth without a second colour.",
+    "two thoughts stay two lines");
+  assert.deepEqual(it.tags, ["marbled", "indigo"]);
+  assert.equal(it.url, "https://example.test/a");
+  // Byte-identical back out, so an Obsidian edit and an app edit agree.
+  assert.equal(serializeInspoBody(m).trim(), body);
+});
+
+test("a note is not mistaken for a caption, a tag line or a source", () => {
+  const m = parseInspoBody([
+    "![[a.png]]",
+    "> https://quoted.test/x is discussed here",
+    "> #hashtags inside a quote are prose",
+  ].join("\n"));
+  const it = m.groups[0].items[0];
+  assert.equal(it.url, null, "a link inside the note is not the item's source");
+  assert.deepEqual(it.tags, [], "hashes inside the note are not the item's tags");
+  assert.equal(it.caption, "");
+  assert.match(it.note, /quoted\.test/);
+});
+
+test("a wikilink in a caption or note survives the round trip", () => {
+  // This is how one wall cites another — the vault harvests the mention from
+  // the body, so no "related" field has to exist in this model.
+  const body = ["![[a.png]]", "See [[Quire Structures]]", "> Pairs with [[Bindery]]."].join("\n");
+  const m = parseInspoBody(body);
+  assert.equal(m.groups[0].items[0].caption, "See [[Quire Structures]]");
+  assert.match(m.groups[0].items[0].note, /\[\[Bindery\]\]/);
+  assert.equal(serializeInspoBody(m).trim(), body);
+});
+
+test("an item with no note serializes exactly as it did before", () => {
+  const body = ["![[a.png]]", "Just a caption", "#one"].join("\n");
+  assert.equal(serializeInspoBody(parseInspoBody(body)).trim(), body);
+});

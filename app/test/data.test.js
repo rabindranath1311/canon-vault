@@ -35,6 +35,90 @@ test("6.18 counts match list() per kind", async () => {
   assert.deepEqual((await d.counts()).counts, { note: 3, topic: 1, canvas: 1, inspo: 1 });
 });
 
+test("kind lists and counts exclude system entries; All pages keeps them", async () => {
+  const files = {
+    "notes/Alpha.md": md(P("01AAAAAAAAAAAAAAAAAAAAAAAA", { title: "Alpha" }), "a real note"),
+    // The fallback bucket's usual suspects: a raw source (no frontmatter, per
+    // CONVENTION), a tag stub, the scaffolded contract docs, and a project's
+    // folder note. All of them index as `note`.
+    "raw/clipped-article.md": "# Clipped\n\nno frontmatter at all",
+    "tags/bookbinding.md": md(P("tag-bookbinding", { title: "bookbinding" }), ""),
+    "CONVENTION.md": md(P("convention", { title: "CONVENTION" }), "the format"),
+    "AGENTS.md": md(P("agents", { title: "AGENTS" }), "the contract"),
+    "CLAUDE.md": md(P("claude-pointer", { title: "CLAUDE" }), "see AGENTS"),
+    "projects/Kiln/Kiln.md": md(P("project-kiln", { title: "Kiln" }), "the folder note"),
+    // …but a page merely INSIDE a project is the user's, and stays listed.
+    "projects/Kiln/Firing Log.md": md(P("01FFFFFFFFFFFFFFFFFFFFFFFF", { title: "Firing Log" }), "cone 6"),
+  };
+  const v = new Vault(new MemoryBackend(files), { now: () => TS(30) });
+  await v.buildIndex();
+  const d = new Data(v, { now: () => new Date(TS(30)) });
+  const noteTitles = (await d.pages({ kind: "note" })).items.map((p) => p.title).sort();
+  assert.deepEqual(noteTitles, ["Alpha", "Firing Log"],
+    "the Note list is the user's notes, not the vault's plumbing");
+  assert.equal((await d.counts()).counts.note, 2,
+    "the nav count matches the list it opens");
+  const all = (await d.pages({})).items;
+  assert.ok(all.some((p) => p.path === "raw/clipped-article.md"),
+    "excluded from the kind list is not the same as gone — All pages keeps it");
+  assert.ok(all.some((p) => p.path === "CONVENTION.md"));
+});
+
+test("orbit() gathers what says a topic's name, by link and by tag", async () => {
+  const files = {
+    "topics/Quire Structures.md": md(P("01QQQQQQQQQQQQQQQQQQQQQQQQ", { title: "Quire Structures", kind: "topic" }), "the fold is the unit"),
+    "notes/Linked.md": md(P("01LLLLLLLLLLLLLLLLLLLLLLLL", { title: "Linked", updated: TS(28) }), "see [[Quire Structures]]"),
+    "notes/Tagged.md": md(P("01TTTTTTTTTTTTTTTTTTTTTTTT", { title: "Tagged", tags: ["quire-structures"], updated: TS(27) }), "no link, just the tag"),
+    "notes/Both.md": md(P("01OOOOOOOOOOOOOOOOOOOOOOOO", { title: "Both", tags: ["quire-structures"], updated: TS(26) }), "[[Quire Structures]] and tagged"),
+    "notes/Unrelated.md": md(P("01UUUUUUUUUUUUUUUUUUUUUUUU", { title: "Unrelated", tags: ["bookbinding"] }), "about something else"),
+    // A topic tagged #current must not swallow everything else tagged
+    // #current — the orbit is the topic's OWN name, not every tag it carries.
+    "notes/AlsoCurrent.md": md(P("01CCCCCCCCCCCCCCCCCCCCCCCC", { title: "Also Current", tags: ["current"] }), "unrelated but shares a tag"),
+  };
+  const v = new Vault(new MemoryBackend(files), { now: () => TS(30) });
+  await v.buildIndex();
+  const d = new Data(v, { now: () => new Date(TS(30)) });
+  const { items, tag } = d.orbit("01QQQQQQQQQQQQQQQQQQQQQQQQ");
+  assert.equal(tag, "quire-structures");
+  assert.deepEqual(items.map((p) => [p.title, p.via]), [
+    ["Linked", "link"], ["Tagged", "tag"], ["Both", "both"],
+  ], "newest first, and each says why it is here");
+  // The topic itself is never in its own orbit.
+  assert.ok(!items.some((p) => p.id === "01QQQQQQQQQQQQQQQQQQQQQQQQ"));
+});
+
+test("addBookmarks: one paste, many links, no duplicates", async () => {
+  const d = await fixture();
+  const r = await d.addBookmarks(
+    "https://a.test/one\nhttps://b.test/two-thing\nnot a link at all");
+  assert.equal(r.found, 2);
+  assert.equal(r.added.length, 2);
+  assert.deepEqual(r.duplicates, []);
+  // Stored the way CONVENTION says a bookmark is stored: a note carrying url.
+  const saved = d.v.list().find((e) => e.url === "https://a.test/one");
+  assert.equal(saved.kind, "note", "a bookmark is a note with a url on disk");
+  assert.ok(saved.path.startsWith("notes/"));
+  // Titled from the url, because nothing here may fetch the page.
+  assert.equal(r.added[1].title, "two thing — b.test");
+  // It shows up under the bookmark facet, which is the list the box sits on.
+  assert.equal((await d.pages({ kind: "bookmark" })).count, 2);
+
+  // The same links again — reported, not saved twice, tracking params and all.
+  const again = await d.addBookmarks("https://a.test/one?utm_source=x https://c.test/new");
+  assert.equal(again.added.length, 1);
+  assert.equal(again.duplicates.length, 1);
+  assert.equal(again.duplicates[0].title, "one — a.test");
+  assert.equal((await d.pages({ kind: "bookmark" })).count, 3);
+});
+
+test("addBookmarks: nothing to save is not an error", async () => {
+  const d = await fixture();
+  const r = await d.addBookmarks("just some prose");
+  assert.deepEqual(r, { added: [], duplicates: [], found: 0 });
+  const tagged = await d.addBookmarks("https://x.test/a", { tags: ["reading"] });
+  assert.deepEqual(tagged.added[0].tags, ["reading"]);
+});
+
 test("6.18 tags aggregate client-side, inline tags included", async () => {
   const d = await fixture();
   const tags = (await d.tags()).tags;

@@ -48,14 +48,18 @@ function h(tag, props, ...kids) {
           });
         }
       }
+      // onChange means `input` here on purpose: every field in this app wants
+      // per-keystroke updates, not the native change-on-commit.
       else if (key === 'onInput' || key === 'onChange') el.addEventListener('input', val);
-      else if (key === 'onKeyDown') el.addEventListener('keydown', val);
-      else if (key === 'onMouseDown') el.addEventListener('mousedown', val);
-      else if (key === 'onMouseEnter') el.addEventListener('mouseenter', val);
-      else if (key === 'onMouseLeave') el.addEventListener('mouseleave', val);
-      else if (key === 'onDragOver') el.addEventListener('dragover', val);
-      else if (key === 'onDragLeave') el.addEventListener('dragleave', val);
-      else if (key === 'onDrop') el.addEventListener('drop', val);
+      /* Everything else spelled `onSomething` binds the lowercase event.
+         It used to be a list of eight named cases falling through to
+         setAttribute, so an unlisted one — `onPaste`, `onBlur` — did not
+         throw, did not warn, and did not work: it stringified the function
+         into an HTML attribute and the handler simply never ran. A factory
+         that silently drops a listener is a bug generator. */
+      else if (/^on[A-Z]/.test(key) && typeof val === 'function') {
+        el.addEventListener(key.slice(2).toLowerCase(), val);
+      }
       else el.setAttribute(key, val);
     }
   }
@@ -507,6 +511,114 @@ function setTagColor(tag, idx) {
   _tagColorsCache = null;
 }
 
+/* A tag's emoji, if it has been given one.
+   Rides the same store as its colour and for the same reason: it is how the
+   tag LOOKS, not what the tag IS. The vault's copy of a tag is the word in
+   `#tag` and the page in `tags/`, and neither gains a decoration field — an
+   Obsidian user or an agent reading the file sees exactly what it saw
+   before. Two clients can disagree about a colour or a glyph with no
+   consequence; they cannot disagree about the word. */
+let _tagEmojiCache = null;
+function tagEmojiMap() {
+  if (!_tagEmojiCache) _tagEmojiCache = loadPrefs().tagEmoji || {};
+  return _tagEmojiCache;
+}
+function tagEmoji(t) {
+  return tagEmojiMap()[String(t).toLowerCase()] || null;
+}
+function setTagEmoji(tag, glyph) {
+  const p = loadPrefs();
+  const next = { ...(p.tagEmoji || {}) };
+  const key = String(tag).toLowerCase();
+  // Only the first grapheme: a chip has room for one mark, and a pasted
+  // string of six would blow the row height out.
+  const g = [...String(glyph || '').trim()][0] || '';
+  if (!g) delete next[key]; else next[key] = g;
+  p.tagEmoji = next;
+  savePrefs(p);
+  _tagEmojiCache = null;
+}
+
+/* A tag chip: pill, sans, its own mark, and no × unless removal is offered.
+   It was a 3px-radius box in JetBrains Mono with a permanent cross — mono
+   said "machine text" about a word the user chose, and a delete control on
+   every chip made a row of labels read as a row of buttons. */
+function TagChip(t, opts = {}) {
+  const { onClick = null, onRemove = null, extra = '', on = false } = opts;
+  const glyph = tagEmoji(t);
+  const chip = h('span', {
+    className: 'tag-chip ' + tagHue(t) + (onRemove ? ' rm' : '')
+      + (on ? ' is-on' : '') + (extra ? ' ' + extra : ''),
+  },
+    // The mark: the tag's emoji if it has one, otherwise a dot in its hue.
+    // Never nothing — the chips line up on their glyph either way.
+    glyph ? h('span', { className: 'tag-chip-e' }, glyph)
+          : h('span', { className: 'tag-chip-d' }),
+    h('span', { className: 'tag-chip-t' }, t));
+  if (onClick) {
+    chip.classList.add('tag-chip-click');
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.tag-chip-x')) return;
+      onClick(e);
+    });
+  }
+  if (onRemove) {
+    chip.appendChild(h('button', {
+      className: 'tag-chip-x', title: 'Remove #' + t, 'aria-label': 'Remove #' + t,
+      onClick: (e) => { e.stopPropagation(); onRemove(e); },
+    }, '×'));
+  }
+  return chip;
+}
+
+/* A mention, resolved for display.
+   `page.mentions` stores whatever links a page: a title, a path, or — when
+   the picker adds one — the target's id, which is the only form that
+   survives a rename. An id is correct to STORE and unreadable to SHOW, and
+   the header was showing it: a chip reading `01KVNOTJG0K41729ADK1…` next to
+   five real names. The stored value is untouched; only the label changes. */
+function resolveMention(mn) {
+  const raw = String(mn || '');
+  const idx = _pageIndexCache || {};
+  const byId = idx[raw];
+  if (byId) return { label: byId.title, id: raw, kind: byId.kind };
+  // Not an id: a title or a path. Show the last segment without its
+  // extension, which is what the link would have been written as.
+  const stem = raw.split('/').pop().replace(/\.(md|canvas)$/i, '');
+  const hit = Object.entries(idx)
+    .find(([, v]) => String(v.title).toLowerCase() === stem.toLowerCase());
+  return { label: stem, id: hit ? hit[0] : null, kind: hit ? hit[1].kind : null };
+}
+
+/* A mention chip: the same pill as a tag, wearing its target's kind instead
+   of a hue. The two were different shapes in different fonts — a mono box
+   with a permanent × beside a sans pill — which made one row of links read
+   as two kinds of thing. */
+function MentionChip(mn, opts = {}) {
+  const { onClick = null, onRemove = null } = opts;
+  const t = resolveMention(mn);
+  const m = t.kind ? (KIND_META[t.kind] || {}) : {};
+  const chip = h('span', { className: 'mention-chip' + (onRemove ? ' rm' : ''), title: String(mn) },
+    h('span', { className: 'mention-chip-i', style: m.color ? { color: m.color } : null },
+      icon(m.icon || 'link-2')),
+    h('span', { className: 'mention-chip-t' }, t.label));
+  if (onClick && t.id) {
+    chip.classList.add('mention-chip-click');
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.mention-chip-x')) return;
+      onClick(e);
+    });
+  }
+  if (onRemove) {
+    chip.appendChild(h('button', {
+      className: 'mention-chip-x', title: 'Remove this link',
+      'aria-label': 'Remove link ' + t.label,
+      onClick: (e) => { e.stopPropagation(); onRemove(e); },
+    }, '×'));
+  }
+  return chip;
+}
+
 /* A tag's colour: the one you picked, or failing that one derived from its
    name — so the same tag wears the same hue in a chip row, the cloud and
    inline prose, with no registry to keep in sync. A hash collision just means
@@ -538,6 +650,195 @@ async function searchMentions(q, exclude) {
     const ex = new Set(exclude || []);
     return (r.items || []).filter((it) => !ex.has(it.id));
   } catch (_) { return []; }
+}
+
+/* ── One picker, for tags and for pages ────────────────────────────────
+   Tagging used to look different in every place it happened: an inline
+   field with its own dropdown in the page header, a bare `<input list=…>`
+   on an inspo card, and a space-separated `#a #b` text box in Arrange.
+   Three behaviours, three keyboard contracts, and only one of them could
+   create a tag that did not exist yet.
+
+   This is the single one. It is the shape the tools that do this well use
+   — Jira's label field, Notion's multi-select: a small panel anchored to
+   whatever you clicked, a search box already focused, a list you can walk
+   with the arrow keys, and a "Create" row that is a REAL row in that list
+   rather than a special case you can only reach with the mouse.
+
+   It picks tags or pages depending on `search`; everything else — layout,
+   keys, dismissal, the create affordance — is identical, because to the
+   person using it the two are the same gesture aimed at different things.
+
+   Returns a close() so a caller can dismiss it (the expanded card does). */
+function openPicker(anchor, opts) {
+  const {
+    placeholder = 'Search…', search, onPick, onCreate = null,
+    createLabel = (t) => `Create “${t}”`, hint = null, multi = true,
+  } = opts;
+
+  document.querySelectorAll('.pk-pop').forEach((n) => n.__close && n.__close());
+
+  const pop = h('div', { className: 'pk-pop', role: 'dialog' });
+  const input = h('input', {
+    className: 'pk-input', placeholder, autocomplete: 'off', spellcheck: 'false',
+    'aria-label': placeholder,
+  });
+  const list = h('div', { className: 'pk-list', role: 'listbox' });
+  pop.append(h('div', { className: 'pk-search' }, icon('search'), input), list);
+  if (hint) pop.appendChild(h('div', { className: 'pk-hint' }, hint));
+
+  let rows = [];          // [{ kind:'item'|'create', row?, text? }]
+  let hi = 0;
+  let timer = null;
+
+  const close = () => {
+    document.removeEventListener('mousedown', onDocDown, true);
+    document.removeEventListener('keydown', onDocKey, true);
+    window.removeEventListener('resize', place);
+    window.removeEventListener('scroll', place, true);
+    pop.remove();
+    if (opts.onClose) opts.onClose();
+  };
+  pop.__close = close;
+
+  /* Anchored to the trigger, flipped up when there is no room below, and
+     nudged back inside the viewport horizontally. Fixed-position so it is
+     not clipped by the `overflow: hidden` on .page-main. */
+  function place() {
+    const r = anchor.getBoundingClientRect();
+    const w = 260, maxH = 320;
+    let left = Math.min(r.left, window.innerWidth - w - 12);
+    left = Math.max(12, left);
+    const below = window.innerHeight - r.bottom;
+    pop.style.width = w + 'px';
+    pop.style.left = left + 'px';
+    if (below < 200 && r.top > below) {
+      pop.style.top = 'auto';
+      pop.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+      pop.style.maxHeight = Math.min(maxH, r.top - 16) + 'px';
+    } else {
+      pop.style.bottom = 'auto';
+      pop.style.top = (r.bottom + 6) + 'px';
+      pop.style.maxHeight = Math.min(maxH, below - 16) + 'px';
+    }
+  }
+
+  function paintHi() {
+    [...list.children].forEach((el, i) => {
+      const on = i === hi;
+      el.classList.toggle('is-hl', on);
+      el.setAttribute('aria-selected', String(on));
+      if (on && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  async function refresh() {
+    const q = input.value.trim();
+    let items = [];
+    try { items = (await search(q)) || []; } catch (_) { items = []; }
+    rows = items.map((row) => ({ kind: 'item', row }));
+    // The create row is a row. Reachable by arrow key, highlighted like any
+    // other, and only offered when it would not duplicate an existing one.
+    if (onCreate && q && !items.some((i) => String(i.label).toLowerCase() === q.toLowerCase())) {
+      rows.push({ kind: 'create', text: q });
+    }
+    hi = rows.length ? 0 : -1;
+    clear(list);
+    if (!rows.length) {
+      list.appendChild(h('div', { className: 'pk-empty' },
+        q ? 'Nothing matches' : 'Type to search'));
+      return;
+    }
+    rows.forEach((r, i) => {
+      const el = r.kind === 'create'
+        ? h('div', { className: 'pk-row pk-row-create', role: 'option' },
+            h('span', { className: 'pk-row-g' }, icon('plus')),
+            h('span', { className: 'pk-row-l' }, createLabel(r.text)))
+        : h('div', { className: 'pk-row', role: 'option' },
+            r.row.swatch
+              ? h('span', { className: 'pk-swatch ' + r.row.swatch })
+              : h('span', { className: 'pk-row-g', style: r.row.color ? { color: r.row.color } : null },
+                  icon(r.row.icon || 'tag')),
+            h('span', { className: 'pk-row-l' }, markedText(r.row.label, q)),
+            r.row.hint ? h('span', { className: 'pk-row-h' }, r.row.hint) : null);
+      el.addEventListener('mousedown', (e) => { e.preventDefault(); choose(i); });
+      el.addEventListener('mouseenter', () => { hi = i; paintHi(); });
+      list.appendChild(el);
+    });
+    paintHi();
+    place();
+  }
+
+  async function choose(i) {
+    const r = rows[i];
+    if (!r) return;
+    if (r.kind === 'create') { await onCreate(r.text); }
+    else { await onPick(r.row); }
+    if (!multi) { close(); return; }
+    input.value = '';
+    input.focus();
+    refresh();
+  }
+
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refresh, 90); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (rows.length) { hi = (hi + 1) % rows.length; paintHi(); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (rows.length) { hi = (hi - 1 + rows.length) % rows.length; paintHi(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(hi); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+  });
+
+  const onDocDown = (e) => { if (!pop.contains(e.target) && e.target !== anchor) close(); };
+  const onDocKey = (e) => { if (e.key === 'Escape' && document.contains(pop)) close(); };
+  document.addEventListener('mousedown', onDocDown, true);
+  document.addEventListener('keydown', onDocKey, true);
+  window.addEventListener('resize', place);
+  window.addEventListener('scroll', place, true);
+
+  document.body.appendChild(pop);
+  place();
+  input.focus();
+  refresh();
+  return close;
+}
+
+/** The trigger that opens a picker. One shape wherever something is added to
+ *  a chip row, so "add a tag" and "link a page" are visibly the same move. */
+function chipAdd(glyph, label, open) {
+  const btn = h('button', {
+    className: 'chip-add', title: label, 'aria-label': label,
+    onClick: (e) => { e.stopPropagation(); open(btn); },
+  }, icon(glyph), h('span', { className: 'chip-add-l' }, label));
+  return btn;
+}
+
+/** Rows for the tag picker: every tag in the vault, minus the ones already on. */
+function tagRows(exclude) {
+  const ex = new Set((exclude || []).map((t) => String(t).toLowerCase()));
+  return async (q) => {
+    let all = [];
+    try { all = (SB.data().tags().tags || []); } catch (_) {}
+    const needle = String(q || '').toLowerCase();
+    return all
+      .filter((t) => !ex.has(t.tag.toLowerCase()) && t.tag.toLowerCase().includes(needle))
+      .slice(0, 40)
+      .map((t) => ({ key: t.tag, label: t.tag, swatch: tagHue(t.tag),
+                     hint: t.count ? String(t.count) : null }));
+  };
+}
+
+/** Rows for the page picker — the same shell, pages instead of tags. */
+function pageRows(exclude) {
+  return async (q) => {
+    const ex = new Set(exclude || []);
+    let items = [];
+    try { items = ((await SB.data().suggestMentions(q || '')).items || []); } catch (_) {}
+    return items.filter((it) => !ex.has(it.id)).slice(0, 40).map((it) => ({
+      key: it.id, label: it.title, id: it.id,
+      icon: (metaForPage(it).icon || 'file-text'),
+      color: metaForPage(it).color, hint: metaForPage(it).label,
+    }));
+  };
 }
 
 function AutocompleteInput(opts) {
@@ -1069,6 +1370,11 @@ const NAV = [
   ] },
   { group: 'system', label: 'system', items: [
     { id: 'about-me', label: 'About me', icon: 'circle-user' },
+    /* The clipper is a thing you install, not a preference, so it gets a row
+       of its own — buried in Settings it was unfindable. It has no route of
+       its own: `focus` sends you to Settings and flashes the panel there,
+       rather than splitting one explanation across two screens. */
+    { id: 'settings', focus: 'clipper', label: 'Clipper', icon: 'download' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
   ] },
 ];
@@ -1396,13 +1702,17 @@ function Sidebar(route, setRoute, kindCounts, onCreate, offline, lastSynced) {
           const meta = it.kind ? KIND_META[it.kind] : null;
           return h('div', {
             className: `nav-item ${g.group === 'kinds' ? 'nav-cat' : ''}`,
-            'aria-current': route === it.id ? 'true' : 'false',
+            /* `!it.focus` — Clipper and Settings share a route, and without
+               this both rows light up whenever either is open. */
+            'aria-current': route === it.id && !it.focus ? 'true' : 'false',
             // A stable handle for the tour to point at. Keyed on the route id
             // rather than the label, so translating or renaming a row cannot
             // silently unanchor a step.
-            'data-tour': 'nav:' + it.id,
+            'data-tour': 'nav:' + (it.focus || it.id),
             onClick: (e) => {
               if (it.href) { window.open(it.href, '_blank', 'noopener,noreferrer'); return; }
+              // Set before the route change: the screen reads it while rendering.
+              if (it.focus) app._settingsFocus = it.focus;
               if (e.metaKey || e.ctrlKey) { newTab(it.id, null, { switchTo: true }); return; }
               setRoute(it.id);
             },
@@ -1472,6 +1782,22 @@ function ThemePicker() {
    be one: the extension ships with the repo and not with the deploy, so a
    hosted instance can point at it but cannot hand it over. */
 const CLIPPER_HELP = 'https://github.com/rabindranath1311/canon-vault/tree/main/extension';
+/* Why not one click? Chrome killed inline installation in 2018. The only
+   one-click path left is a Web Store listing, and a self-hosted `.crx` is
+   enterprise-policy-only. So the honest offer is: hand over the files, and
+   be very clear about the three steps that follow.
+
+   The zip is built HERE, in the page, from a mirror of `extension/` (see
+   scripts/sync-clipper.mjs). GitHub can only zip a whole repository, which
+   is the app and the docs and the demo vault as well — everything except
+   what was asked for. A release asset would be a second artefact to keep in
+   step with the code. Building it locally means the download is exactly the
+   `extension/` of the deploy you are standing in, and it still works with
+   the network off. */
+const CLIPPER_EXT_PAGE = 'chrome://extensions';
+/* The one folder name the user has to recognise twice — in their downloads
+   and in Chrome's folder picker — so it is defined once. */
+const CLIPPER_DIR = 'canon-vault-clipper';
 
 /* The other half of onboarding.
  *
@@ -2018,7 +2344,7 @@ function V2Home(state, onOpen, onCreate, onKind) {
               h('span', { className: 'pages-title' }, r.title),
               showVia ? h('span', { className: 'recent-via' }, r.via) : null,
               h('span', { className: 'pages-tags' },
-                (r.tags || []).slice(0, 2).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
+                (r.tags || []).slice(0, 2).map((t) => TagChip(t))),
               h('span', { className: 'pages-when' }, fmtDate(r.updated))))),
 
       // ── Activity buckets (replaces v1's "memory tiers") ──
@@ -2262,7 +2588,7 @@ function ListView_Board(pages, onOpen) {
           h('span', { className: 'board-card-line' },
             firstLineOf(p.excerpt || '', 60) || (drawing ? 'Excalidraw' : 'JSON Canvas')),
           h('span', { className: 'board-card-tags' },
-            (p.tags || []).slice(0, 3).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t)))));
+            (p.tags || []).slice(0, 3).map((t) => TagChip(t)))));
     }));
 }
 
@@ -2301,7 +2627,7 @@ function ListView_List(pages, onOpen) {
         h('div', { className: 'list-row-snippet' }, firstLineOf(p.body))),
       h('div', { className: 'list-row-meta' },
         h('span', { className: 'list-row-tags' },
-          (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
+          (p.tags || []).slice(0, 4).map((t) => TagChip(t))),
         h('span', { className: 'list-row-when' }, fmtDate(p.updated))));
     rows.push(row);
     if (depth < SUBPAGE_MAX_DEPTH - 1) {
@@ -2310,6 +2636,34 @@ function ListView_List(pages, onOpen) {
   }
   roots.forEach((r) => renderRow(r, 0));
   return h('div', { className: 'pages-list pages-tree' }, rows);
+}
+
+/* Topics list as cards, not rows.
+   A topic's identity is its gravity — how much orbits it, how recently you
+   argued with it — and a table column of dates says none of that. The tree
+   view it used to share with markdown pages was also modelling the wrong
+   thing: topics nest by reference, not by parent, so the indent was drawing
+   a hierarchy that is not how they relate. */
+function ListView_TopicCards(pages, onOpen) {
+  const orbitOf = (p) => {
+    try { return SB.data().orbit(p.id).count; } catch (_) { return 0; }
+  };
+  return h('div', { className: 'topic-cards' },
+    pages.map((p) => {
+      const n = orbitOf(p);
+      return h('div', { className: 'topic-card', onClick: () => onOpen(p.id) },
+        h('div', { className: 'topic-card-hd' },
+          h('span', { className: 'topic-card-t' }, p.title || '(untitled)'),
+          h('span', { className: 'topic-card-when' }, fmtDate(p.updated))),
+        h('div', { className: 'topic-card-thesis' }, firstLineOf(p.body) || 'No position written yet.'),
+        h('div', { className: 'topic-card-ft' },
+          // The gravity, stated. Zero is not a failure — it is a topic you
+          // have not connected yet, and saying so is the nudge.
+          h('span', { className: 'topic-card-orb' + (n ? '' : ' is-zero') },
+            n ? nOf(n, 'page') + ' in orbit' : 'nothing in orbit yet'),
+          h('span', { className: 'topic-card-tags' },
+            (p.tags || []).slice(0, 3).map((t) => TagChip(t)))));
+    }));
 }
 
 function ListView_Bento(pages, onOpen) {
@@ -2331,19 +2685,37 @@ function ListView_Bento(pages, onOpen) {
     }));
 }
 
+/* The page list.
+   It was a four-column table: a 110px KIND column holding one 14px glyph, a
+   title, a 220px TAGS column that is empty on most rows, and a date. Two of
+   the four columns were usually blank, so a list of eight notes was mostly
+   white space with a word in it — and the row said nothing about the page
+   beyond its name, which is the one thing you already knew.
+
+   A row is a thing now, not a record: the kind as a coloured glyph against
+   the title rather than a column of its own, and the page's first line under
+   it, which is what actually tells two notes apart. Tags and the date sit
+   right, quiet. No header band — with the kind inline there is nothing left
+   to label, and the strip above already says what you are looking at. */
 function ListView_Table(pages, onOpen) {
   return h('div', { className: 'pages-table' },
-    h('div', { className: 'pages-th' },
-      h('span', null, 'Kind'),
-      h('span', null, 'Title'),
-      h('span', null, 'Tags'),
-      h('span', null, 'Updated')),
-    pages.map((p) => h('div', { className: 'pages-row', onClick: () => onOpen(p.id) },
-      h('span', null, KindChip(p)),
-      h('span', { className: 'pages-title' }, p.title || '(untitled)'),
-      h('span', { className: 'pages-tags' },
-        (p.tags || []).slice(0, 4).map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t))),
-      h('span', { className: 'pages-when' }, fmtDate(p.updated)))));
+    pages.map((p) => {
+      const m = metaForPage(p);
+      // plainOf, not the raw body: an excerpt is a preview of the PAGE, and
+      // the raw form put "## Coptic **lies flat** > A tool that…" in a row
+      // whose whole job is to be scannable.
+      const snip = firstLineOf(plainOf(p.body));
+      return h('div', { className: 'pages-row', onClick: () => onOpen(p.id) },
+        h('span', { className: 'row-g', style: { color: m.color || 'var(--muted)' },
+                    title: m.label }, icon(m.icon || 'file-text')),
+        h('span', { className: 'row-main' },
+          h('span', { className: 'row-t' }, p.title || '(untitled)'),
+          snip ? h('span', { className: 'row-x' }, snip) : null),
+        (p.tags || []).length
+          ? h('span', { className: 'row-tags' }, p.tags.slice(0, 3).map((t) => TagChip(t)))
+          : null,
+        h('span', { className: 'row-w' }, fmtDate(p.updated)));
+    }));
 }
 
 function V2PagesList(kind, pages, onOpen, onCreate) {
@@ -2386,7 +2758,8 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
           'Try a different keyword, or clear the filter.');
       }
     } else if (kind === 'canvas') view = ListView_Board(filtered, onOpen);
-    else if (kind === 'topic' || kind === 'markdown') view = ListView_List(filtered, onOpen);
+    else if (kind === 'topic') view = ListView_TopicCards(filtered, onOpen);
+    else if (kind === 'markdown') view = ListView_List(filtered, onOpen);
     else if (kind === 'inspo') view = ListView_Bento(filtered, onOpen);
     else view = ListView_Table(filtered, onOpen);
     listSlot.appendChild(view);
@@ -2418,9 +2791,131 @@ function V2PagesList(kind, pages, onOpen, onCreate) {
           '+ new ' + (meta ? meta.label.toLowerCase() : 'page'))));
   wrap.appendChild(h('div', { className: 'list-search-row' },
     searchInput, h('span', { className: 'list-search-count' }, countEl)));
+  if (kind === 'bookmark') {
+    const drop = BookmarkDrop(pages, listSlot, renderList, countEl);
+    wrap.appendChild(drop);
+    // It listens on `document`, so leaving the screen has to unhook it —
+    // otherwise pasting a link into a note two screens later files a bookmark.
+    wrap.__teardown = () => document.removeEventListener('paste', drop.__onPaste);
+  }
   wrap.appendChild(listSlot);
   renderList();
   return wrap;
+}
+
+/* ── Feeding the bookmark list ─────────────────────────────────────────
+   Saving a link used to be: press "+ new bookmark", land on a blank page,
+   find the url field, paste, invent a title, go back. Six actions and a
+   context switch to record something you already had on the clipboard.
+
+   This is the whole gesture instead: paste, Enter. And because the clipboard
+   is often a column of links rather than one, it takes as many as you give
+   it — the parser reads links out of whatever shape the text arrives in.
+
+   Titles come from the URL. The app cannot fetch a page to learn its real
+   title (no network requests, by contract) and does not pretend to: the
+   clipper is what gets the true title and the card artwork, and this says
+   so once, quietly, rather than shipping a worse version of it. */
+function BookmarkDrop(pages, listSlot, renderList, countEl) {
+  const ta = h('textarea', {
+    className: 'bm-drop-ta',
+    rows: 1,
+    placeholder: 'Paste a link and press Enter — or paste a whole list of them',
+    onKeyDown: (e) => {
+      // Enter saves; Shift+Enter is the escape hatch for building a list by
+      // hand before committing it.
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+    },
+    onInput: (e) => {
+      // Grow with the paste, so twelve links do not hide inside one line.
+      const el = e.target;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+    },
+  });
+  const status = h('div', { className: 'bm-drop-status' });
+  const btn = h('button', { className: 'btn-primary', onClick: () => submit() }, 'Save');
+  const wrap = h('div', { className: 'bm-drop' },
+    h('div', { className: 'bm-drop-row' }, ta, btn),
+    status);
+
+  async function submit() {
+    const text = ta.value.trim();
+    if (!text) { ta.focus(); return; }
+    btn.disabled = true;
+    clear(status); status.className = 'bm-drop-status';
+    status.appendChild(document.createTextNode('saving…'));
+    try {
+      const r = await SB.data().addBookmarks(text);
+      if (!r.found) {
+        status.className = 'bm-drop-status is-warn';
+        clear(status);
+        status.appendChild(document.createTextNode('No links in that — a bookmark needs an http(s) address.'));
+        btn.disabled = false;
+        return;
+      }
+      // Straight into the list under the box, newest first, with no reload:
+      // the point of the gesture is that the result is immediate.
+      r.added.forEach((p) => { cacheSetPage(p); pages.unshift(p); });
+      invalidatePageIndex();
+      await refreshCounts();
+      // The nav count and the list it opens must agree — "Bookmark 1" over a
+      // list of four is the sidebar lying, and it is the same bug the kind
+      // counts were fixed for once already.
+      refreshSidebar();
+      renderList();
+      if (countEl) countEl.textContent = nOf(pages.length, 'page');
+      ta.value = ''; ta.style.height = 'auto';
+      clear(status);
+      status.className = 'bm-drop-status is-ok';
+      const bits = [];
+      if (r.added.length) bits.push('Saved ' + nOf(r.added.length, 'link'));
+      /* Duplicates are named, not swallowed. "Saved 3" when you pasted 4 is
+         a silence the user has to investigate; saying which one you already
+         had is the answer they would have gone looking for. */
+      if (r.duplicates.length) {
+        bits.push(r.duplicates.length === 1
+          ? 'already saved: ' + (r.duplicates[0].title || 'that link')
+          : nOf(r.duplicates.length, 'link') + ' already saved');
+      }
+      status.appendChild(document.createTextNode(bits.join(' · ')));
+      if (r.duplicates.length === 1) {
+        status.appendChild(h('button', {
+          className: 'bm-drop-open',
+          onClick: () => openPage(r.duplicates[0].id),
+        }, 'open it'));
+      }
+    } catch (e) {
+      status.className = 'bm-drop-status is-warn';
+      clear(status);
+      status.appendChild(document.createTextNode('Could not save — ' + (e.message || e)));
+    } finally {
+      btn.disabled = false;
+      ta.focus();
+    }
+  }
+
+  /* Paste anywhere on the screen lands here. The clipboard is where links
+     come from, so ⌘V should not first require finding the right box —
+     unless you are already typing in one, in which case it means what it
+     always means. */
+  wrap.__onPaste = (e) => {
+    const t = e.target;
+    if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!urlsLikely(text)) return;
+    e.preventDefault();
+    ta.value = ta.value ? ta.value + '\n' + text : text;
+    ta.dispatchEvent(new Event('input'));
+    submit();
+  };
+  document.addEventListener('paste', wrap.__onPaste);
+  return wrap;
+}
+
+/** Cheap pre-check, so a paste of ordinary prose is left alone. */
+function urlsLikely(text) {
+  return /https?:\/\/\S/i.test(String(text || ''));
 }
 
 function V2PageView(pageId, onChange, onDeleted) {
@@ -2428,6 +2923,7 @@ function V2PageView(pageId, onChange, onDeleted) {
   let page = null;
   let dirty = false;
   let saveTimer = null;
+  let inFlight = 0;         // writes started and not yet finished
   // Body renderers can register cleanup callbacks (e.g. global event listeners
   // they attached). They're run before every re-layout and on screen unmount.
   let bodyTeardowns = [];
@@ -2512,9 +3008,55 @@ function V2PageView(pageId, onChange, onDeleted) {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(commit, 600);
   };
+
+  /* Write now, do not wait out the debounce.
+     The 600ms timer exists so that typing does not hit the disk on every
+     keystroke. It is not a reason to still be holding unsaved text once the
+     user has plainly finished — closing the editor, leaving the page, hiding
+     the tab. Every one of those calls this instead. */
+  const flushSave = () => {
+    clearTimeout(saveTimer);
+    if (dirty) commit();
+  };
+
+  /* The exits the router does not know about.
+     `render()` runs __teardown on a route change and closeTab goes through
+     render, so navigating inside the app was already covered. Closing the
+     window, reloading, or switching to another tab was not: the debounce
+     could still be holding the last thing typed, and a local-first app's
+     only copy is the one on disk.
+
+     `pagehide` and a hidden `visibilitychange` are the two events that
+     actually fire on the way out — beforeunload is unreliable for work and
+     is used below only to raise the alarm, never to do the writing. */
+  const leaveHandler = () => flushSave();
+  const visHandler = () => { if (document.visibilityState === 'hidden') flushSave(); };
+  window.addEventListener('pagehide', leaveHandler);
+  document.addEventListener('visibilitychange', visHandler);
+  /* `beforeunload` does two jobs, and the first one is not optional.
+
+     WriterElection also listens for `pagehide`, and releases this tab's write
+     lock when it fires. It registers at vault startup — long before this view
+     exists — so on a real close its handler runs FIRST and a flush attempted
+     from `pagehide` is refused with "another tab holds the write lock". The
+     last thing typed would be lost, silently, which is the exact failure this
+     whole block exists to prevent. `beforeunload` fires before `pagehide`,
+     while the lock is still held, so the write is issued from here.
+
+     Second job: if a write is genuinely still in the air, say so. Only then —
+     warning about a page that has already been flushed would be a dialog that
+     cries wolf on every close. */
+  const unloadGuard = (e) => {
+    flushSave();
+    if (!inFlight) return;
+    e.preventDefault();
+    e.returnValue = '';
+  };
+  window.addEventListener('beforeunload', unloadGuard);
   const commit = async () => {
     if (!page || !dirty) return;
     dirty = false;
+    inFlight++;
     try {
       const patched = await savePage({
         title: page.title, body: page.body, tags: page.tags,
@@ -2540,6 +3082,8 @@ function V2PageView(pageId, onChange, onDeleted) {
     } catch (e) {
       console.warn('save failed', e);
       setSaveState('error');
+    } finally {
+      inFlight--;
     }
   };
 
@@ -2591,7 +3135,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     return h('div', { className: 'page-body' },
       ProseEditor({
         getValue: () => page.body,
-        setValue: (v) => { page.body = v; queueSave(); },
+        setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
         placeholder: 'Write…  Markdown works, [[wikilinks]] resolve, #tags stick.',
       }));
   }
@@ -2962,16 +3506,94 @@ function V2PageView(pageId, onChange, onDeleted) {
 
     descSec.appendChild(ProseEditor({
       getValue: () => page.body,
-      setValue: (v) => { page.body = v; queueSave(); },
+      setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
       placeholder: 'What are you working out here?\n\nMarkdown, [[wikilinks]] and #tags all work.',
       minHeight: 360,
     }));
 
+    /* ── The orbit ────────────────────────────────────────────────────
+       What makes a topic a topic rather than a note with a different pill.
+
+       A note's backlinks are a curiosity, which is why they live in the rail.
+       A topic's backlinks ARE the topic — the evidence that the idea is
+       load-bearing — so they come out of the rail and into the body, grouped
+       by kind, computed live from the graph (see Data.orbit).
+
+       Nothing here is stored. The topic owns no pages; it attracts them. */
+    const orbSec = h('div', { className: 'topic-orb-sec' });
+    const orbHd = h('div', { className: 'topic-orb-hd' },
+      h('span', { className: 'topic-orb-l' }, 'Orbit'),
+      h('span', { className: 'topic-orb-n' }, '…'));
+    orbSec.appendChild(orbHd);
+    const orbBody = h('div', { className: 'topic-orb-body' });
+    orbSec.appendChild(orbBody);
+
+    function renderOrbit() {
+      let res;
+      try { res = SB.data().orbit(page.id); }
+      catch (_) { res = { items: [], count: 0, tag: null }; }
+      const items = res.items || [];
+      orbHd.querySelector('.topic-orb-n').textContent = String(items.length);
+      clear(orbBody);
+      if (!items.length) {
+        // The empty state teaches the two gestures, naming this page's own
+        // tag — an empty section that does not say how to fill it is a dead end.
+        orbBody.appendChild(h('div', { className: 'topic-orb-empty' },
+          h('div', null, 'Nothing orbits this topic yet.'),
+          h('div', { className: 'topic-orb-empty-how' },
+            'Write ', h('code', null, '[[' + (page.title || 'this topic') + ']]'),
+            ' in a note, or tag a page ',
+            h('code', null, '#' + (res.tag || 'topic')), '.')));
+        return;
+      }
+      // Grouped by kind, in the nav's order so the page reads the way the
+      // sidebar does. metaForPage, not KIND_META — bookmarks and boards are
+      // facets, and a group headed "Note" full of bookmarks is the label lying.
+      const groups = new Map();
+      items.forEach((p) => {
+        const m = metaForPage(p);
+        const key = m.label || p.kind;
+        if (!groups.has(key)) groups.set(key, { meta: m, rows: [] });
+        groups.get(key).rows.push(p);
+      });
+      const order = KIND_ORDER.map((k) => (KIND_META[k] || {}).label).filter(Boolean);
+      const keys = [...groups.keys()].sort((a, b) => {
+        const ia = order.indexOf(a), ib = order.indexOf(b);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+      keys.forEach((key) => {
+        const g = groups.get(key);
+        const grp = h('div', { className: 'topic-orb-grp' },
+          h('div', { className: 'topic-orb-grp-hd', style: { '--k-c': g.meta.color || 'var(--muted)' } },
+            h('span', { className: 'topic-orb-grp-g' }, icon(g.meta.icon || 'file-text')),
+            h('span', null, key),
+            h('span', { className: 'topic-orb-grp-n' }, String(g.rows.length))));
+        g.rows.forEach((p) => {
+          grp.appendChild(h('button', {
+            className: 'topic-orb-row',
+            onClick: () => { app.openPageId = p.id; app.route = 'page'; render(); },
+          },
+            h('span', { className: 'topic-orb-row-t' }, p.title || '(untitled)'),
+            // WHY it is here. A link you wrote and a tag you sprinkled are
+            // different kinds of evidence, and the difference is worth a glance.
+            h('span', { className: 'topic-orb-via topic-orb-via-' + p.via },
+              p.via === 'both' ? 'link + tag' : p.via),
+            h('span', { className: 'topic-orb-row-w' }, fmtDate(p.updated))));
+        });
+        orbBody.appendChild(grp);
+      });
+    }
+    renderOrbit();
+
     /* Writing first, material second. The tray used to come first, so every
        topic opened on an empty filing cabinet and you scrolled past your own
        storage to reach your own thinking. Attachments are what a topic is
-       BUILT FROM; the topic is what it is FOR. */
+       BUILT FROM; the topic is what it is FOR.
+
+       The orbit sits between them: your position, then the evidence for it,
+       then the raw material you are still digesting. */
     wrap.appendChild(descSec);
+    wrap.appendChild(orbSec);
     wrap.appendChild(attSec);
 
     return { body: wrap };
@@ -3162,6 +3784,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     let activeTag = null;
     let editing = false;   // the wall opens in view mode; see card()
     let gallery = [];      // the visible image items, in render order — the lightbox walks this
+    let dragging = null;   // {item, from} while a card is being dragged between groups
 
     const wrap = h('div', { className: 'page-body inspo-bento' });
     const toolbar = h('div', { className: 'bento-toolbar' });
@@ -3223,10 +3846,40 @@ function V2PageView(pageId, onChange, onDeleted) {
     document.addEventListener('paste', onPaste);
     onBodyTeardown(() => document.removeEventListener('paste', onPaste));
 
-    // Drop image files onto the wall. The ring says the wall heard you.
+    /* Drop onto the wall. Two kinds of drop, because inspiration arrives two
+       ways: a file off the desktop, and a picture dragged straight out of
+       another browser tab.
+
+       The second one does NOT arrive as a file — it arrives as a URL (and
+       usually an `<img>` fragment beside it), which is why dragging something
+       off Dribbble used to land on the wall and do nothing at all. It cannot
+       become a local image either: downloading it would mean `fetch()` to a
+       third-party origin, which this app does not do — that is the clipper's
+       job, and the clipper runs inside the page where the image already is.
+       So it becomes a link card pointing at the picture, which is honest
+       about what was actually saved. */
+    const urlFromDrop = (dt) => {
+      if (!dt) return null;
+      const uri = (dt.getData('text/uri-list') || '').split('\n')
+        .map((s) => s.trim()).find((s) => s && !s.startsWith('#'));
+      if (uri && /^https?:\/\//i.test(uri)) return uri;
+      // Dragged from a page: the HTML fragment carries the image's own src,
+      // which is a better target than the page it was sitting on.
+      const html = dt.getData('text/html') || '';
+      const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (m && /^https?:\/\//i.test(m[1])) return m[1];
+      const text = (dt.getData('text/plain') || '').trim();
+      return /^https?:\/\/\S+$/.test(text) ? text : null;
+    };
+
     wrap.addEventListener('dragover', (e) => {
-      const items = [...((e.dataTransfer && e.dataTransfer.items) || [])];
-      if (!items.some((i) => i.kind === 'file')) return;
+      if (dragging) return;                    // a card being regrouped, not an import
+      const dt = e.dataTransfer;
+      const items = [...((dt && dt.items) || [])];
+      const hasFile = items.some((i) => i.kind === 'file');
+      const hasUrl = items.some((i) => i.type === 'text/uri-list' || i.type === 'text/html'
+        || i.type === 'text/plain');
+      if (!hasFile && !hasUrl) return;
       e.preventDefault();
       wrap.classList.add('is-drop');
     });
@@ -3234,9 +3887,14 @@ function V2PageView(pageId, onChange, onDeleted) {
       if (!wrap.contains(e.relatedTarget)) wrap.classList.remove('is-drop');
     });
     wrap.addEventListener('drop', (e) => {
+      if (dragging) return;                    // the group's own handler owns this
       e.preventDefault();
       wrap.classList.remove('is-drop');
-      addImageFiles(e.dataTransfer && e.dataTransfer.files);
+      const files = [...((e.dataTransfer && e.dataTransfer.files) || [])]
+        .filter((f) => /^image\//.test(f.type || ''));
+      if (files.length) { addImageFiles(files); return; }
+      const url = urlFromDrop(e.dataTransfer);
+      if (url) addLink(url);
     });
 
     function renderToolbar() {
@@ -3343,59 +4001,179 @@ function V2PageView(pageId, onChange, onDeleted) {
       toolbar.appendChild(actions);
     }
 
-    /* ── The lightbox ──────────────────────────────────────────────────
-       A wall you cannot view large is a wall of thumbnails. Click an image
-       and it fills the screen, with its caption and source under it; ← →
-       walk the wall in render order, Esc or the scrim closes, and focus
-       goes back to the card that opened it (asDialog owns that). */
+    /* ── The expanded card ─────────────────────────────────────────────
+       Opening an item used to drop the whole app into a black theatre: the
+       picture on a dark scrim, its caption printed underneath as a label,
+       and nothing editable. It was a slideshow. But the reason to open an
+       item is almost never "look at this bigger" on its own — it is to
+       read what you wrote about it, and to fix or add to it while you are
+       looking at the picture.
+
+       So this is the card, larger, on the app's own paper: the image at the
+       size it deserves on the left, and on the right the SAME controls the
+       card has — caption, note, tags, source — not read-only copies of
+       them. Nothing you can do on the wall becomes impossible here, and
+       nothing here is a different gesture than it is out there.
+
+       ← → still walk the wall, Esc still closes, focus still returns to the
+       card that opened it (asDialog owns that). */
     function openLightbox(item) {
       let idx = Math.max(0, gallery.indexOf(item));
-      const stage = h('div', { className: 'lightbox-stage' });
-      const capBar = h('div', { className: 'lightbox-bar' });
+      const stage = h('div', { className: 'xp-stage' });
+      const side = h('div', { className: 'xp-side' });
       const close = () => {
         document.removeEventListener('keydown', onKey, true);
+        document.querySelectorAll('.pk-pop').forEach((n) => n.__close && n.__close());
         bg.remove();
+        paint();                 // the wall reflects whatever was edited in here
       };
       const onKey = (e) => {
+        // Not while typing, and not while the picker owns the keyboard.
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        if (document.querySelector('.pk-pop')) return;
         if (e.key === 'ArrowRight') { e.preventDefault(); show(idx + 1); }
         if (e.key === 'ArrowLeft')  { e.preventDefault(); show(idx - 1); }
       };
+
       function show(n) {
         idx = (n + gallery.length) % gallery.length;
         const it = gallery[idx];
+        const owner = model.groups.find((g) => g.items.includes(it)) || model.groups[0];
+
         clear(stage);
-        stage.appendChild(vaultImage(it.image, { alt: it.caption || '', className: 'lightbox-img' }));
-        clear(capBar);
-        capBar.appendChild(h('div', { className: 'lightbox-cap' },
-          it.caption || '',
-          (it.tags || []).length
-            ? h('span', { className: 'lightbox-tags' },
-                it.tags.map((t) => h('span', { className: 'tag-chip ' + tagHue(t) }, t)))
-            : null));
-        capBar.appendChild(h('div', { className: 'lightbox-meta' },
-          it.url ? h('a', { className: 'lightbox-src', href: it.url, target: '_blank',
-            rel: 'noopener' }, icon('link-2'), 'Source') : null,
-          gallery.length > 1
-            ? h('span', { className: 'lightbox-count' }, (idx + 1) + ' / ' + gallery.length)
-            : null));
+        stage.appendChild(vaultImage(it.image, { alt: it.caption || '', className: 'xp-img' }));
+
+        clear(side);
+
+        // ── Caption ──────────────────────────────────────────────────
+        side.appendChild(h('div', { className: 'xp-l' }, 'Caption'));
+        side.appendChild(h('input', {
+          className: 'xp-cap', value: it.caption || '', placeholder: 'What is this?',
+          onInput: (e) => { it.caption = e.target.value; save(); },
+        }));
+
+        // ── Note ─────────────────────────────────────────────────────
+        side.appendChild(h('div', { className: 'xp-l' }, 'Why it works'));
+        const note = h('textarea', {
+          className: 'xp-note', value: it.note || '',
+          placeholder: 'Why it works · the rule · when to reach for it…\n[[Link]] another page.',
+          onInput: (e) => {
+            it.note = e.target.value; save();
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.max(96, e.target.scrollHeight) + 'px';
+          },
+        });
+        side.appendChild(note);
+        setTimeout(() => { note.style.height = 'auto'; note.style.height = Math.max(96, note.scrollHeight) + 'px'; }, 0);
+
+        // ── Tags: the same chips and the same picker as the card ─────
+        side.appendChild(h('div', { className: 'xp-l' }, 'Tags'));
+        const tags = h('div', { className: 'xp-tags' });
+        const addBtn = h('button', {
+          className: 'chip-add', title: 'Add a tag',
+          onClick: (e) => {
+            e.stopPropagation();
+            openPicker(addBtn, {
+              placeholder: 'Find or create a tag…',
+              hint: '↑↓ to choose · ⏎ to add · esc to close',
+              search: async (q) => {
+                const on = new Set((it.tags || []).map((t) => t.toLowerCase()));
+                const needle = String(q || '').toLowerCase();
+                let vault = [];
+                try { vault = (SB.data().tags().tags || []).map((t) => t.tag); } catch (_) {}
+                const wall = I.tags(model);
+                const seen = new Set();
+                return [...wall, ...vault].filter((t) => {
+                  const k = t.toLowerCase();
+                  if (on.has(k) || seen.has(k) || !k.includes(needle)) return false;
+                  seen.add(k); return true;
+                }).slice(0, 40).map((t) => ({ key: t, label: t, swatch: tagHue(t),
+                  hint: wall.includes(t) ? 'on this wall' : null }));
+              },
+              onPick: (row) => { pushTag(it, row.key); paintTags(); },
+              onCreate: (text) => { pushTag(it, text); paintTags(); },
+              createLabel: (t) => 'Create #' + String(t).replace(/^#/, '').toLowerCase(),
+            });
+          },
+        }, icon('plus'), h('span', { className: 'chip-add-l' }, 'Tag'));
+        function paintTags() {
+          clear(tags);
+          (it.tags || []).forEach((t) => {
+            tags.appendChild(TagChip(t, {
+              on: activeTag === t,
+              onClick: () => { activeTag = activeTag === t ? null : t; close(); },
+              onRemove: () => {
+                it.tags = (it.tags || []).filter((x) => x !== t);
+                save(); renderToolbar(); paintTags();
+              },
+            }));
+          });
+          tags.appendChild(addBtn);
+        }
+        paintTags();
+        side.appendChild(tags);
+
+        // ── Source, group, and the image's own file ──────────────────
+        side.appendChild(h('div', { className: 'xp-l' }, 'Source'));
+        side.appendChild(h('input', {
+          className: 'xp-url', value: it.url || '', placeholder: 'https://…',
+          onChange: (e) => { it.url = e.target.value.trim() || null; save(); },
+        }));
+        if (it.url) {
+          side.appendChild(h('a', { className: 'xp-open', href: it.url,
+            target: '_blank', rel: 'noopener noreferrer' },
+            icon('link-2'), it.url.replace(/^https?:\/\//, '').slice(0, 46)));
+        }
+
+        side.appendChild(h('div', { className: 'xp-l' }, 'Group'));
+        const sel = h('select', { className: 'set-input xp-group' },
+          model.groups.map((g) => h('option', {
+            value: g.name, selected: g === owner ? 'selected' : undefined,
+          }, g.name || '(ungrouped)')));
+        sel.addEventListener('change', () => {
+          const to = model.groups.find((g) => g.name === sel.value);
+          if (!to || to === owner) return;
+          owner.items.splice(owner.items.indexOf(it), 1);
+          to.items.unshift(it);
+          save();
+        });
+        side.appendChild(sel);
+
+        clear(counter);
+        if (gallery.length > 1) {
+          counter.appendChild(document.createTextNode((idx + 1) + ' / ' + gallery.length));
+        }
       }
+
+      function pushTag(it, raw) {
+        const fresh = String(raw || '').split(/[,\s]+/)
+          .map((t) => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean);
+        if (!fresh.length) return;
+        it.tags = [...new Set([...(it.tags || []), ...fresh])];
+        save(); renderToolbar();
+      }
+
+      const counter = h('span', { className: 'xp-count' });
       const bg = h('div', {
-        className: 'modal-bg lightbox-bg',
+        className: 'modal-bg xp-bg',
         onClick: (e) => { if (e.target === bg) close(); },
       },
-        h('button', { className: 'lightbox-x', 'aria-label': 'Close', title: 'Close',
-          onClick: close }, '✕'),
-        gallery.length > 1 ? h('button', {
-          className: 'lightbox-nav lightbox-prev', 'aria-label': 'Previous image',
-          onClick: () => show(idx - 1) }, icon('chevron-left')) : null,
-        h('div', { className: 'lightbox-frame' }, stage, capBar),
-        gallery.length > 1 ? h('button', {
-          className: 'lightbox-nav lightbox-next', 'aria-label': 'Next image',
-          onClick: () => show(idx + 1) }, icon('chevron-right')) : null);
+        h('div', { className: 'xp-frame' },
+          h('div', { className: 'xp-hd' },
+            counter,
+            gallery.length > 1 ? h('div', { className: 'xp-steps' },
+              h('button', { className: 'xp-step', 'aria-label': 'Previous',
+                onClick: () => show(idx - 1) }, icon('chevron-left')),
+              h('button', { className: 'xp-step', 'aria-label': 'Next',
+                onClick: () => show(idx + 1) }, icon('chevron-right'))) : null,
+            h('button', { className: 'xp-x', 'aria-label': 'Close', title: 'Close (esc)',
+              onClick: close }, icon('x'))),
+          h('div', { className: 'xp-body' }, stage, side)));
       show(idx);
       document.body.appendChild(bg);
       document.addEventListener('keydown', onKey, true);
-      asDialog(bg, { onEscape: close, label: 'Image viewer' });
+      asDialog(bg, { onEscape: close, label: 'Expanded card' });
     }
 
     /* A wall has two states, and it used to only have one.
@@ -3411,6 +4189,30 @@ function V2PageView(pageId, onChange, onDeleted) {
        edit frequent enough that a mode switch would be a tax. */
     function card(item, group) {
       const el = h('div', { className: 'bento-card' });
+
+      /* ── Grouping by dragging ──────────────────────────────────────
+         Moving a card used to mean: switch to Arrange, find the card's
+         group <select>, open it, pick a name. Four actions to express
+         "this belongs over there", and it is the single most common thing
+         done to a wall after adding to it — grouping IS the thinking.
+
+         So the card is draggable in both states, and a group is a drop
+         target. The <select> stays for keyboards and for precision. */
+      el.draggable = true;
+      el.addEventListener('dragstart', (e) => {
+        dragging = { item, from: group };
+        el.classList.add('is-dragging');
+        // Text too, so a card can also be dragged out to another app.
+        try {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', item.url || item.caption || '');
+        } catch (_) {}
+      });
+      el.addEventListener('dragend', () => {
+        dragging = null;
+        el.classList.remove('is-dragging');
+        gridWrap.querySelectorAll('.is-dropzone').forEach((n) => n.classList.remove('is-dropzone'));
+      });
 
       if (item.image) {
         el.appendChild(!editing
@@ -3443,6 +4245,9 @@ function V2PageView(pageId, onChange, onDeleted) {
           className: 'bento-cap-view' + (item.caption ? '' : ' is-empty'),
           title: 'Click to edit the caption',
           onClick: (e) => {
+            // A link in the caption is a link first. Without this, following
+            // a citation would instead open the caption for editing.
+            if (e.target.closest && e.target.closest('a, .mention-link, .mention-chip, .hashtag')) return;
             e.stopPropagation();
             const inp = h('input', {
               className: 'bento-cap', value: item.caption || '', placeholder: 'Caption…',
@@ -3453,26 +4258,162 @@ function V2PageView(pageId, onChange, onDeleted) {
             cap.replaceWith(inp);
             inp.focus(); inp.select();
           },
-        }, item.caption || 'Add a caption');
+        });
+        /* The caption is rendered too, so a `[[wikilink]]` written into one
+           is followable rather than four literal brackets. Plain text takes
+           the fast path — most captions are three words. */
+        if (item.caption && /\[\[|#\w|https?:\/\//.test(item.caption)) {
+          try {
+            const rc = h('div', { html: SB.data().renderHtml(item.caption).html });
+            decorateMentions(rc); decorateHashtags(rc);
+            cap.appendChild(rc);
+          } catch (_) { cap.appendChild(document.createTextNode(item.caption)); }
+        } else {
+          cap.appendChild(document.createTextNode(item.caption || 'Add a caption'));
+        }
 
         const body = h('div', { className: 'bento-body' }, cap);
-        if ((item.tags || []).length || (item.url && item.image)) {
-          body.appendChild(h('div', { className: 'bento-body-ft' },
-            (item.tags || []).length
-              ? h('div', { className: 'bento-tags-view' },
-                  item.tags.map((t) => h('button', {
-                    className: 'tag-chip tag-chip-btn ' + tagHue(t),
-                    onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
-                  }, t)))
-              : h('span'),
-            (item.url && item.image)
-              ? h('a', {
-                  className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
-                  title: item.url,
-                  onClick: (e) => e.stopPropagation(),
-                }, icon('link-2'), 'Source')
-              : null));
+
+        /* ── The note ──────────────────────────────────────────────────
+           A caption says what a thing is. The note says why it is on the
+           wall and when to reach for it — the part you cannot rebuild from
+           the picture six months later, and the reason this page is worth
+           keeping rather than a folder of screenshots.
+
+           Rendered, not raw: `[[Other Wall]]` becomes a link you can follow,
+           so one wall cites another through the mention graph the vault
+           already keeps. Click anywhere else in it to edit. */
+        const noteEl = h('div', {
+          className: 'bento-note' + (item.note ? '' : ' is-empty'),
+          title: item.note ? 'Click to edit' : 'Why it works · the rule · when to use it',
+          onClick: (e) => {
+            if (e.target.closest && e.target.closest('a, .mention-link, .mention-chip, .hashtag')) return;
+            e.stopPropagation();
+            const ta = h('textarea', {
+              className: 'bento-note-ta', value: item.note || '',
+              placeholder: 'Why it works · the rule · when to reach for it…\n[[Link]] another page.',
+              onInput: (ev) => {
+                item.note = ev.target.value; save();
+                ev.target.style.height = 'auto';
+                ev.target.style.height = ev.target.scrollHeight + 'px';
+              },
+              onKeyDown: (ev) => { if (ev.key === 'Escape') ev.target.blur(); },
+            });
+            ta.addEventListener('blur', () => paint());
+            noteEl.replaceWith(ta);
+            ta.style.height = 'auto'; ta.style.height = Math.max(54, ta.scrollHeight) + 'px';
+            ta.focus();
+            const n = ta.value.length;
+            try { ta.setSelectionRange(n, n); } catch (_) {}
+          },
+        });
+        if (item.note) {
+          try {
+            const r = SB.data().renderHtml(item.note);
+            const rendered = h('div', { html: r.html });
+            decorateMentions(rendered);
+            decorateHashtags(rendered);
+            noteEl.appendChild(rendered);
+          } catch (_) { noteEl.appendChild(document.createTextNode(item.note)); }
+        } else {
+          noteEl.appendChild(h('span', { className: 'bento-note-add' },
+            icon('pen-line'), 'Why this?'));
         }
+        body.appendChild(noteEl);
+
+        /* ── Tags, editable where you look at them ─────────────────────
+           Tags were readable here and editable only in Arrange: the footer
+           was skipped entirely when an item had none, so a fresh card — the
+           one you have just added and most want to file — showed no way to
+           tag it at all. Tagging is how the wall stays findable, so it is
+           not behind a mode.
+
+           A chip does two things and says which: the name filters the wall,
+           the × removes the tag. */
+        const tagsRow = h('div', { className: 'bento-tags-view' });
+
+        const addTag = (raw) => {
+          const fresh = String(raw || '').split(/[,\s]+/)
+            .map((t) => t.replace(/^#/, '').trim().toLowerCase())
+            .filter(Boolean);
+          if (!fresh.length) return false;
+          item.tags = [...new Set([...(item.tags || []), ...fresh])];
+          save(); renderToolbar();          // the filter strip gains the new tag
+          return true;
+        };
+
+        /* The same picker the page header uses. It used to be a bare
+           `<input list=…>`: a native datalist, with the browser's own
+           dropdown, no create affordance and no keyboard contract shared
+           with anywhere else in the app. */
+        const addBtn = h('button', {
+          className: 'bento-tag-add', title: 'Add a tag', 'aria-label': 'Add a tag',
+          onClick: (e) => {
+            e.stopPropagation();
+            openPicker(addBtn, {
+              placeholder: 'Find or create a tag…',
+              hint: '↑↓ to choose · ⏎ to add · esc to close',
+              // The wall's own vocabulary first: it is what you almost always
+              // want, and a near-miss typed by hand is how tag sets fragment.
+              search: wallTagRows(() => item.tags || []),
+              onPick: (row) => { addTag(row.key); paintTags(); },
+              onCreate: (text) => { addTag(text); paintTags(); },
+              createLabel: (t) => 'Create #' + String(t).replace(/^#/, '').toLowerCase(),
+            });
+          },
+        }, icon('plus'), (item.tags || []).length ? '' : 'tag');
+
+        /** Wall tags before vault tags, both filtered by what is already on. */
+        function wallTagRows(current) {
+          return async (q) => {
+            const on = new Set((current() || []).map((t) => t.toLowerCase()));
+            const needle = String(q || '').toLowerCase();
+            let vault = [];
+            try { vault = (SB.data().tags().tags || []).map((t) => t.tag); } catch (_) {}
+            const wall = I.tags(model);
+            const seen = new Set();
+            return [...wall, ...vault]
+              .filter((t) => {
+                const k = t.toLowerCase();
+                if (on.has(k) || seen.has(k) || !k.includes(needle)) return false;
+                seen.add(k); return true;
+              })
+              .slice(0, 40)
+              .map((t) => ({ key: t, label: t, swatch: tagHue(t),
+                             hint: wall.includes(t) ? 'on this wall' : null }));
+          };
+        }
+
+        function paintTags() {
+          clear(tagsRow);
+          (item.tags || []).forEach((t) => {
+            tagsRow.appendChild(TagChip(t, {
+              on: activeTag === t,
+              onClick: (e) => { e.stopPropagation(); activeTag = activeTag === t ? null : t; paint(); },
+              onRemove: (e) => {
+                e.stopPropagation();
+                item.tags = (item.tags || []).filter((x) => x !== t);
+                save(); renderToolbar(); paintTags();
+              },
+            }));
+          });
+          tagsRow.appendChild(addBtn);
+          clear(addBtn);
+          addBtn.appendChild(icon('plus'));
+          if (!(item.tags || []).length) addBtn.appendChild(document.createTextNode('tag'));
+        }
+        paintTags();
+
+        // Always present now: it carries the add affordance, not just chips.
+        body.appendChild(h('div', { className: 'bento-body-ft' },
+          tagsRow,
+          (item.url && item.image)
+            ? h('a', {
+                className: 'bento-src', href: item.url, target: '_blank', rel: 'noopener',
+                title: item.url,
+                onClick: (e) => e.stopPropagation(),
+              }, icon('link-2'), 'Source')
+            : null));
         el.appendChild(body);
         return el;
       }
@@ -3485,11 +4426,22 @@ function V2PageView(pageId, onChange, onDeleted) {
       const tagIn = h('input', {
         className: 'bento-tags-in', placeholder: '#tags',
         value: (item.tags || []).map((t) => '#' + t).join(' '),
+        /* Kept as a raw text field ON PURPOSE, and only here. Arrange is the
+           bulk-editing mode: retyping a whole tag line, or pasting one across
+           several cards, is faster than opening a panel per tag. The picker
+           is the way in everywhere a single tag is added — this is the escape
+           hatch beside it, not a fourth idiom. */
         onChange: (e) => {
           item.tags = [...new Set(e.target.value.split(/\s+/)
-            .map((t) => t.replace(/^#/, '').trim()).filter(Boolean))];
+            .map((t) => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean))];
           save(); renderToolbar();
         },
+      });
+      const noteIn = h('textarea', {
+        className: 'bento-note-in', rows: 2,
+        placeholder: 'Why it works · the rule · when to reach for it…',
+        value: item.note || '',
+        onInput: (e) => { item.note = e.target.value; save(); },
       });
       const urlIn = h('input', {
         className: 'bento-url-in', placeholder: 'Source URL…', value: item.url || '',
@@ -3517,7 +4469,7 @@ function V2PageView(pageId, onChange, onDeleted) {
             group.items.splice(idx, 0, removed); save(); paint();
           } });
         } }, icon('trash-2'));
-      el.appendChild(h('div', { className: 'bento-fields' }, capIn, tagIn, urlIn,
+      el.appendChild(h('div', { className: 'bento-fields' }, capIn, noteIn, tagIn, urlIn,
         h('div', { className: 'bento-row' }, sel, del)));
       return el;
     }
@@ -3529,8 +4481,45 @@ function V2PageView(pageId, onChange, onDeleted) {
       for (const g of model.groups) {
         const visible = g.items.filter((it) => !activeTag || (it.tags || []).includes(activeTag));
         gallery.push(...visible.filter((it) => it.image));
-        if (!g.items.length && !g.name) continue;         // hide an empty unnamed group
+        /* An empty unnamed group is hidden — but not while a card is in the
+           air. "Ungrouped" has to be reachable as a destination, or a card
+           dragged into a group can never come back out of it. */
+        if (!g.items.length && !g.name && !dragging) continue;
         const sec = h('section', { className: 'bento-group' });
+        // Every group accepts a dropped card, including the one it came from
+        // (a no-op, which is the right outcome for a drag you thought better of).
+        sec.addEventListener('dragover', (e) => {
+          if (!dragging) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          sec.classList.add('is-dropzone');
+        });
+        sec.addEventListener('dragleave', (e) => {
+          if (!sec.contains(e.relatedTarget)) sec.classList.remove('is-dropzone');
+        });
+        sec.addEventListener('drop', (e) => {
+          if (!dragging) return;
+          e.preventDefault();
+          e.stopPropagation();          // the wall's file-drop handler is not this
+          sec.classList.remove('is-dropzone');
+          const { item: moved, from } = dragging;
+          dragging = null;
+          if (from === g) { paint(); return; }
+          const at = from.items.indexOf(moved);
+          if (at < 0) { paint(); return; }
+          from.items.splice(at, 1);
+          g.items.unshift(moved);
+          save(); paint();
+          toast('Moved to ' + (g.name || 'ungrouped'), {
+            actionLabel: 'Undo',
+            onAction: () => {
+              const back = g.items.indexOf(moved);
+              if (back >= 0) g.items.splice(back, 1);
+              from.items.splice(at, 0, moved);
+              save(); paint();
+            },
+          });
+        });
         if (g.name) sec.appendChild(h('h3', { className: 'bento-group-h' }, g.name,
           h('span', { className: 'bento-group-n' }, ' ' + visible.length)));
         if (visible.length) {
@@ -3564,7 +4553,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     return h('div', { className: 'page-body snippet-body' },
       ProseEditor({
         getValue: () => page.body,
-        setValue: (v) => { page.body = v; queueSave(); },
+        setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
         placeholder: 'A quick thought…',
         minHeight: 160,
       }));
@@ -3586,7 +4575,7 @@ function V2PageView(pageId, onChange, onDeleted) {
     return h('div', { className: 'page-body md-body' },
       ProseEditor({
         getValue: () => page.body,
-        setValue: (v) => { page.body = v; queueSave(); },
+        setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
         placeholder: 'Write…\n\n## Section headers\n- Bullet lists\n> A quote\n\n[[Wikilinks]] resolve and #tags stick.',
         minHeight: 420,
       }));
@@ -3632,68 +4621,162 @@ function V2PageView(pageId, onChange, onDeleted) {
       box.appendChild(content);
     }
 
+    /* A pasted address is usually a whole URL, but people also type
+       `stripe.com/docs`. Assume https rather than refusing — every other
+       address bar does. */
+    const withScheme = (s) => (/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : 'https://' + s);
+
+    /* The link, spelled the way a person reads it: the site in full strength,
+       the path after it in a quieter tone, no `https://www.` in front of
+       either. The href keeps every character; only the label is shortened. */
+    function prettyUrl(raw) {
+      try {
+        const u = new URL(raw);
+        const host = u.hostname.replace(/^www\./i, '');
+        let rest = (u.pathname === '/' ? '' : u.pathname) + (u.search || '');
+        rest = decodeURI(rest).replace(/\/$/, '');
+        return { host, rest };
+      } catch (_) { return { host: raw, rest: '' }; }
+    }
+
+    /* Which row is being typed into, held as the LINK ITSELF rather than its
+       index. Rows are removed while another is being edited — blur, ×, and
+       the add button all reorder the array — and an index captured in a
+       closure quietly starts pointing at the wrong link the moment that
+       happens. An object reference cannot drift. */
+    let editing = null;
+
+    const dropBlanks = () => {
+      page.meta.links = page.meta.links.filter((l) => l.url || l === editing);
+    };
+
+    function commitLink(link, raw) {
+      const v = String(raw || '').trim();
+      // An empty commit removes the row. A blank link card is not a link, and
+      // leaving one behind is what made "add link" feel like it did nothing.
+      if (!v) {
+        const at = page.meta.links.indexOf(link);
+        if (at >= 0) page.meta.links.splice(at, 1);
+      } else {
+        link.url = withScheme(v);
+      }
+      editing = null;
+      syncLegacy(); queueSave(); renderLinks();
+    }
+
+    function linkEditor(link) {
+      const input = h('input', {
+        className: 'bm-link-input',
+        placeholder: 'Paste or type a link…',
+        value: link.url || '',
+        onKeyDown: (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commitLink(link, e.target.value); }
+          if (e.key === 'Escape') { e.preventDefault(); commitLink(link, link.url || ''); }
+        },
+        /* Paste IS the commit. The clipboard already holds the finished
+           address, so asking for an Enter afterwards is asking the user to
+           confirm something they just did. */
+        onPaste: (e) => {
+          const text = (e.clipboardData || window.clipboardData).getData('text');
+          const first = (String(text).match(/\S+/) || [''])[0];
+          if (!first) return;
+          e.preventDefault();
+          commitLink(link, first);
+        },
+        /* Deferred, so a click on another row's × or on "add link" lands
+           before this re-renders the list out from under it. Committing on
+           blur synchronously destroys the button you were reaching for. */
+        onBlur: (e) => {
+          const v = e.target.value;
+          setTimeout(() => { if (editing === link) commitLink(link, v); }, 0);
+        },
+      });
+      return h('div', { className: 'bm-link bm-link-editing' }, input);
+    }
+
+    function linkRow(link, idx) {
+      const { host, rest } = prettyUrl(link.url);
+      const row = h('div', { className: 'bm-link' });
+      /* The link itself is the control. A separate "Open" button beside a
+         link is a second way to do the thing the link already does, and it
+         is the one that made these rows feel like forms. */
+      row.appendChild(h('a', {
+        className: 'bm-link-a', href: link.url,
+        target: '_blank', rel: 'noopener noreferrer',
+        title: link.url,
+      },
+        h('span', { className: 'bm-link-g' }, icon('link-2')),
+        h('span', { className: 'bm-link-host' }, host),
+        rest ? h('span', { className: 'bm-link-rest' }, rest) : null));
+      row.appendChild(h('button', {
+        className: 'bm-link-act', title: 'Edit this link', 'aria-label': 'Edit this link',
+        onClick: () => { dropBlanks(); editing = link; renderLinks(); },
+      }, icon('pen-line')));
+      row.appendChild(h('button', {
+        className: 'bm-link-act bm-link-rm', title: 'Remove this link', 'aria-label': 'Remove this link',
+        onClick: () => {
+          editing = null;
+          const at = page.meta.links.indexOf(link);
+          if (at >= 0) page.meta.links.splice(at, 1);
+          dropBlanks();
+          syncLegacy(); queueSave(); renderLinks();
+        },
+      }, icon('x')));
+      return row;
+    }
+
     function renderLinks() {
       clear(linksWrap);
       page.meta.links.forEach((link, idx) => {
+        linksWrap.appendChild(link === editing || !link.url
+          ? linkEditor(link)
+          : linkRow(link, idx));
         /* The preview machinery is gone. It rendered a box, said "fetching
            preview…", and then failed — fetchLinkPreview() routes through
-           gone(), because a browser tab cannot read another origin. The
-           refresh button beside it could never do anything either.
+           gone(), because a browser tab cannot read another origin.
 
            A saved og payload still renders if the clipper captured one; the
            app simply stops pretending it can go and get one itself. */
-        const previewBox = h('div', { className: 'bm-preview' });
-        if (link.og) renderPreview(previewBox, link.og);
-        const urlInput = h('input', {
-          className: 'bm-url-input',
-          placeholder: 'https://…',
-          value: link.url || '',
-          onInput: (e) => { link.url = e.target.value; syncLegacy(); queueSave(); },
-        });
-        linksWrap.appendChild(h('div', { className: 'bm-link-card' },
-          h('div', { className: 'bm-link-card-hd' },
-            /* "#1" on a card when there is exactly one card is a number
-               counting to one. It appears from the second link onward, where
-               it actually distinguishes something. */
-            page.meta.links.length > 1
-              ? h('span', { className: 'bm-link-card-n' }, String(idx + 1))
-              : h('span', { className: 'bm-link-card-n bm-link-card-n-mute' }, 'Link'),
-            h('button', { className: 'bm-link-card-rm', title: 'Remove this link',
-              onClick: () => {
-                if (page.meta.links.length === 1 && !link.url) return;
-                page.meta.links.splice(idx, 1);
-                syncLegacy(); queueSave(); renderLinks();
-              } }, '×')),
-          h('div', { className: 'bm-url-row' },
-            urlInput,
-            h('a', { className: 'bm-open', href: link.url || '#', target: '_blank',
-              title: 'Open in a new tab',
-              onClick: (e) => { if (!link.url) e.preventDefault(); } }, 'Open')),
-          previewBox));
+        if (link.og && link !== editing) {
+          const previewBox = h('div', { className: 'bm-preview' });
+          renderPreview(previewBox, link.og);
+          linksWrap.appendChild(previewBox);
+        }
       });
-      // "+ add link" button at the bottom
       linksWrap.appendChild(h('button', {
         className: 'bm-link-add',
         onClick: () => {
-          page.meta.links.push({ url: '', og: null });
-          syncLegacy(); queueSave(); renderLinks();
+          // Straight into a focused field — the button's whole job is to get
+          // out of the way of the paste that is about to happen.
+          editing = null;
+          dropBlanks();
+          const fresh = { url: '', og: null };
+          page.meta.links.push(fresh);
+          editing = fresh;
+          renderLinks();
         },
-      }, icon('plus'), 'Add another link'));
+      }, icon('plus'), page.meta.links.length ? 'Add another link' : 'Add link'));
+
+      const input = linksWrap.querySelector('.bm-link-input');
+      if (input && editing) { input.focus(); input.select(); }
+      if (linkCountEl) linkCountEl.textContent = String(page.meta.links.length);
     }
 
-    // Ensure at least one link card is visible
-    if (page.meta.links.length === 0) page.meta.links.push({ url: '', og: null });
+    /* No placeholder row. A bookmark with no link shows the add button and
+       nothing else — an empty card pretending to be a link was the thing
+       that had to be cleaned up before you could use the page. */
+    const linkCountEl = h('span', null, String(page.meta.links.length));
     renderLinks();
 
     const linkSection = h('div', { className: 'bm-section bm-section-link' },
-      h('div', { className: 'bm-section-l' }, 'Links · ', String(page.meta.links.length)),
+      h('div', { className: 'bm-section-l' }, 'Links · ', linkCountEl),
       linksWrap);
 
     const contextSection = h('div', { className: 'bm-section bm-section-context' },
       ProseEditor({
         label: 'Context',
         getValue: () => page.body,
-        setValue: (v) => { page.body = v; queueSave(); },
+        setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
         placeholder: 'Why this matters · what to remember · who else cares…',
         minHeight: 180,
       }));
@@ -3758,7 +4841,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         noteWrap.appendChild(ProseEditor({
           label: null,
           getValue: () => page.body,
-          setValue: (v) => { page.body = v; queueSave(); },
+          setValue: (v) => { page.body = v; queueSave(); }, onDone: flushSave,
           placeholder: 'Anything about the folder itself. The pages inside carry their own.',
           minHeight: 180,
         }));
@@ -3977,34 +5060,39 @@ function V2PageView(pageId, onChange, onDeleted) {
         sRow('Updated',  fmtDate(page.updated)),
         sRow('ID',       page.id.slice(0, 8) + '…'))));
 
-    // BACKLINKS — fetched live (pages that mention this one)
-    const backHd = h('div', { className: 'side-card-hd' }, 'Backlinks');
-    const backBody = h('div', { className: 'side-card-body side-card-empty' }, 'loading…');
-    aside.appendChild(h('div', { className: 'side-card' }, backHd, backBody));
-    Promise.resolve(SB.data().backlinks(page.id)).then(({ items }) => {
-      backHd.textContent = 'Backlinks · ' + (items ? items.length : 0);
-      clear(backBody);
-      if (!items || !items.length) {
-        backBody.className = 'side-card-body side-card-empty';
-        backBody.appendChild(document.createTextNode('No pages link here yet.'));
-        return;
-      }
-      backBody.className = 'side-card-body';
-      const list = h('div', { className: 'side-children' });
-      items.forEach((b) => list.appendChild(h('button', {
-        className: 'side-link side-link-hasg',
-        onClick: () => { app.openPageId = b.id; app.route = 'page'; render(); },
-      },
-        h('span', { className: 'side-link-g',
-          style: { color: metaForPage(b).color || 'var(--muted)' } },
-          icon(metaForPage(b).icon || 'file-text')),
-        h('span', { className: 'side-link-title' }, b.title),
-        h('span', { className: 'side-link-meta' }, metaForPage(b).label || b.kind))));
-      backBody.appendChild(list);
-    }).catch(() => {
-      backHd.textContent = 'Backlinks · 0';
-      clear(backBody); backBody.appendChild(document.createTextNode('—'));
-    });
+    /* BACKLINKS — fetched live (pages that mention this one).
+       Not on a topic: the orbit in the body is a superset of this list and
+       says more about each row, so keeping the card too would print the same
+       links twice on one screen and make the reader choose which to trust. */
+    if (page.kind !== 'topic') {
+      const backHd = h('div', { className: 'side-card-hd' }, 'Backlinks');
+      const backBody = h('div', { className: 'side-card-body side-card-empty' }, 'loading…');
+      aside.appendChild(h('div', { className: 'side-card' }, backHd, backBody));
+      Promise.resolve(SB.data().backlinks(page.id)).then(({ items }) => {
+        backHd.textContent = 'Backlinks · ' + (items ? items.length : 0);
+        clear(backBody);
+        if (!items || !items.length) {
+          backBody.className = 'side-card-body side-card-empty';
+          backBody.appendChild(document.createTextNode('No pages link here yet.'));
+          return;
+        }
+        backBody.className = 'side-card-body';
+        const list = h('div', { className: 'side-children' });
+        items.forEach((b) => list.appendChild(h('button', {
+          className: 'side-link side-link-hasg',
+          onClick: () => { app.openPageId = b.id; app.route = 'page'; render(); },
+        },
+          h('span', { className: 'side-link-g',
+            style: { color: metaForPage(b).color || 'var(--muted)' } },
+            icon(metaForPage(b).icon || 'file-text')),
+          h('span', { className: 'side-link-title' }, b.title),
+          h('span', { className: 'side-link-meta' }, metaForPage(b).label || b.kind))));
+        backBody.appendChild(list);
+      }).catch(() => {
+        backHd.textContent = 'Backlinks · 0';
+        clear(backBody); backBody.appendChild(document.createTextNode('—'));
+      });
+    }
 
     // SUB-PAGES
     const children = (page.meta && Array.isArray(page.meta.children)) ? page.meta.children : [];
@@ -4041,11 +5129,19 @@ function V2PageView(pageId, onChange, onDeleted) {
             try {
               const res = await SB.data().exportPage(page.id);
               const blob = new Blob([res.content], { type: 'text/markdown' });
+              const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
-              a.href = URL.createObjectURL(blob);
+              a.href = url;
               a.download = res.filename.split('/').pop();
+              // In the document, and revoked on a timer rather than on the
+              // next line: the save reads the object URL after click() has
+              // returned, so revoking synchronously races it. Same fix as the
+              // clipper download.
+              a.style.display = 'none';
+              document.body.appendChild(a);
               a.click();
-              URL.revokeObjectURL(a.href);
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 60_000);
             } catch (e) { toast('Export failed — ' + e.message, { tone: 'error' }); }
           } }, icon('download'), 'Export .md'),
         /* The other half of the write safety. Every overwrite has snapshotted
@@ -4224,36 +5320,25 @@ function V2PageView(pageId, onChange, onDeleted) {
          header's height. The add-affordances sit at the end of their group,
          quiet until used. */
       isProjectNote ? null : h('div', { className: 'page-chips-row' },
-        page.tags.map((t, i) => h('span', {
-          className: 'tag-chip rm tag-chip-click ' + tagHue(t),
-          title: 'Click to see all pages with #' + t,
-          onClick: (e) => {
-            if (e.target.tagName === 'BUTTON') return;  // remove btn handled separately
-            setRoute('tag:' + t);
+        page.tags.map((t, i) => TagChip(t, {
+          onClick: () => setRoute('tag:' + t),
+          onRemove: () => { page.tags.splice(i, 1); queueSave(); layout(); },
+        })),
+        /* The one picker, opened from a chip-shaped trigger. It used to be an
+           inline field whose dropdown could only offer existing tags to the
+           keyboard — the create row was mouse-only. */
+        chipAdd('tag', 'Tag', (btn) => openPicker(btn, {
+          placeholder: 'Find or create a tag…',
+          hint: '↑↓ to choose · ⏎ to add · esc to close',
+          search: tagRows(page.tags),
+          onPick: (row) => { page.tags.push(row.key); invalidateTagsCache(); queueSave(); layout(); },
+          onCreate: (text) => {
+            const t = String(text).replace(/^#/, '').trim().toLowerCase();
+            if (!t || page.tags.includes(t)) return;
+            page.tags.push(t); invalidateTagsCache(); queueSave(); layout();
           },
-        },
-          h('span', { className: 'tag-chip-t' }, t),
-          h('button', { title: 'Remove this tag', 'aria-label': 'Remove tag ' + t,
-            onClick: (e) => {
-              e.stopPropagation();
-              page.tags.splice(i, 1); queueSave(); layout();
-            } }, '×'))),
-        AutocompleteInput({
-          placeholder: '+ tag',
-          allowCreate: true,
-          fetchSuggestions: (q) => searchTags(q, page.tags),
-          renderItem: (it) => [
-            h('span', { className: 'ac-row-l' }, it.tag),
-            h('span', { className: 'ac-row-r' }, String(it.count)),
-          ],
-          onPick: ({ existing, created }) => {
-            const val = existing ? existing.tag : created;
-            if (!val) return;
-            page.tags.push(val);
-            invalidateTagsCache();
-            queueSave(); layout();
-          },
-        }),
+          createLabel: (t) => 'Create #' + String(t).replace(/^#/, '').toLowerCase(),
+        })),
         /* The seam between the two families — present only when both are. */
         (page.tags.length && visibleMentions().length)
           ? h('span', { className: 'chips-sep', 'aria-hidden': 'true' }) : null,
@@ -4263,25 +5348,17 @@ function V2PageView(pageId, onChange, onDeleted) {
         // which rendered as five identical truncated chips. Both are
         // filtered for display only — the underlying array is untouched,
         // so nothing is dropped from the file.
-        visibleMentions().map(({ mn, i }) => h('span', { className: 'mention-chip rm' },
-          h('span', { className: 'mention-chip-i' }, icon('link-2')),
-          h('span', { className: 'mention-chip-t' }, mn),
-          h('button', { title: 'Remove this link', 'aria-label': 'Remove link ' + mn,
-            onClick: () => { page.mentions.splice(i, 1); queueSave(); layout(); } }, '×'))),
-        AutocompleteInput({
-          placeholder: '+ link a page',
-          allowCreate: false,
-          fetchSuggestions: (q) => searchMentions(q, page.mentions),
-          renderItem: (it) => [
-            h('span', { className: 'ac-row-l' }, it.title || '(untitled)'),
-            h('span', { className: 'ac-row-r' }, it.kind),
-          ],
-          onPick: ({ existing }) => {
-            if (!existing) return;
-            page.mentions.push(existing.id);  // canonical ref by id
-            queueSave(); layout();
-          },
-        }),
+        visibleMentions().map(({ mn, i }) => MentionChip(mn, {
+          onClick: () => { const t = resolveMention(mn); if (t.id) openPage(t.id); },
+          onRemove: () => { page.mentions.splice(i, 1); queueSave(); layout(); },
+        })),
+        // Same panel, same keys, pages instead of tags.
+        chipAdd('link-2', 'Link a page', (btn) => openPicker(btn, {
+          placeholder: 'Find a page…',
+          hint: '↑↓ to choose · ⏎ to link · esc to close',
+          search: pageRows(page.mentions),
+          onPick: (row) => { page.mentions.push(row.id); queueSave(); layout(); },
+        })),
         /* An "in content" strip used to list every #hashtag found in the
            body. It restated information the reader can already see — the
            tags are right there in the prose, styled as tags — and on an
@@ -4391,7 +5468,14 @@ function V2PageView(pageId, onChange, onDeleted) {
       side = renderTopicSide();
     }
 
-    wrap.appendChild(h('div', { className: 'page-grid' + (side ? '' : ' no-chat') + extraClass },
+    /* --k-c on the GRID, not on the header: the metadata rail is a sibling of
+       the main column, and both take the kind wash. Setting it once here is
+       what lets the rail's cards tint themselves without every one of them
+       being told which page they belong to. */
+    wrap.appendChild(h('div', {
+      className: 'page-grid' + (side ? '' : ' no-chat') + extraClass,
+      style: { '--k-c': m.color },
+    },
       h('div', { className: 'page-main' }, header, body),
       side)); // right column
   };
@@ -4422,7 +5506,10 @@ function V2PageView(pageId, onChange, onDeleted) {
 
   // Save on unmount + clean up any body listeners (canvas/inspo paste, etc.)
   wrap.__teardown = () => {
-    if (dirty) commit();
+    flushSave();          // not `if (dirty) commit()` — the debounce is killed too
+    window.removeEventListener('pagehide', leaveHandler);
+    document.removeEventListener('visibilitychange', visHandler);
+    window.removeEventListener('beforeunload', unloadGuard);
     runBodyTeardowns();
   };
   return wrap;
@@ -4442,7 +5529,35 @@ function openTagColorPicker(anchor, tag, onDone) {
 
   const pop = h('div', { className: 'tag-pop', role: 'menu',
     'aria-label': 'Colour for ' + tag });
-  pop.appendChild(h('div', { className: 'tag-pop-hd' }, 'Colour for #' + tag));
+  pop.appendChild(h('div', { className: 'tag-pop-hd' }, 'Mark for #' + tag));
+
+  /* The emoji. A short row of the ones that actually get used on a wall of
+     references, plus a field for anything else — a picker with 3,000 glyphs
+     in it is a worse answer than eight good ones and somewhere to paste. */
+  const EMOJI = ['🎨', '📐', '🔤', '📷', '🧭', '⚙️', '📚', '💡', '🧪', '🌿', '🔥', '⭐'];
+  const cur = tagEmoji(tag);
+  const erow = h('div', { className: 'tag-pop-emoji' });
+  EMOJI.forEach((g) => {
+    erow.appendChild(h('button', {
+      className: 'tag-pop-e' + (cur === g ? ' on' : ''),
+      title: g, 'aria-label': 'Use ' + g,
+      onClick: () => { setTagEmoji(tag, g); close(); onDone(); },
+    }, g));
+  });
+  const efield = h('input', {
+    className: 'tag-pop-ein', placeholder: 'or paste one', value: cur || '',
+    maxLength: 4, 'aria-label': 'Any emoji',
+  });
+  efield.addEventListener('change', () => { setTagEmoji(tag, efield.value); close(); onDone(); });
+  erow.appendChild(efield);
+  if (cur) {
+    erow.appendChild(h('button', {
+      className: 'tag-pop-e tag-pop-e-clear', title: 'No emoji', 'aria-label': 'No emoji',
+      onClick: () => { setTagEmoji(tag, ''); close(); onDone(); },
+    }, '⃠'));
+  }
+  pop.appendChild(erow);
+  pop.appendChild(h('div', { className: 'tag-pop-sub' }, 'Colour'));
 
   const grid = h('div', { className: 'tag-pop-grid' });
   TAG_HUES.forEach((label, i) => {
@@ -4951,12 +6066,31 @@ function ProseEditor(opts) {
     placeholder,
     value: getValue() || '',
     style: { minHeight: minHeight + 'px' },
-    onInput: (e) => { setValue(e.target.value); schedule(); },
+    onInput: (e) => { setValue(e.target.value); grow(); schedule(); },
+    /* Leaving the field IS finishing. The mode was previously exited by
+       finding a "Done" button, which is the ceremony this editor is trying
+       not to have — and it is also the moment the text should reach disk,
+       so the blur both renders and commits rather than waiting out a timer. */
+    onBlur: () => { if (mode === 'edit') setMode('view'); },
+    onKeyDown: (e) => {
+      // Escape leaves the field the same way clicking away does.
+      if (e.key === 'Escape') { e.preventDefault(); ta.blur(); }
+    },
   });
+
+  /* The textarea grows to its content instead of scrolling inside a fixed
+     box. A pane that scrolls independently of the page is the other half of
+     what made this feel like a separate mode. */
+  function grow() {
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(minHeight, ta.scrollHeight) + 'px';
+  }
 
   let mode = (getValue() || '').trim() ? 'view' : 'edit';
   let timer = null;
   const schedule = () => { clearTimeout(timer); timer = setTimeout(paint, 350); };
+
+  function setMode(next) { mode = next; apply(); }
 
   async function paint() {
     const body = (getValue() || '').trim();
@@ -4981,7 +6115,24 @@ function ProseEditor(opts) {
 
   const toggle = h('button', {
     className: 'md-mode-btn',
-    onClick: () => { mode = mode === 'view' ? 'edit' : 'view'; apply(); },
+    // mousedown, not click: by the time `click` fires the textarea has already
+    // blurred and put us back in view mode, so the button would toggle straight
+    // back in and read as doing nothing.
+    onMouseDown: (e) => { e.preventDefault(); setMode(mode === 'view' ? 'edit' : 'view'); },
+  });
+
+  /* Click the prose to edit the prose.
+     Hunting for an Edit button to change a word is the ceremony; the text is
+     already the thing you are pointing at. Links, mentions and hashtags keep
+     their own click — you cannot follow a link if the paragraph swallows the
+     press — and so does a real text selection, because dragging to select is
+     not a request to edit. */
+  view.addEventListener('mouseup', (e) => {
+    if (mode === 'edit') return;
+    if (e.target.closest && e.target.closest('a, .mention-link, .mention-chip, .hashtag, button')) return;
+    const sel = window.getSelection();
+    if (sel && String(sel).length) return;
+    setMode('edit');
   });
 
   function apply() {
@@ -4991,7 +6142,20 @@ function ProseEditor(opts) {
     toggle.appendChild(icon(editing ? 'check' : 'pen-line'));
     toggle.appendChild(document.createTextNode(editing ? 'Done' : 'Edit'));
     toggle.setAttribute('title', editing ? 'Finish editing' : 'Edit this text');
-    if (!editing) paint(); else setTimeout(() => ta.focus(), 0);
+    if (!editing) {
+      paint();
+      // Leaving the field is a commit point: the debounce is for typing, not
+      // for the gap between finishing and closing the tab.
+      if (opts.onDone) opts.onDone();
+    } else {
+      grow();
+      setTimeout(() => {
+        ta.focus();
+        // Caret at the end rather than at 0 — you are almost always adding.
+        const n = ta.value.length;
+        try { ta.setSelectionRange(n, n); } catch (_) {}
+      }, 0);
+    }
   }
 
   wrap.appendChild(h('div', { className: 'prose-editor-hd' },
@@ -5836,12 +7000,126 @@ function SettingsScreen() {
         },
       }))));
 
+  /* The clipper panel is BUILT below (it needs `row`), but it belongs here —
+     second, under the vault it writes into. It was under Appearance, three
+     scrolls down and shaped like a preference, and the one person who went
+     looking for it did not find it. A thing you install is not a setting. */
+  const clipperSlot = h('div');
+  wrap.appendChild(clipperSlot);
+
   wrap.appendChild(section('Getting around', 'how this app works, in seven steps',
     row('The tour', 'Points at each control as it explains it. Runs once on a new vault.',
       h('button', {
         className: 'btn',
         onClick: () => { app.route = 'home'; render(); setTimeout(() => startTour(0), 80); },
       }, 'Take the tour'))));
+
+  /* ── The clipper ──────────────────────────────────────────────────────
+     Not a Web Store listing, so not one click — and the panel says so rather
+     than pretending. What it can do is remove every other obstacle: build the
+     zip of just the extension, name the folder to pick, and copy the
+     `chrome://` address the browser refuses to let a page link to. */
+  const clipperSteps = [
+    ['Unzip it', `You get a folder called ${CLIPPER_DIR}.`],
+    ['Open the extensions page', 'Chrome blocks links to chrome:// — copy it above and paste it in a new tab.'],
+    ['Turn on Developer mode, then Load unpacked', `Pick the ${CLIPPER_DIR} folder itself.`],
+    ['Choose your vault', 'The clipper opens its own setup page and asks for one thing: the same folder you opened here. Pin its toolbar icon while you are there.'],
+  ];
+  const copyBtn = h('button', {
+    className: 'btn',
+    onClick: async (e) => {
+      const b = e.currentTarget;
+      try {
+        await navigator.clipboard.writeText(CLIPPER_EXT_PAGE);
+        b.textContent = 'copied';
+        setTimeout(() => { b.textContent = 'copy address'; }, 1400);
+      } catch (_) {
+        // Clipboard can be refused (permissions, insecure context). Say so
+        // rather than flashing a success the user cannot verify.
+        toast('Could not copy — the address is ' + CLIPPER_EXT_PAGE, { tone: 'error' });
+      }
+    },
+  }, 'copy address');
+
+  /* Built on click, not on load: the bundle is ~310KB of base64 and most
+     visits never touch it. Dynamically imported for the same reason
+     demo-vault.js is. */
+  const dlBtn = h('button', { className: 'btn-primary set-dl' },
+    icon('download'), 'Download .zip');
+  dlBtn.addEventListener('click', async () => {
+    if (dlBtn.disabled) return;
+    dlBtn.disabled = true;
+    const restore = (label) => {
+      clear(dlBtn);
+      dlBtn.appendChild(icon('download'));
+      dlBtn.appendChild(document.createTextNode(label));
+      dlBtn.disabled = false;
+    };
+    clear(dlBtn); dlBtn.appendChild(document.createTextNode('building…'));
+    try {
+      const v = window.SB_ASSET_V ? `?v=${window.SB_ASSET_V}` : '';
+      const [{ zip, fromBase64 }, { CLIPPER_BUNDLE }] = await Promise.all([
+        import(`./clipper/zip.js${v}`),
+        import(`./clipper/bundle.js${v}`),
+      ]);
+      // Everything nests under one named folder, so unzipping always yields a
+      // folder Chrome can be pointed at — rather than 23 loose files landing
+      // in Downloads, which is what a flat archive does on some unzippers.
+      const bytes = zip(CLIPPER_BUNDLE.map(([name, b64]) =>
+        ({ name: `${CLIPPER_DIR}/${name}`, data: fromBase64(b64) })));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/zip' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `${CLIPPER_DIR}.zip`;
+      // In the document, because a detached anchor's click is ignored in
+      // enough browsers to matter, and this is a quarter of a megabyte the
+      // user is waiting on.
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // NOT revoked on the next line. The save reads from the object URL
+      // after click() returns, and revoking synchronously races it — for a
+      // 238KB blob that race is winnable, which is the worst kind of bug.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      restore('Download again');
+    } catch (e) {
+      toast('Could not build the zip — ' + (e.message || e), { tone: 'error' });
+      restore('Download .zip');
+    }
+  });
+
+  const clipperSec = section('The clipper', 'a Chrome extension that saves images, links and quotes into this vault',
+    row('Get the files',
+      'Chrome only allows one-click installs from its Web Store, and this is not listed there. '
+      + 'So: download the extension, then three steps.',
+      dlBtn),
+    row(h('span', null, 'Extensions page ',
+          h('code', { className: 'set-code' }, CLIPPER_EXT_PAGE)),
+      'Paste this into a new tab — a web page is not allowed to open it for you.',
+      copyBtn),
+    h('ol', { className: 'set-steps' },
+      clipperSteps.map(([t, d]) => h('li', null,
+        h('span', { className: 'set-step-t' }, t),
+        h('span', { className: 'set-step-d' }, d)))),
+    row('What it does', 'It writes through the same safety as the app: history snapshots, '
+      + 'conflict checks, and it will never turn a folder into a vault by mistake.',
+      h('a', { className: 'btn', href: CLIPPER_HELP, target: '_blank', rel: 'noopener noreferrer' },
+        'Read the docs')));
+  clipperSec.id = 'set-clipper';
+  clipperSec.classList.add('set-sec-feature');
+  clipperSlot.appendChild(clipperSec);
+
+  /* Arriving from the sidebar's Clipper row: bring it into view and flash it
+     once. Without the flash, a scroll that lands mid-screen leaves you asking
+     which panel you were sent to. */
+  if (app._settingsFocus === 'clipper') {
+    app._settingsFocus = null;
+    requestAnimationFrame(() => {
+      clipperSec.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      clipperSec.classList.add('is-flash');
+      setTimeout(() => clipperSec.classList.remove('is-flash'), 1600);
+    });
+  }
 
   wrap.appendChild(section('Appearance', null,
     // The swatch row, not a dropdown: the chip paints the mode's own page and
@@ -5903,6 +7181,10 @@ function buildMain() {
       while (view.firstChild) wrap.appendChild(view.firstChild);
       // copy className additions
       wrap.className = view.className;
+      // The children move to this wrap, so any cleanup the view registered has
+      // to move with them — `render()` only ever calls __teardown on the outer
+      // element it is holding.
+      if (view.__teardown) wrap.__teardown = view.__teardown;
     }).catch((e) => {
       clear(wrap);
       wrap.appendChild(EmptyState('Failed to load.', String(e.message)));
@@ -5965,6 +7247,21 @@ function render() {
   if (app.createOpen) appEl.appendChild(CreateModal(app.createOpen, createPage, () => { app.createOpen = false; render(); }));
   if (app.searchOpen) appEl.appendChild(SearchPanel(closeSearch));
   root.appendChild(appEl);
+}
+
+/* Swap the sidebar in place, counts and all.
+   For the case where something changed the vault but re-rendering the whole
+   screen would throw away what the user is in the middle of — the bookmark
+   paste box keeps its focus and its "saved 3" line while the nav behind it
+   catches up. A full render() is still right for anything that changes which
+   screen you are on. */
+function refreshSidebar() {
+  const old = document.querySelector('.app > .nav');
+  if (!old) return;
+  old.replaceWith(Sidebar(
+    app.route, setRoute, app.kindCounts,
+    () => { app.createOpen = true; render(); },
+    app.offline, app.lastSynced));
 }
 
 /* Arrow-key movement within a list.

@@ -239,6 +239,39 @@ export function captureToBookmark(capture = {}) {
 }
 
 /**
+ * Every link in a lump of pasted text, in order, deduplicated.
+ *
+ * The paste is not assumed to be tidy. People copy a column out of a
+ * spreadsheet, a run of lines out of a chat, a markdown list, or a single
+ * bare link — and all four should mean the same thing. So: find URLs
+ * anywhere in the text rather than requiring one per line.
+ *
+ * Trailing punctuation is trimmed because prose puts links in sentences —
+ * "see https://example.com/x." must not save a URL ending in a full stop.
+ * Closing brackets are trimmed only when unbalanced, since a Wikipedia URL
+ * can legitimately end in one.
+ */
+export function urlsFromText(text) {
+  const out = [];
+  const seen = new Set();
+  for (const m of String(text ?? "").matchAll(/https?:\/\/[^\s<>"'`\]]+/gi)) {
+    let raw = m[0];
+    // Punctuation that ended a sentence, not the address.
+    raw = raw.replace(/[.,;:!?]+$/, "");
+    while (raw.endsWith(")") && (raw.match(/\(/g) || []).length < (raw.match(/\)/g) || []).length) {
+      raw = raw.slice(0, -1);
+    }
+    const safe = safeUrl(raw);
+    if (!safe) continue;
+    const key = canonicalUrl(safe) || safe;
+    if (seen.has(key)) continue;      // the same link pasted twice is one link
+    seen.add(key);
+    out.push(safe);
+  }
+  return out;
+}
+
+/**
  * What to call a link nobody named — clipped from a context menu, where the
  * only thing known about it is the href.
  *

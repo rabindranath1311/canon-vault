@@ -904,3 +904,42 @@ test("read-only comes first, and warnings still get through", () => {
 test("a clean vault says nothing", () => {
   assert.deepEqual(vaultNotices(true, []), []);
 });
+
+test("a closing tab can finish the write it already started", async () => {
+  /* The editor flushes unsaved text from `beforeunload`. Saving is async and
+     `release()` is not, so the write suspends on its first await, `pagehide`
+     releases the lock, and the write then wakes to find itself locked out —
+     losing the last thing typed, silently, on a page nobody is watching. */
+  const t = tabs();
+  const el = t.open("a");
+  el.tick();
+  assert.equal(el.isWriter, true);
+
+  const be = new MemoryBackend({ "notes/A.md": md(page({ title: "A" }), "before") });
+  const v = new Vault(be, { election: el, now: () => TS });
+  await v.buildIndex();
+
+  // Issue the write, then close the tab before it settles.
+  const writing = v.put({ path: "notes/A.md", id: page().id,
+    kind: "note", title: "A",
+    frontmatter: { kind: "note", title: "A", tags: [] }, body: "after" });
+  el.tab.fire("pagehide");
+  const r = await writing;
+  assert.equal(r.ok !== false, true, "the final flush must land, not be refused");
+  assert.match(await be.readText("notes/A.md"), /after/);
+
+  // The allowance is exactly that narrow: a tab that never held the lock does
+  // not acquire one by closing…
+  const t2 = tabs();
+  const a = t2.open("a"), b = t2.open("b");
+  a.tick(); b.tick();
+  const reader = a.isWriter ? b : a;
+  assert.equal(reader.isWriter, false);
+  reader.tab.fire("pagehide");
+  const v2 = new Vault(new MemoryBackend(), { election: reader });
+  assert.equal(v2.mayWrite(), false, "a read-only tab must not gain the lock by closing");
+
+  // …and it shuts again when a frozen document comes back from the bfcache.
+  el.resume();
+  assert.equal(el.closing, false);
+});

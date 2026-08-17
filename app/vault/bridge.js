@@ -66,6 +66,11 @@ function markdownRenderer() {
 // file in the app and this pinned it to one version forever. A module knows its
 // own URL, and boot.js already passes ours through, so read it from there.
 const ASSET_V = new URL(import.meta.url).searchParams.get("v") || "0";
+/* app.js is a classic script, so it cannot read a module's URL. It needs the
+   version anyway: anything it imports dynamically (the clipper bundle) is
+   served cache-first on an exact URL match, and an unversioned specifier
+   would pin a returning user to the copy of that file the cache already has. */
+window.SB_ASSET_V = ASSET_V;
 
 function loadApp() {
   if (window.__SB_APP_LOADED) return;

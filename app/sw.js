@@ -9,7 +9,7 @@
 //   * CACHE_VERSION versions the *cache itself*. `activate` deletes every cache
 //     that is not the current one, so caches.keys() is always exactly 1 and no
 //     deploy leaves orphans. Bump it when this file changes.
-const CACHE_VERSION = "v158";
+const CACHE_VERSION = "v204";
 const CACHE = `canon-vault-${CACHE_VERSION}`;
 
 const SHELL = [
@@ -22,10 +22,15 @@ const SHELL = [
   "vendor/fonts/inter-italic-latin-ext.woff2",
   "vendor/fonts/jetbrains-mono-normal-latin.woff2",
   "vendor/fonts/jetbrains-mono-normal-latin-ext.woff2",
+  // Everything bridge.js reaches through static imports loads on every boot,
+  // so ALL of it belongs in the shell — clip.js (imported by data.js) and
+  // brain-text.js (imported by scaffold.js) were missing, and a stale worker
+  // with no cached copy blanked the whole app. dhash.js is gone the other
+  // way: nothing shipped imports it, only tests do.
   "vault/mdfile.js", "vault/vault.js", "vault/dashboard.js",
   "vault/data.js", "vault/bridge.js", "vault/links.js",
-  "vault/dhash.js", "vault/images.js", "vault/scaffold.js",
-  // bridge.js imports these on every boot, so they belong in the shell.
+  "vault/images.js", "vault/scaffold.js",
+  "vault/clip.js", "vault/brain-text.js",
   "vault/excalidraw.js", "vault/inspo.js", "vendor/lz-string.js",
   "vendor/markdown-it.min.js",
   // vendor/excalidraw/* is deliberately NOT precached: it is ~8MB, and a vault

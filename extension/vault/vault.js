@@ -225,6 +225,9 @@ export class WriterElection {
     this._target = opts.target ?? (typeof window !== "undefined" ? window : null);
     this._timer = null;
     this.released = false;
+    /** Open only between `release()` and the document actually going away —
+     *  see release(). Lets a closing tab finish the write it already began. */
+    this.closing = false;
     if (this.ch) {
       this.ch.onmessage = (e) => this.#onMessage(e.data);
       this.#start();
@@ -292,6 +295,20 @@ export class WriterElection {
   release() {
     if (this.released) return;
     this.released = true;
+    /* The departing tab keeps permission to finish its OWN last write.
+
+       Saving is asynchronous and `release()` is not: the editor issues its
+       final flush from `beforeunload`, the write suspends on its first
+       `await`, this runs, and the write then wakes up to find the lock gone
+       and is refused — losing exactly the keystrokes the flush existed to
+       save. It failed silently, because nobody is reading a "Not saved"
+       badge on a page that is closing.
+
+       Only if this tab actually held the lock: a read-only second tab must
+       not gain write permission by being closed. And the window shuts again
+       in `resume()`, so a document that comes back from the bfcache cannot
+       write against whoever took the lock while it was frozen. */
+    this.closing = this.isWriter;
     this.isWriter = false;
     this.#say("bye");
     if (this._timer != null) { this._clearInterval(this._timer); this._timer = null; }
@@ -312,6 +329,9 @@ export class WriterElection {
    */
   resume() {
     if (!this.released || !this.ch) return;
+    // The final-flush window closes here: the document is live again, so any
+    // further write must win the lock properly rather than inherit it.
+    this.closing = false;
     const t = this.now();
     for (const id of this.peers.keys()) this.peers.set(id, t);
     this.#start();
@@ -492,6 +512,19 @@ export class Vault {
     this.now = opts.now ?? (() => new Date().toISOString().replace(/\.\d+Z$/, "+00:00"));
     this.newId = opts.newId ?? newUlid;
     this._mtimes = new Map();
+  }
+
+  /**
+   * May this tab write?
+   *
+   * Normally: only the elected writer. Plus one narrow case — a tab that held
+   * the lock and is now closing keeps permission long enough to finish the
+   * write it already started. Saving is async and `release()` is not, so
+   * without this the editor's final flush is issued while the lock is held
+   * and lands after it is gone. See `WriterElection.release`.
+   */
+  mayWrite() {
+    return !!(this.election.isWriter || this.election.closing);
   }
 
   // 5.5 / 5.12 / 5.13 / 5.16 / 5.17
@@ -685,7 +718,7 @@ export class Vault {
 
   // 5.6 / 5.14 / 5.17 / 5.19 / 5.20 / 5.23
   async put(page) {
-    if (!this.election.isWriter) {
+    if (!this.mayWrite()) {
       return { ok: false, reason: "not-writer", message: "another tab holds the write lock" };
     }
     // Resolve by PATH first when one is given. Resolving by id is wrong here: a
@@ -809,7 +842,7 @@ export class Vault {
    * Refuses rather than overwrites: a name already on disk belongs to somebody.
    */
   async rename(id, toPath) {
-    if (!this.election.isWriter) {
+    if (!this.mayWrite()) {
       return { ok: false, reason: "not-writer", message: "another tab holds the write lock" };
     }
     const e = this.index.get(id);
@@ -919,7 +952,7 @@ export class Vault {
      a plain move back, refusing if something has since taken the old path so
      a restore can never overwrite a live file. */
   async untrash({ trashed, trashedCanvas, path, canvasPath } = {}) {
-    if (!this.election.isWriter) return { ok: false, reason: "not-writer" };
+    if (!this.mayWrite()) return { ok: false, reason: "not-writer" };
     if (!trashed || !path) return { ok: false, reason: "nothing-to-restore" };
     if (!(await this.be.exists(trashed))) return { ok: false, reason: "gone-from-trash" };
     if (await this.be.exists(path)) return { ok: false, reason: "path-taken" };
@@ -935,7 +968,7 @@ export class Vault {
 
   async readBlob(path) { return this.be.readBytes(path); }
   async writeBlob(path, bytes) {
-    if (!this.election.isWriter) return { ok: false, reason: "not-writer" };
+    if (!this.mayWrite()) return { ok: false, reason: "not-writer" };
     try {
       await this.be.writeBytes(path, bytes);
     } catch (e) {
