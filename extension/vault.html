@@ -19,83 +19,128 @@
         uploaded — the same files the app and Obsidian open.</p>
     </div>
 
-    <section class="section">
-      <h2>Vault folder</h2>
-      <div class="card card-pad stack">
-        <div class="row between">
-          <div class="stack grow">
-            <div id="vault-name" style="font-weight:600">Not connected</div>
-            <div id="vault-why" class="note"></div>
-          </div>
+    <!-- The whole of first run. One decision, one button, and nothing else on
+         screen competing with it: every other section below is hidden until a
+         folder is connected, because none of them can do anything yet. -->
+    <section id="onboard" class="section hidden">
+      <div class="card onboard">
+        <div class="onboard-main stack">
+          <h2 class="lead">Choose the folder your vault lives in</h2>
+          <p class="note">The one holding <span class="mono">CONVENTION.md</span> — the same
+            folder you open in the app and in Obsidian. Clips are written straight
+            into it. Nothing is uploaded, and nothing else on your disk is read.</p>
           <div class="row">
-            <button id="unlock" class="primary hidden">Unlock</button>
-            <button id="choose">Choose folder…</button>
-            <button id="forget" class="ghost hidden">Forget</button>
+            <button id="connect" class="primary lead-btn">Choose vault folder…</button>
+            <span class="note">takes one click</span>
           </div>
         </div>
-        <p class="note">Chrome grants folder access for the session, so it can lapse
-          when the browser restarts. Clips are never lost when it does — they
-          queue below and are written the moment access is restored.</p>
+        <ol class="steps">
+          <li><span class="step-t">Pin the toolbar icon</span>
+            <span class="step-d">Click the puzzle-piece in Chrome's toolbar, then the pin
+              beside Canon Clip. That icon is the popup.</span></li>
+          <li><span class="step-t">Clip anything</span>
+            <span class="step-d">Right-click an image or a selection, press
+              <kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd> for the page, or
+              <kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> to drag out a region.</span></li>
+          <li><span class="step-t">Open it in the app</span>
+            <span class="step-d">It is already there — a clip is a markdown file in the
+              folder you just picked.</span></li>
+        </ol>
       </div>
       <p id="status" class="status" role="status"></p>
     </section>
 
-    <section class="section">
-      <h2>Defaults</h2>
-      <div class="card card-pad stack">
-        <div class="grid2">
-          <label class="field">Wall for images and screenshots
-            <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
-            <datalist id="walls"></datalist>
+    <!-- Chrome hands out folder access per session, so this is the single most
+         common thing that goes wrong. It gets a banner at the top of the page
+         with one button, rather than a control to go hunting for. -->
+    <section id="lock" class="section hidden">
+      <div class="card card-pad banner row between">
+        <div class="stack grow">
+          <strong id="lock-title">Vault locked</strong>
+          <span id="lock-why" class="note"></span>
+        </div>
+        <button id="unlock" class="primary">Unlock</button>
+      </div>
+    </section>
+
+    <div id="connected" class="stack-lg hidden">
+      <section class="section">
+        <h2>Vault folder</h2>
+        <div class="card card-pad stack">
+          <div class="row between">
+            <div class="stack grow">
+              <div id="vault-name" style="font-weight:600">Not connected</div>
+              <div id="vault-why" class="note"></div>
+            </div>
+            <div class="row">
+              <button id="choose">Change folder…</button>
+              <button id="forget" class="ghost">Forget</button>
+            </div>
+          </div>
+          <p class="note">Chrome grants folder access for the session, so it can lapse
+            when the browser restarts. Clips are never lost when it does — they
+            queue below and are written the moment access is restored.</p>
+        </div>
+        <p id="status-connected" class="status" role="status"></p>
+      </section>
+
+      <section class="section">
+        <h2>Defaults</h2>
+        <div class="card card-pad stack">
+          <div class="grid2">
+            <label class="field">Wall for images and screenshots
+              <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
+              <datalist id="walls"></datalist>
+            </label>
+            <label class="field">Group on that wall (optional)
+              <input id="group" type="text" placeholder="ungrouped">
+            </label>
+          </div>
+          <label class="field">A clipped page or link becomes
+            <select id="linkTarget">
+              <option value="bookmark">a bookmark — a note carrying the url</option>
+              <option value="wall">a card on the wall</option>
+            </select>
           </label>
-          <label class="field">Group on that wall (optional)
-            <input id="group" type="text" placeholder="ungrouped">
+          <label class="check">
+            <input id="autoSave" type="checkbox">
+            <span>Write each clip immediately<br>
+              <span class="note">Off means everything waits here until you press Save.</span></span>
+          </label>
+          <label class="check">
+            <input id="dedupe" type="checkbox">
+            <span>Skip references the vault already holds<br>
+              <span class="note">Matches on the link, ignoring tracking parameters.</span></span>
           </label>
         </div>
-        <label class="field">A clipped page or link becomes
-          <select id="linkTarget">
-            <option value="bookmark">a bookmark — a note carrying the url</option>
-            <option value="wall">a card on the wall</option>
-          </select>
-        </label>
-        <label class="check">
-          <input id="autoSave" type="checkbox">
-          <span>Write each clip immediately<br>
-            <span class="note">Off means everything waits here until you press Save.</span></span>
-        </label>
-        <label class="check">
-          <input id="dedupe" type="checkbox">
-          <span>Skip references the vault already holds<br>
-            <span class="note">Matches on the link, ignoring tracking parameters.</span></span>
-        </label>
-      </div>
-    </section>
+      </section>
 
-    <section class="section">
-      <div class="row between">
-        <h2 id="queue-title">Waiting</h2>
-        <div class="row">
-          <button id="flush" class="primary">Save all now</button>
-          <button id="clear" class="ghost">Discard all</button>
+      <section class="section">
+        <div class="row between">
+          <h2 id="queue-title">Waiting</h2>
+          <div class="row">
+            <button id="flush" class="primary">Save all now</button>
+            <button id="clear" class="ghost">Discard all</button>
+          </div>
         </div>
-      </div>
-      <div id="queue" class="card list"></div>
-    </section>
+        <div id="queue" class="card list"></div>
+      </section>
 
-    <section class="section">
-      <h2>Recently written</h2>
-      <div id="recent" class="card list"></div>
-    </section>
+      <section class="section">
+        <h2>Recently written</h2>
+        <div id="recent" class="card list"></div>
+      </section>
 
-    <section class="section">
-      <h2>Shortcuts</h2>
-      <div class="card card-pad stack">
-        <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd><span class="note">clip this page</span></div>
-        <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd><span class="note">drag a region out of this page</span></div>
-        <p class="note">Right-click anything — an image, a link, a selection — for the
-          rest. Change these keys at <span class="mono">chrome://extensions/shortcuts</span>.</p>
-      </div>
-    </section>
+      <section class="section">
+        <h2>Shortcuts</h2>
+        <div class="card card-pad stack">
+          <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd><span class="note">clip this page</span></div>
+          <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd><span class="note">drag a region out of this page</span></div>
+          <p class="note">Right-click anything — an image, a link, a selection — for the
+            rest. Change these keys at <span class="mono">chrome://extensions/shortcuts</span>.</p>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script type="module" src="vault.js"></script>

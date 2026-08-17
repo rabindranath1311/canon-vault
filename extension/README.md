@@ -12,8 +12,18 @@ It is not in the Chrome Web Store; load it from this repo.
 
 1. `chrome://extensions` → turn on **Developer mode**
 2. **Load unpacked** → choose this `extension/` folder
-3. The setup page opens → **Choose folder…** → pick your vault
+3. The setup page opens by itself → **Choose vault folder…** → pick the folder
+   holding your `CONVENTION.md`
 4. Pin the toolbar icon
+
+That is the whole setup: one folder, one click. Everything else on that page —
+the default wall, what a clipped link becomes — has a working default and can
+stay untouched, which is why none of it is shown until the folder is connected.
+
+Chrome hands out folder access **per browser session**, so it lapses when Chrome
+restarts. Nothing is lost when it does: clips queue, the toolbar badge marks the
+vault as locked before you clip rather than after, and the popup's banner
+unlocks it in one click.
 
 Chromium only — the File System Access API does not exist in Safari or Firefox,
 which is the same constraint the app has.

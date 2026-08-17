@@ -47,10 +47,19 @@ chrome.runtime.onInstalled.addListener((details) => {
   // and a real click — a popup closes the moment the folder dialog opens.
   if (details.reason === "install") chrome.runtime.openOptionsPage();
 });
-chrome.runtime.onStartup.addListener(buildMenus);
+chrome.runtime.onStartup.addListener(() => {
+  buildMenus();
+  // A new browser session is exactly when the folder grant has just lapsed, so
+  // it is exactly when the badge has something to say.
+  paintBadge().catch(() => {});
+});
 
 // ── the badge ───────────────────────────────────────────────────────────────
 
+// The badge answers "will my next clip be written?" before it is made, not
+// after. A lapsed folder grant with an empty queue used to look identical to a
+// healthy clipper — you found out by clipping something and reading the
+// failure. `queryPermission` needs no gesture, so the worker can just ask.
 async function paintBadge(flash = null) {
   if (flash) {
     await chrome.action.setBadgeBackgroundColor({ color: flash === "ok" ? "#16a34a" : "#dc2626" });
@@ -59,8 +68,18 @@ async function paintBadge(flash = null) {
     return;
   }
   const n = await count();
+  const handle = await storedHandle();
+  const state = await permission(handle);
+  const ready = state === "granted";
+
   await chrome.action.setBadgeBackgroundColor({ color: "#d97706" });
-  await chrome.action.setBadgeText({ text: n ? String(n) : "" });
+  await chrome.action.setBadgeText({ text: n ? String(n) : (ready ? "" : "•") });
+  await chrome.action.setTitle({
+    title: !handle ? "Canon Clip — no vault connected yet"
+      : !ready ? `Canon Clip — ${handle.name} is locked, click to unlock`
+      : n ? `Canon Clip — ${n} waiting for ${handle.name}`
+      : `Canon Clip — writing to ${handle.name}`,
+  });
 }
 
 // ── capture ─────────────────────────────────────────────────────────────────

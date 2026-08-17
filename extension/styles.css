@@ -145,6 +145,25 @@ button.tiny { padding: 3px 7px; font-size: 11px; }
 .item .err { color: var(--bad); font-size: 11px; }
 .item .ok { color: var(--ok); }
 
+/* Said before the click, not after: the one card that appears when a clip
+   cannot be written, on both surfaces. Its button is the fix. */
+.banner { border-color: var(--warn); align-items: flex-start; }
+.banner strong { color: var(--warn); font-size: 12px; }
+
+/* Tags and wall, folded away in the popup until they are wanted. */
+.disclose {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
+  margin-left: -4px; padding: 2px 4px;
+}
+.disclose .caret { transition: transform 120ms ease; }
+.disclose.open .caret { transform: rotate(90deg); }
+
+.keys {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+  padding-top: 10px; border-top: 1px solid var(--i-1);
+}
+.keys kbd { margin-right: 2px; }
+
 .note { font-size: 11px; color: var(--i-3); line-height: 1.5; }
 .status { font-size: 12px; min-height: 18px; }
 .status.ok { color: var(--ok); }
@@ -166,3 +185,21 @@ kbd {
   font: 11px/1 ui-monospace, monospace; padding: 3px 5px; border-radius: 5px;
   background: var(--s-sunken); border: 1px solid var(--i-1);
 }
+
+/* ── first run ──────────────────────────────────────────────────────────────
+   Everything but the folder decision is hidden until the folder is picked, so
+   this card is the whole page. It earns the extra weight. */
+.stack-lg { display: flex; flex-direction: column; gap: 20px; }
+.onboard { display: flex; flex-direction: column; }
+.onboard-main { padding: 20px; gap: 10px; }
+.lead { font-size: 17px; }
+.lead-btn { padding: 9px 16px; }
+.steps {
+  display: flex; flex-direction: column; gap: 12px;
+  margin: 0; padding: 16px 20px 18px 38px;
+  background: var(--s-sunken); border-top: 1px solid var(--i-1);
+}
+.steps li::marker { color: var(--i-3); font-size: 11px; }
+.step-t { display: block; font-weight: 600; font-size: 12px; }
+.step-d { display: block; font-size: 11px; color: var(--i-3); line-height: 1.55; }
+.steps kbd { margin: 0 1px; }

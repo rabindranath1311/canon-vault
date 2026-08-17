@@ -25,23 +25,53 @@ function host(url) {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url || ""; }
 }
 
-/** The vault chip is the honest one-glance answer to "will this be saved?". */
+/**
+ * Open the setup page, optionally on the control that fixes what is wrong.
+ *
+ * `openOptionsPage` cannot carry a fragment, and the fragment is the whole
+ * point when the answer is one specific button — so a targeted open makes the
+ * tab itself. An untargeted one keeps `openOptionsPage`, which reuses a setup
+ * tab that is already open instead of stacking another.
+ */
+function openSetup(hash = "") {
+  if (hash) chrome.tabs.create({ url: chrome.runtime.getURL(`vault.html${hash}`) });
+  else chrome.runtime.openOptionsPage();
+  window.close();
+}
+
+/** The vault chip is the honest one-glance answer to "will this be saved?" —
+ *  and when the answer is no, the banner below says why and fixes it. */
 function paintVault() {
   const chip = $("vault-chip");
+  const banner = $("vault-banner");
   const v = state.vault || {};
+
   if (!v.name) {
     chip.textContent = "Connect vault";
     chip.className = "chip warn";
     chip.title = "Pick the folder your vault lives in";
-  } else if (v.permission !== "granted") {
+    banner.classList.remove("hidden");
+    $("banner-title").textContent = "No vault connected";
+    $("banner-why").textContent = "Clips are kept safely here until you pick a folder.";
+    $("banner-do").textContent = "Connect";
+    banner.dataset.hash = "";
+    return;
+  }
+  if (v.permission !== "granted") {
     chip.textContent = `${v.name} — locked`;
     chip.className = "chip warn";
     chip.title = "Chrome dropped the folder permission. Click to restore it.";
-  } else {
-    chip.textContent = v.name;
-    chip.className = "chip";
-    chip.title = "Vault settings";
+    banner.classList.remove("hidden");
+    $("banner-title").textContent = `${v.name} is locked`;
+    $("banner-why").textContent = "Chrome drops folder access between sessions. One click restores it.";
+    $("banner-do").textContent = "Unlock";
+    banner.dataset.hash = "#unlock";
+    return;
   }
+  chip.textContent = v.name;
+  chip.className = "chip";
+  chip.title = "Vault settings";
+  banner.classList.add("hidden");
 }
 
 function paintTarget() {
@@ -51,13 +81,34 @@ function paintTarget() {
   }
 }
 
+/** Tags and wall are collapsed until asked for. Anything already carrying a
+ *  value opens them, because a hidden field that is quietly set is a trap. */
+function paintDetails() {
+  const open = state.settings.details === true
+    || Boolean($("tags").value.trim())
+    || Boolean($("wall").value.trim());
+  setDetails(open, false);
+}
+
+function setDetails(open, remember = true) {
+  $("more").classList.toggle("hidden", !open);
+  $("more-toggle").setAttribute("aria-expanded", String(open));
+  $("more-toggle").classList.toggle("open", open);
+  $("more-label").textContent = open ? "Tags and wall" : "Add tags or choose a wall";
+  if (remember) saveSettings({ details: open });
+}
+
 function paintWalls() {
   const dl = $("walls");
   dl.textContent = "";
   for (const w of state.walls || []) {
     dl.appendChild(Object.assign(document.createElement("option"), { value: w.title }));
   }
-  if (!$("wall").value) $("wall").value = state.settings.wall || "";
+  // The default goes in the placeholder, not the value. `fields()` already
+  // falls back to it, so an untouched field means "wherever it usually goes" —
+  // and a *typed* one is the only thing that counts as an override worth
+  // opening the section for.
+  if (state.settings.wall) $("wall").placeholder = state.settings.wall;
 }
 
 function paintQueue() {
@@ -114,6 +165,7 @@ function paint() {
   paintVault();
   paintTarget();
   paintWalls();
+  paintDetails();
   paintQueue();
   paintRecent();
 }
@@ -145,11 +197,11 @@ function report(r) {
   if (!r || r.ok === false) {
     if (r && r.reason === "cancelled") { status("Cancelled."); return; }
     if (r && r.reason === "no-vault") {
-      status("No vault connected — click the chip above.", "warn");
+      status("Kept — connect a vault above and it is written.", "warn");
       return;
     }
     if (r && (r.reason === "permission" || r.reason === "different-vault")) {
-      status("Clipped, but the vault is locked — open settings to unlock.", "warn");
+      status("Kept — unlock the vault above and it is written.", "warn");
       return;
     }
     status(`Clipped, not saved: ${(r && (r.message || r.reason)) || "unknown"}`, "bad");
@@ -173,9 +225,13 @@ async function act(fn) {
 
 // ── wiring ──────────────────────────────────────────────────────────────────
 
-$("vault-chip").addEventListener("click", () => {
-  chrome.runtime.openOptionsPage();
-  window.close();
+$("vault-chip").addEventListener("click", () => openSetup());
+
+$("banner-do").addEventListener("click", () => openSetup($("vault-banner").dataset.hash || ""));
+
+$("more-toggle").addEventListener("click", () => {
+  setDetails($("more").classList.contains("hidden"));
+  if (!$("more").classList.contains("hidden")) $("tags").focus();
 });
 
 $("target").addEventListener("click", async (e) => {
@@ -183,6 +239,9 @@ $("target").addEventListener("click", async (e) => {
   if (!b) return;
   state.settings = await saveSettings({ linkTarget: b.dataset.target });
   paintTarget();
+  // Choosing the wall as the destination is as close as the UI gets to being
+  // told *which* wall matters — so open the field that answers it.
+  if (b.dataset.target === "wall" && $("more").classList.contains("hidden")) setDetails(true);
 });
 
 $("clip-page").addEventListener("click", () => act(() => send("clipPage", {
@@ -214,9 +273,13 @@ $("clip-screen").addEventListener("click", () =>
 
 $("flush").addEventListener("click", () => act(() => send("flush")));
 
-$("caption").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { e.preventDefault(); $("clip-page").click(); }
-});
+// Enter from any of the three text fields clips the page — the field you are in
+// is a detail *about* that clip, never a separate destination.
+for (const id of ["caption", "tags", "wall"]) {
+  $(id).addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); $("clip-page").click(); }
+  });
+}
 
 (async function init() {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -238,6 +301,16 @@ $("caption").addEventListener("keydown", (e) => {
       $("thumb").hidden = false;
     }
     if (meta.selection) $("caption").placeholder = meta.selection.slice(0, 60);
+    // Two of the five actions only mean anything on some pages. Saying which
+    // beats a button that answers "nothing is selected" after the click.
+    if (!meta.selection) {
+      $("clip-selection").disabled = true;
+      $("clip-selection").title = "Select some text on the page first";
+    }
+    if (!(meta.og && meta.og.image)) {
+      $("clip-og").disabled = true;
+      $("clip-og").title = "This page offers no image of its own";
+    }
   }
   $("caption").focus();
 })();

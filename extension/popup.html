@@ -16,6 +16,16 @@
   </header>
 
   <main class="pad">
+    <!-- Shown only when a clip cannot be written. It says so BEFORE the click,
+         rather than after, and carries the button that fixes it. -->
+    <section id="vault-banner" class="card card-pad banner row between hidden">
+      <div class="stack grow">
+        <strong id="banner-title"></strong>
+        <span id="banner-why" class="note"></span>
+      </div>
+      <button id="banner-do" class="primary tiny"></button>
+    </section>
+
     <section class="card">
       <div class="preview">
         <img id="thumb" alt="" hidden>
@@ -28,13 +38,20 @@
         <label class="field">Caption
           <input id="caption" type="text" placeholder="what caught your eye…">
         </label>
-        <label class="field">Tags
-          <input id="tags" type="text" placeholder="#ui #navigation">
-        </label>
-        <label class="field">Wall
-          <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
-        </label>
-        <datalist id="walls"></datalist>
+        <!-- Two fields most clips never fill. Out of the way by default, so the
+             primary button sits where the eye already is. -->
+        <button id="more-toggle" class="ghost tiny disclose" aria-expanded="false">
+          <span class="caret">›</span><span id="more-label">Tags and wall</span>
+        </button>
+        <div id="more" class="stack hidden">
+          <label class="field">Tags
+            <input id="tags" type="text" placeholder="#ui #navigation">
+          </label>
+          <label class="field">Wall
+            <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
+          </label>
+          <datalist id="walls"></datalist>
+        </div>
       </div>
     </section>
 
@@ -70,6 +87,12 @@
       <div class="card-pad"><h2>Just saved</h2></div>
       <div id="recent" class="list"></div>
     </section>
+
+    <footer class="keys tiny muted">
+      <span><kbd>Enter</kbd> clip page</span>
+      <span><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> region</span>
+      <span>right-click anything else</span>
+    </footer>
   </main>
 
   <script type="module" src="popup.js"></script>

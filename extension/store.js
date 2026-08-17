@@ -114,6 +114,9 @@ export const DEFAULTS = {
   // Write as soon as the clip is made, when the folder permission still holds.
   autoSave: true,
   dedupe: true,
+  // Whether the popup's tags-and-wall fields start open. A preference the user
+  // sets by using them, not by finding a setting.
+  details: false,
 };
 
 export async function settings() {

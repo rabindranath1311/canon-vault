@@ -5,6 +5,16 @@
 // would be picked into a window that no longer exists. It is also the only
 // surface with a user gesture to spend on `requestPermission`, which is why
 // "Unlock" lives here and the popup only links to it.
+//
+// The page has three states and shows exactly one of them at a time:
+//
+//   onboard    no folder yet — one button, and nothing else to read
+//   locked     a folder whose grant lapsed — a banner whose only button fixes it
+//   connected  the settings, the queue and the log
+//
+// The reason is what first run used to look like: five sections, four of them
+// empty, and the one decision that mattered competing with a Defaults form the
+// user could not yet have an opinion about.
 
 import { settings, saveSettings, pending, clear, drop } from "./store.js";
 import { rememberHandle, forgetHandle, storedHandle, permission, openVault } from "./writer.js";
@@ -12,9 +22,13 @@ import { rememberHandle, forgetHandle, storedHandle, permission, openVault } fro
 const $ = (id) => document.getElementById(id);
 const send = (type, extra = {}) => chrome.runtime.sendMessage({ type, ...extra });
 
+/** Two status lines — one per visible state — so the message always lands
+ *  where the user is looking. They are never on screen at the same time. */
 function status(text, tone = "") {
-  $("status").textContent = text;
-  $("status").className = `status ${tone}`;
+  for (const el of [$("status"), $("status-connected")]) {
+    el.textContent = text;
+    el.className = `status ${tone}`;
+  }
 }
 
 function when(iso) {
@@ -26,12 +40,23 @@ function when(iso) {
 async function paintVault() {
   const handle = await storedHandle();
   const state = await permission(handle);
+  const locked = Boolean(handle) && state !== "granted";
+
+  $("onboard").classList.toggle("hidden", Boolean(handle));
+  $("connected").classList.toggle("hidden", !handle);
+  $("lock").classList.toggle("hidden", !locked);
+
+  if (locked) {
+    $("lock-title").textContent = `${handle.name} is locked`;
+    $("lock-why").textContent = state === "denied"
+      ? "Chrome is refusing access to this folder. Choose it again below."
+      : "Chrome hands out folder access for the session, and this one has lapsed. "
+        + "One click restores it and writes everything waiting.";
+    $("unlock").textContent = state === "denied" ? "Try again" : `Unlock ${handle.name}`;
+  }
+
   $("vault-name").textContent = handle ? handle.name : "Not connected";
-  $("choose").textContent = handle ? "Change folder…" : "Choose folder…";
-  $("forget").classList.toggle("hidden", !handle);
-  $("unlock").classList.toggle("hidden", !handle || state === "granted");
-  $("vault-why").textContent = !handle
-    ? "Pick the folder your vault lives in — the one with CONVENTION.md in it."
+  $("vault-why").textContent = !handle ? ""
     : state === "granted" ? "Connected. Clips are written as they are made."
     : state === "denied" ? "Chrome is refusing access to this folder. Choose it again."
     : "Access has lapsed. Unlock to write the clips waiting below.";
@@ -137,7 +162,9 @@ async function refresh() {
 
 // ── actions ─────────────────────────────────────────────────────────────────
 
-$("choose").addEventListener("click", async () => {
+/** Pick the folder. Shared by the first-run button and "Change folder…", which
+ *  are the same act seen from two different states. */
+async function chooseFolder() {
   let handle;
   try {
     handle = await showDirectoryPicker({ mode: "readwrite", id: "canon-vault" });
@@ -159,13 +186,16 @@ $("choose").addEventListener("click", async () => {
   }
   const known = opened.vault.list().length;
   status(known
-    ? `Connected to ${handle.name} — ${known} pages.`
+    ? `Connected to ${handle.name} — ${known} pages. Clip anything and it lands here.`
     : `Connected to ${handle.name}. It looks empty — open it in the app once to set it up.`,
     known ? "ok" : "warn");
   await send("refreshWalls");
   await send("flush");
   await refresh();
-});
+}
+
+$("connect").addEventListener("click", chooseFolder);
+$("choose").addEventListener("click", chooseFolder);
 
 $("unlock").addEventListener("click", async () => {
   const handle = await storedHandle();
@@ -187,7 +217,7 @@ $("flush").addEventListener("click", async () => {
   const r = await send("flush");
   if (!r || r.ok === false) {
     status(r && r.reason === "permission"
-      ? "The folder is locked — press Unlock first."
+      ? "The folder is locked — press Unlock at the top of the page."
       : (r && (r.message || r.reason)) || "Could not write.", "warn");
   } else {
     status(`Wrote ${r.wrote}${r.failed ? `, ${r.failed} failed` : ""}.`, r.failed ? "warn" : "ok");
@@ -214,4 +244,12 @@ for (const [id, key, read] of [
   el.addEventListener("change", async () => { await saveSettings({ [key]: read(el) }); });
 }
 
-paintSettings().then(refresh);
+/** Arriving from the popup's locked chip. The button is already the only thing
+ *  in the banner; focusing it means the whole recovery is one keystroke. */
+function honourHash() {
+  if (location.hash !== "#unlock" || $("lock").classList.contains("hidden")) return;
+  $("lock").scrollIntoView({ block: "center" });
+  $("unlock").focus();
+}
+
+paintSettings().then(refresh).then(honourHash);
