@@ -35,8 +35,13 @@ as garbage, it is wrong.
 
 ```sh
 git clone https://github.com/rabindranath1311/canon-vault
-python3 -m http.server 8091 --directory canon-vault/app
+node scripts/serve.mjs 8091 app     # from inside canon-vault/
 ```
+
+`python3 -m http.server 8091 --directory canon-vault/app` also works, with one
+caveat: it sends no cache policy, so the service worker's precache never
+populates and offline silently does nothing locally. `serve.mjs` needs no
+install either — it is dependency-free Node.
 
 Open `http://localhost:8091`. Or use a hosted instance — the app is a client, so
 running it from someone else's URL gives them no access to your files.
@@ -155,4 +160,7 @@ it says which ones before you spend an afternoon.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE.txt](LICENSE.txt).
+
+Vendored third-party code under `app/vendor/` keeps its own licenses, listed in
+[THIRD-PARTY.md](THIRD-PARTY.md).

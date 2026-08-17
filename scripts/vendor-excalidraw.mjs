@@ -99,6 +99,24 @@ try {
     if (existsSync(src)) cpSync(src, join(OUT, "fonts", f), { recursive: true });
   }
 
+  // Attribution. This repo REDISTRIBUTES both of these, so the notice has to
+  // travel with them — and it has to be written here, because the rmSync above
+  // wipes OUT on every run. A missing license is not a cosmetic problem, so a
+  // failure here is fatal rather than a warning: shipping 8.7 MB of someone
+  // else's MIT code with the copyright stripped is the one outcome to avoid.
+  //
+  // React's license comes from the installed package. Excalidraw's does not:
+  // its npm tarball ships no LICENSE file at all, so it is fetched from the
+  // pinned tag in its own repo — the same version that was just installed.
+  cpSync(join(work, "node_modules", "react", "LICENSE"), join(OUT, "LICENSE.react"));
+
+  const licUrl = `https://raw.githubusercontent.com/excalidraw/excalidraw/v${PIN["@excalidraw/excalidraw"]}/LICENSE`;
+  const licRes = await fetch(licUrl);
+  if (!licRes.ok) throw new Error(`could not fetch Excalidraw LICENSE (${licRes.status}) from ${licUrl}`);
+  const licText = await licRes.text();
+  if (!/MIT License/i.test(licText)) throw new Error(`Excalidraw LICENSE from ${licUrl} does not look like a license`);
+  writeFileSync(join(OUT, "LICENSE"), licText);
+
   const version = JSON.parse(readFileSync(
     join(work, "node_modules", "@excalidraw", "excalidraw", "package.json"), "utf8")).version;
   writeFileSync(join(OUT, "VERSION"), [

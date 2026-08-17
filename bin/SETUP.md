@@ -74,12 +74,20 @@ passes the validator unmodified:
 node scripts/verify-vault.mjs --vault "$HOME/Brain"
 ```
 
-## 3. Web clipping — Obsidian Web Clipper
+## 3. Web clipping
 
-Use the official [Obsidian Web Clipper](https://obsidian.md/clipper) rather than
-a custom extension. It is maintained, it extracts article content in the page
-(which is the only way to get around CORS without a server), and it writes
-markdown straight into a vault folder.
+**Use the clipper in [`extension/`](../extension).** It ships in this repo,
+writes through the app's own data layer — so a clip gets the same serializer,
+`.history` snapshot and conflict gate as any other write — and it handles the
+things a generic template cannot: right-click an image, drag a region out of a
+page, keep a link or a quotation. Load it unpacked from `chrome://extensions`;
+the full instructions are in [docs/connect/clipper.md](../docs/connect/clipper.md).
+
+The rest of this section is the **alternative**: the official
+[Obsidian Web Clipper](https://obsidian.md/clipper), for people already using it
+or who want article-text extraction, which our clipper does not do. It writes
+markdown straight into a vault folder, so it needs one template configured to
+match the convention — otherwise its output fails the validator.
 
 Configure one template:
 

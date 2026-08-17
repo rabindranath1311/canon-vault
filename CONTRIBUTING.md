@@ -16,7 +16,9 @@ someone who does not trust it — view-source is the real source.
 **No dependencies.** `app/package.json` exists only so Node treats `app/**/*.js`
 as ES modules. It has zero dependencies and must never gain any. Libraries we do
 use — markdown-it, Inter, JetBrains Mono, Excalidraw — are vendored as files
-under `app/vendor/`.
+under `app/vendor/`. Vendoring is redistribution, so anything added there must
+bring its license with it and gain a row in [THIRD-PARTY.md](THIRD-PARTY.md);
+`app/test/vendor-license.test.js` fails if the two drift apart.
 
 **No server, no database, no `fetch()` to an origin.** If a feature seems to
 need one, it is the wrong feature. The whole premise is that your files never

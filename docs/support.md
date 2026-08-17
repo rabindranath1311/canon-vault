@@ -3,7 +3,7 @@
 The app needs the **File System Access API** — `showDirectoryPicker`, directory
 handles, and `createWritable`. Without it there is no way to read your files
 without uploading them, which is the whole point, so there is no fallback and
-no degraded mode. Non-Chromium visitors get an explainer page (task 8.3).
+no degraded mode. Non-Chromium visitors get an explainer page.
 
 ## Tested here
 
@@ -42,7 +42,7 @@ needs a real check on a real browser before it is a claim:
 The two "will not work" rows are the reason the explainer page exists. The
 explainer itself was exercised by removing the API in Chromium and confirming it
 renders with four browser links and zero console errors — but it has **not** been
-loaded in Safari or Firefox, which is what task S2 actually asks for.
+loaded in Safari or Firefox, which is the check still outstanding.
 
 ## How to check
 
