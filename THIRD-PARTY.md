@@ -13,8 +13,27 @@ code below. Each item keeps its own license, listed here.
 | [React](https://github.com/facebook/react) / React DOM | 19.0.0 | MIT © Meta Platforms, Inc. and affiliates | [app/vendor/excalidraw/LICENSE.react](app/vendor/excalidraw/LICENSE.react) |
 | [markdown-it](https://github.com/markdown-it/markdown-it) | see file header | MIT | header inside [app/vendor/markdown-it.min.js](app/vendor/markdown-it.min.js) |
 | [lz-string](https://github.com/pieroxy/lz-string) | see file header | MIT | header inside [app/vendor/lz-string.js](app/vendor/lz-string.js) |
-| [Inter](https://github.com/rsms/inter) | — | SIL Open Font License 1.1 | [app/vendor/fonts/OFL-Inter.txt](app/vendor/fonts/OFL-Inter.txt) |
-| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | — | SIL Open Font License 1.1 | [app/vendor/fonts/OFL-JetBrainsMono.txt](app/vendor/fonts/OFL-JetBrainsMono.txt) |
+| [Inter](https://github.com/rsms/inter) | — | SIL Open Font License 1.1 © 2016 The Inter Project Authors | [app/vendor/fonts/OFL-Inter.txt](app/vendor/fonts/OFL-Inter.txt) |
+| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | — | SIL Open Font License 1.1 © 2020 The JetBrains Mono Project Authors | [app/vendor/fonts/OFL-JetBrainsMono.txt](app/vendor/fonts/OFL-JetBrainsMono.txt) |
+| [Lucide](https://github.com/lucide-icons/lucide) | — | ISC | inlined — see below |
+
+The two OFL fonts are self-hosted under `app/vendor/fonts/` so the app makes no
+external request. The license requires its text to accompany the font files,
+which is why each project's own OFL is vendored beside them verbatim.
+
+## Lucide is not in `app/vendor/`
+
+The icon paths are inlined into the `LUCIDE` map in
+[app/app.js](app/app.js) rather than shipped as a library. That keeps the
+no-build rule intact and means the deployed CSP is never asked to permit an
+external fetch. The ISC terms still apply to those paths.
+
+## Provenance
+
+This project began as a fork of [Quartz](https://github.com/jackyzha0/quartz),
+Copyright (c) 2021 jackyzha0, also under the MIT License. **No Quartz source
+remains in this repository** — the attribution is retained for provenance, not
+because any of that code is still here.
 
 ## React is inside `excalidraw.js`
 

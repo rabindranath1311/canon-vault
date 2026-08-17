@@ -59,6 +59,26 @@ test("THIRD-PARTY.md lists every license file it points at", () => {
   }
 });
 
+// LICENSE.txt once carried the third-party notices appended after the MIT text.
+// That is why GitHub reported the repo's license as NOASSERTION and showed no
+// license at all: its detector stops matching when the file grows well past the
+// template. The notices live in THIRD-PARTY.md now, and this keeps them there.
+test("LICENSE.txt is the MIT text and nothing else", () => {
+  const text = readFileSync(join(REPO, "LICENSE.txt"), "utf8");
+  assert.match(text, /^MIT License/, "LICENSE.txt no longer starts with the MIT header");
+  assert.match(text.trimEnd(), /DEALINGS IN THE\nSOFTWARE\.$/,
+    "LICENSE.txt has content after the MIT text — GitHub will stop detecting the license");
+  assert.ok(text.length < 1400,
+    `LICENSE.txt is ${text.length} bytes; MIT is ~1070. Extra notices belong in THIRD-PARTY.md`);
+});
+
+test("Lucide is accounted for even though it ships inlined", () => {
+  assert.match(readFileSync(INVENTORY, "utf8"), /Lucide/,
+    "Lucide icons are inlined in app/app.js and still need attribution");
+  assert.match(readFileSync(join(REPO, "app", "app.js"), "utf8"), /const LUCIDE = \{/,
+    "the LUCIDE map moved — check THIRD-PARTY.md still describes where the icons live");
+});
+
 test("every path linked from THIRD-PARTY.md actually exists", () => {
   const inventory = readFileSync(INVENTORY, "utf8");
   // Relative markdown targets only; upstream project URLs are not our problem.
