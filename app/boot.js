@@ -93,7 +93,10 @@ window.SB_VERSION = "v3";
       + '     there is no server.</p>'
       + '  <div class="sb-actions">'
       + BROWSERS.map(function (b) {
-          return '<a class="sb-connect-demo" href="' + b[1] + '">' + b[0] + ' ↗</a>';
+          /* target=_blank, because this screen is also embedded: the landing
+             page runs the app in an iframe, and an in-frame navigation replaces
+             the demo with google.com/chrome and leaves no way back. */
+          return '<a class="sb-connect-demo" target="_blank" rel="noopener" href="' + b[1] + '">' + b[0] + ' ↗</a>';
         }).join("")
       + '  </div>'
       + '  <p class="sb-actions-note">Open this page in any of them and the folder picker'
