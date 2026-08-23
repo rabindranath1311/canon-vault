@@ -133,7 +133,10 @@ function brandLockup() {
 // class names are load-bearing beyond this file: the site embeds the app in an
 // iframe and reaches in to hide `.sb-connect-cta` and click `.sb-connect-demo`.
 // Keep both.
-function firstRun(onPick, onDemo) {
+/* `copy` lets the reconnect screen reuse this whole shell. It is the same
+   decision the first-run screen asks for — hand this app a folder — and the
+   only honest difference is that we already know which folder. */
+function firstRun(onPick, onDemo, copy = null) {
   const root = document.getElementById("root") || document.body;
   root.innerHTML = "";
   const wrap = document.createElement("main");
@@ -157,15 +160,13 @@ function firstRun(onPick, onDemo) {
     '<div class="sb-connect-inner">',
     '  <section class="sb-connect-copy">',
     '    <span class="sb-connect-brand-slot"></span>',
-    '    <p class="sb-connect-pill"><span class="sbc-pulse" aria-hidden="true"></span>Local-first · plain markdown · nothing uploaded</p>',
-    '    <h1 class="sb-connect-h1">A second brain that lives <span class="sb-connect-voice">in your files.</span></h1>',
-    '    <p class="sb-connect-lede">Pick the folder your notes live in — or an empty one to start.',
-    '       The app, Obsidian and your coding agent all read the same files.',
-    '       No database, no account.</p>',
+    '    <p class="sb-connect-pill"><span class="sbc-pulse" aria-hidden="true"></span>' + (copy ? copy.pill : 'Local-first · plain markdown · nothing uploaded') + '</p>',
+    '    <h1 class="sb-connect-h1">' + (copy ? copy.h1 : 'A second brain that lives <span class="sb-connect-voice">in your files.</span>') + '</h1>',
+    '    <p class="sb-connect-lede">' + (copy ? copy.lede : 'Pick the folder your notes live in — or an empty one to start. The app, Obsidian and your coding agent all read the same files. No database, no account.') + '</p>',
     '    <div class="sb-connect-cta-row">',
     '      <button type="button" class="sb-connect-cta">',
     '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>',
-    '        Choose folder</button>',
+    '        ' + (copy ? copy.cta : 'Choose folder') + '</button>',
     "      " + demoHTML,
     '    </div>',
     "    " + demoNote,
@@ -348,10 +349,30 @@ async function boot() {
   if (!stored) {
     firstRun(reconnect, openDemo);  // never seen a vault: onboarding, not an error
   } else {
-    // We had a vault and lost the grant. Show content, disable writing.
-    banner("Vault disconnected — showing the last known state, read-only.",
-           "Reconnect vault", reconnect);
-    loadApp();
+    /* We had a vault and lost the grant — which is the ORDINARY case, not a
+       rare one: Chrome downgrades a persisted directory handle to `prompt`
+       on every browser restart, and re-granting legally requires a click.
+
+       This used to raise a banner and call `loadApp()`, and the comment said
+       "show content, disable writing". There was no content. `connectVault`
+       computes a read-only `cache` for exactly this path, but bridge never
+       passed one and never installed one, so `window.SB_DATA` was undefined
+       and app.js booted into a world with no data layer at all. If the tab
+       it restored happened to be Home it looked fine; if it was All pages or
+       any kind: filter, `buildMain` called `SB.data()`, got "vault not
+       connected", and — because `render()` clears the root before it builds
+       — left a blank white page with no error and nothing to click. Reloading
+       could not fix it, because the tab that caused it is persisted.
+
+       So: ask for the click. It is the only thing that can actually help, and
+       it is the same question the first-run screen already knows how to ask. */
+    firstRun(reconnect, openDemo, {
+      pill: "Vault disconnected · nothing has been lost",
+      h1: 'Your vault needs <span class="sb-connect-voice">permission again.</span>',
+      lede: "Chrome forgets folder access when it restarts — your notes are untouched on "
+          + "disk. Pick the same folder to carry on where you left off.",
+      cta: "Reconnect vault",
+    });
   }
 }
 

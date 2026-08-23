@@ -7266,3 +7266,35 @@ body:has(.sb-vault-banner) .cv-toast { bottom: calc(var(--banner-h) + var(--sp-3
     animation: none !important;
   }
 }
+
+/* ── Crash screen ───────────────────────────────────────────────────────
+   The screen that used to be a blank white page. Deliberately plain: it has
+   to render when the rest of the app could not, so it leans on nothing but
+   the tokens and never on a component that might itself be the thing that
+   threw. */
+.sb-crash {
+  max-width: 60ch;
+  margin: 12vh auto;
+  padding: 0 var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  align-items: flex-start;
+}
+.sb-crash-h {
+  font-size: 1.35rem; font-weight: 600; color: var(--fg);
+  letter-spacing: var(--track-title); margin: 0;
+}
+.sb-crash-p { color: var(--muted); margin: 0; line-height: 1.6; }
+.sb-crash-pre {
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-badge);
+  font-family: var(--font-mono);
+  font-size: var(--fz-micro);
+  color: var(--muted);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.sb-crash-row { display: flex; gap: var(--sp-2); flex-wrap: wrap; }

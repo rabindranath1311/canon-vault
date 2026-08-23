@@ -7714,10 +7714,14 @@ function buildMain() {
   return V2Home(app, openPage, () => { app.createOpen = true; render(); }, (k) => setRoute('kind:' + k));
 }
 
+/* Build first, swap second.
+   This used to `clear(root)` and then build into it, so anything that threw
+   part-way left an EMPTY page — the screen was destroyed before the thing
+   replacing it was known to exist. That is how a single "vault not connected"
+   became a white void you could not reload your way out of. The old screen
+   now stays up until a whole new one has been built successfully. */
 function render() {
-  if (currentMain && currentMain.__teardown) currentMain.__teardown();
   applyNavW();
-  clear(root);
   markSettled();
   const appEl = h('div', { className: 'app app-tabs',
     'data-log': 'hidden',
@@ -7741,11 +7745,17 @@ function render() {
     app.lastSynced,
   ));
 
-  currentMain = buildMain();
-  appEl.appendChild(h('div', { className: 'main' }, currentMain));
+  // Local until the swap: `currentMain` must keep pointing at the screen that
+  // is actually mounted, or the teardown below runs against the incoming one.
+  const nextMain = buildMain();
+  appEl.appendChild(h('div', { className: 'main' }, nextMain));
 
   if (app.createOpen) appEl.appendChild(CreateModal(app.createOpen, createPage, () => { app.createOpen = false; render(); }));
   if (app.searchOpen) appEl.appendChild(SearchPanel(closeSearch));
+  // Only now is the old screen safe to throw away.
+  if (currentMain && currentMain.__teardown) currentMain.__teardown();
+  currentMain = nextMain;
+  clear(root);
   root.appendChild(appEl);
 }
 
@@ -7831,6 +7841,52 @@ function markSettled() {
   setTimeout(() => document.body.classList.add('cv-settled'), 900);
 }
 
+/* ── The last resort ────────────────────────────────────────────────────
+   There was no `onerror` and no `unhandledrejection` handler anywhere in this
+   app, and `render()` destroyed the screen before it built the replacement.
+   Together those turned EVERY uncaught error into the same outcome: a blank
+   white page, no message, nothing to click, and — when the cause was a
+   persisted tab — no way to reload out of it either.
+
+   A crash the user can see and recover from is not a nice-to-have here. This
+   app holds the only copy of nothing (the files are on disk, untouched), but
+   a screen that says nothing is indistinguishable from one that is still
+   loading, which is exactly how half an hour gets spent waiting on something
+   that failed in the first second. */
+let _crashed = false;
+function crashScreen(err, kind) {
+  if (_crashed) return;              // one screen, not one per stray rejection
+  _crashed = true;
+  const msg = (err && (err.message || err.reason && err.reason.message)) || String(err || 'Unknown error');
+  clear(root);
+  const wrap = h('div', { className: 'sb-crash' },
+    h('h1', { className: 'sb-crash-h' }, 'Something broke while drawing this screen.'),
+    h('p', { className: 'sb-crash-p' },
+      'Your notes are files on disk and nothing here has touched them. '
+      + 'This is the app failing to render, not the vault failing to load.'),
+    h('pre', { className: 'sb-crash-pre' }, kind + ': ' + msg),
+    h('div', { className: 'sb-crash-row' },
+      h('button', {
+        className: 'btn btn-primary',
+        onClick: () => { location.reload(); },
+      }, 'Reload'),
+      /* The usual cause is a restored tab pointing at something that no
+         longer resolves — which survives a reload, so "reload" alone can
+         loop forever. This is the escape hatch, and it touches localStorage
+         only: never the vault. */
+      h('button', {
+        className: 'btn',
+        onClick: () => {
+          try { localStorage.removeItem('sb.tabs'); } catch (_) {}
+          location.hash = '';
+          location.reload();
+        },
+      }, 'Reset tabs and reload')));
+  root.appendChild(wrap);
+}
+window.addEventListener('error', (e) => crashScreen(e.error || e, 'Error'));
+window.addEventListener('unhandledrejection', (e) => crashScreen(e.reason, 'Unhandled rejection'));
+
 async function boot() {
   // Seed the in-memory tweaks from the persisted store before first paint,
   // otherwise the app flashes the default mode and then corrects itself.
@@ -7851,9 +7907,20 @@ async function boot() {
     app.openPageId = initial.openPageId;
     _syncActiveTab();
   }
-  // 3) Fresh load with no deep link / no restored tabs → land on the
-  //    active mode's home (work mode reloads back into the workspace).
-  render();
+  /* 3) Fresh load with no deep link / no restored tabs → land on the
+        active mode's home (work mode reloads back into the workspace).
+
+     Guarded, and it falls back to Home rather than to nothing: the tab this
+     restored is the single most likely thing to be unrenderable, and it is
+     also the thing a reload faithfully brings back. */
+  try {
+    render();
+  } catch (e) {
+    app.route = 'home';
+    app.openPageId = null;
+    _syncActiveTab();
+    try { render(); } catch (e2) { crashScreen(e2, 'Error'); return; }
+  }
   try {
     await Promise.all([refreshCounts(), refreshRecent()]);
     app.offline = false;
