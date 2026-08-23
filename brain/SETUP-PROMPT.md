@@ -46,8 +46,8 @@ context/      identity — read before writing in my voice
 notes/        anything read as prose
 topics/       living hubs
 tags/         subjects — near-empty pages; linking one files a page under it
-canvas/       spatial boards (.md + .canvas sidecar)
-inspo/        visual reference (.md + .canvas sidecar)
+canvas/       spatial boards (.excalidraw.md)
+inspo/        visual reference — embeds and captions, ordinary markdown
 projects/     a folder per project, each with a folder note
 raw/          immutable sources — clipped articles, transcripts; never edited
 attachments/  images and binaries
@@ -89,9 +89,10 @@ Using my answers:
 - **One page of every kind**, drawn from my real answers, not from lorem:
   - a `note` in `notes/`
   - a `topic` in `topics/` that hubs the thing I said I am working on
-  - a `canvas` in `canvas/` — `.md` plus a valid `.canvas` sidecar, with the
-    `.md` embedding it via `![[<name>.canvas]]`
-  - an `inspo` in `inspo/`, same pairing
+  - **skip `canvas`** — a board is a `.excalidraw.md` scene, and an invented one
+    is worse than none. Say in `log.md` that boards are made in the app.
+  - an `inspo` in `inspo/` — ordinary markdown: `![[attachments/…]]` embeds, each
+    with a one-line caption. No sidecar, no geometry.
 - **`index.md`** — the catalog, every page you created, one line each, grouped
   by folder.
 - **`log.md`** — first entry records the setup. Entries start

@@ -6038,6 +6038,521 @@ function _inlineMarkdown(text) {
   html = html.replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>');
   return html;
 }
+/* ── LiveSource ─────────────────────────────────────────────────────────
+   The writing surface, decorated in place.
+
+   The editor and the view already shared a face, a size, a leading and an
+   origin — ae50fe4 did that much — but they still did not look alike, and
+   the reason is that a <textarea> cannot style its own contents. `**bold**`
+   sat there as five plain characters, `## Heading` was body-sized, and a
+   list was a hyphen. So every toggle still threw away every visual signal
+   in the document; the text no longer MOVED, but it still changed clothes.
+
+   A textarea cannot be rescued here, and neither can the usual trick of a
+   highlighted <pre> aligned behind a transparent one: the moment a span is
+   bold or a heading is larger, a proportional face re-measures the line and
+   the two layers drift apart. Varying weight and size per span IS the ask,
+   so the surface has to be a contenteditable.
+
+   The text stays raw markdown — this is source, not a rich-text buffer, and
+   what reaches disk is exactly what you typed. Each source line becomes one
+   `.ln` div, decorated by its own syntax, and every source character is
+   still present, in order, exactly once: markers are dimmed rather than
+   hidden. That is deliberate and it is what keeps the caret honest — a
+   character you cannot see is a character the caret falls through. It is
+   also the truth: you are editing markdown, and the `##` is really there.
+
+   Because the DOM is reprogrammed on edit, the browser's own undo stack is
+   destroyed. So this keeps its own — see `snap`/`doUndo`. Anything that
+   silently ate an undo would be a write-safety bug wearing an editor. */
+
+const LV_FENCE = /^\s*(```|~~~)/;
+/* indent, marker, gap, optional checkbox — `[0]` is therefore everything up
+   to the item's own text, which is the one measurement the rest relies on. */
+const LV_LIST = /^(\s*)([-*+]|\d+[.)])([ \t]+)(\[[ xX]\][ \t]+)?/;
+
+function lvEsc(s) {
+  return String(s).replace(/[&<>]/g, (c) => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'));
+}
+const lvMk = (s) => (s ? '<span class="lv-mk">' + lvEsc(s) + '</span>' : '');
+
+/* Inline syntax → HTML, preserving every character.
+   The invariant every branch below must hold: the text content of what is
+   emitted equals the slice of source it consumed. Break it and the caret
+   arithmetic — which measures in characters — silently points at the wrong
+   place, which is worse than no decoration at all. */
+function lvInline(src) {
+  let out = '', i = 0;
+  while (i < src.length) {
+    const rest = src.slice(i);
+    const atWordStart = i === 0 || /[\s(]/.test(src[i - 1]);
+    let m;
+
+    if ((m = /^\\[\\`*_{}\[\]()#+\-.!~=|>]/.exec(rest))) {
+      out += lvMk('\\') + lvEsc(m[0][1]); i += 2; continue;
+    }
+    if ((m = /^(`+)([^`]+?)\1/.exec(rest))) {
+      out += lvMk(m[1]) + '<code class="lv-code">' + lvEsc(m[2]) + '</code>' + lvMk(m[1]);
+      i += m[0].length; continue;
+    }
+    if ((m = /^(!?)\[\[([^\]]*)\]\]/.exec(rest))) {
+      out += lvMk(m[1] + '[[') + '<span class="lv-wiki">' + lvEsc(m[2]) + '</span>' + lvMk(']]');
+      i += m[0].length; continue;
+    }
+    if ((m = /^(!?)\[([^\]]*)\]\(([^)]*)\)/.exec(rest))) {
+      out += lvMk(m[1] + '[') + '<span class="lv-link">' + lvEsc(m[2]) + '</span>'
+           + lvMk('](') + '<span class="lv-url">' + lvEsc(m[3]) + '</span>' + lvMk(')');
+      i += m[0].length; continue;
+    }
+    if ((m = /^(\*\*|__)(?=\S)([\s\S]*?\S)\1/.exec(rest))) {
+      out += lvMk(m[1]) + '<strong>' + lvInline(m[2]) + '</strong>' + lvMk(m[1]);
+      i += m[0].length; continue;
+    }
+    if ((m = /^(\*|_)(?=\S)([\s\S]*?\S)\1/.exec(rest))) {
+      out += lvMk(m[1]) + '<em>' + lvInline(m[2]) + '</em>' + lvMk(m[1]);
+      i += m[0].length; continue;
+    }
+    if ((m = /^~~(?=\S)([\s\S]*?\S)~~/.exec(rest))) {
+      out += lvMk('~~') + '<s>' + lvInline(m[1]) + '</s>' + lvMk('~~');
+      i += m[0].length; continue;
+    }
+    if ((m = /^==(?=\S)([\s\S]*?\S)==/.exec(rest))) {
+      out += lvMk('==') + '<mark class="lv-hl">' + lvInline(m[1]) + '</mark>' + lvMk('==');
+      i += m[0].length; continue;
+    }
+    if (atWordStart && (m = /^https?:\/\/[^\s<>)\]]+/.exec(rest))) {
+      out += '<span class="lv-url">' + lvEsc(m[0]) + '</span>'; i += m[0].length; continue;
+    }
+    /* Tag and mention are the graph, so they read as the graph here too —
+       the same two colours the rendered view gives them. */
+    if (atWordStart && (m = /^#[A-Za-z][\w\/-]*/.exec(rest))) {
+      out += '<span class="lv-tag">' + lvEsc(m[0]) + '</span>'; i += m[0].length; continue;
+    }
+    if (atWordStart && (m = /^@[A-Za-z][\w\/-]*/.exec(rest))) {
+      out += '<span class="lv-at">' + lvEsc(m[0]) + '</span>'; i += m[0].length; continue;
+    }
+    out += lvEsc(src[i]); i++;
+  }
+  return out;
+}
+
+/* One source line → one `.ln`. `inCode` threads the fence state down the
+   document, because whether a line is code is not a property of the line. */
+function lvLine(src, inCode) {
+  const el = document.createElement('div');
+  el.className = 'ln';
+  let code = inCode, html, m;
+
+  if (LV_FENCE.test(src)) {
+    code = !inCode;
+    el.classList.add('ln-code');
+    html = lvMk(src) || '<br>';
+  } else if (inCode) {
+    el.classList.add('ln-code');
+    html = src === '' ? '<br>' : lvEsc(src);
+  } else if ((m = /^(#{1,6})([ \t]+)(.*)$/.exec(src))) {
+    el.classList.add('ln-h' + Math.min(m[1].length, 4));
+    html = lvMk(m[1] + m[2]) + lvInline(m[3]);
+  } else if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(src)) {
+    el.classList.add('ln-hr');
+    html = lvMk(src);
+  } else if ((m = /^(\s*)(>+)([ \t]?)(.*)$/.exec(src))) {
+    el.classList.add('ln-quote');
+    html = lvMk(m[1] + m[2] + m[3]) + lvInline(m[4]);
+  } else if ((m = LV_LIST.exec(src))) {
+    const box = m[4] || '';
+    el.classList.add(/\d/.test(m[2]) ? 'ln-ol' : 'ln-ul');
+    if (/\[[xX]\]/.test(box)) el.classList.add('ln-done');
+    el.style.setProperty('--lv-ind', Math.floor(m[1].replace(/\t/g, '  ').length / 2));
+    html = '<span class="lv-mk lv-bullet">' + lvEsc(m[1] + m[2] + m[3]) + '</span>'
+         + (box ? '<span class="lv-mk lv-box">' + lvEsc(box) + '</span>' : '')
+         + lvInline(src.slice(m[0].length));
+  } else if (src === '') {
+    html = '<br>';
+  } else {
+    html = lvInline(src);
+  }
+  el.innerHTML = html;
+  return { el, code };
+}
+
+/* Which lines sit inside a fence. Cheap, and recomputed rather than cached:
+   a stale code map decorates prose as code, and nothing tells you it did. */
+function lvCodeAt(lines, upto) {
+  let code = false;
+  for (let i = 0; i < upto; i++) if (LV_FENCE.test(lines[i])) code = !code;
+  return code;
+}
+
+/* Ordered lists are renumbered from the run the caret is in, one counter per
+   indent level, so a new `3.` in the middle pushes the rest down instead of
+   leaving two of them. A deeper level restarts at 1 and a shallower one
+   discards the counters below it, which is what makes Tab feel like Tab. */
+function lvRenumber(lines, at) {
+  let s = at, e = at;
+  while (s > 0 && LV_LIST.test(lines[s - 1])) s--;
+  while (e < lines.length - 1 && LV_LIST.test(lines[e + 1])) e++;
+  const counters = {};
+  for (let i = s; i <= e; i++) {
+    const m = LV_LIST.exec(lines[i]);
+    if (!m) continue;
+    const ind = m[1].replace(/\t/g, '  ').length;
+    for (const k of Object.keys(counters)) if (+k > ind) delete counters[k];
+    const om = /^(\d+)([.)])$/.exec(m[2]);
+    if (!om) { delete counters[ind]; continue; }
+    counters[ind] = (counters[ind] || 0) + 1;
+    lines[i] = m[1] + counters[ind] + om[2] + m[3] + (m[4] || '') + lines[i].slice(m[0].length);
+  }
+  return lines;
+}
+
+function LiveSource(opts) {
+  const { placeholder = '', minHeight = 240, onInput, onBlur } = opts;
+
+  const root = h('div', { className: 'md-live' });
+  root.setAttribute('contenteditable', 'true');
+  root.setAttribute('spellcheck', 'true');
+  root.setAttribute('role', 'textbox');
+  root.setAttribute('aria-multiline', 'true');
+  if (placeholder) root.setAttribute('data-ph', placeholder);
+  root.style.minHeight = minHeight + 'px';
+
+  let value = opts.value || '';
+  const undo = [], redo = [];
+  let burst = false, burstT = null, composing = false;
+
+  const lines = () => value.split('\n');
+
+  function render() {
+    clear(root);
+    let code = false;
+    for (const line of lines()) {
+      const r = lvLine(line, code);
+      code = r.code;
+      root.appendChild(r.el);
+    }
+    if (!root.firstChild) root.appendChild(lvLine('', false).el);
+    root.classList.toggle('is-empty', value === '');
+  }
+
+  /* ── caret, measured in characters ─────────────────────────────────── */
+
+  function lineIndex(node) {
+    let el = node && node.nodeType === 1 ? node : (node && node.parentElement);
+    el = el && el.closest ? el.closest('.ln') : null;
+    return el && el.parentElement === root
+      ? Array.prototype.indexOf.call(root.children, el) : -1;
+  }
+
+  function posOf(container, offset) {
+    if (!container || !root.contains(container)) return null;
+    if (container === root) {
+      const i = Math.max(0, Math.min(offset, root.children.length - 1));
+      return { line: i, off: 0 };
+    }
+    const i = lineIndex(container);
+    if (i < 0) return null;
+    const pre = document.createRange();
+    pre.selectNodeContents(root.children[i]);
+    try { pre.setEnd(container, offset); } catch (_) { return null; }
+    return { line: i, off: pre.toString().length };
+  }
+
+  function selRange() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    const r = sel.getRangeAt(0);
+    const a = posOf(r.startContainer, r.startOffset);
+    const b = posOf(r.endContainer, r.endOffset);
+    return a && b ? { a, b, collapsed: r.collapsed } : null;
+  }
+  const caretNow = () => { const s = selRange(); return s ? s.a : null; };
+
+  function setCaret(c) {
+    if (!c) return;
+    const el = root.children[Math.max(0, Math.min(c.line, root.children.length - 1))];
+    if (!el) return;
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    let n, acc = 0, target = null, toff = 0;
+    while ((n = w.nextNode())) {
+      const len = n.nodeValue.length;
+      target = n; toff = len;
+      if (acc + len >= c.off) { toff = c.off - acc; break; }
+      acc += len;
+    }
+    const r = document.createRange();
+    if (target) r.setStart(target, Math.max(0, Math.min(toff, target.nodeValue.length)));
+    else r.selectNodeContents(el);
+    r.collapse(true);
+    const s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+  }
+
+  const toAbs = (ls, c) => {
+    let n = 0;
+    for (let i = 0; i < c.line && i < ls.length; i++) n += ls[i].length + 1;
+    return n + c.off;
+  };
+  const toPos = (ls, abs) => {
+    let n = 0;
+    for (let i = 0; i < ls.length; i++) {
+      if (abs <= n + ls[i].length) return { line: i, off: abs - n };
+      n += ls[i].length + 1;
+    }
+    return { line: ls.length - 1, off: ls[ls.length - 1].length };
+  };
+
+  /* ── undo, because reprogramming the DOM destroyed the browser's ───── */
+
+  function snap() {
+    const top = undo[undo.length - 1];
+    if (top && top.text === value) return;
+    undo.push({ text: value, caret: caretNow() });
+    if (undo.length > 300) undo.shift();
+    redo.length = 0;
+  }
+  function restore(from, to) {
+    if (!from.length) return;
+    const prev = from.pop();
+    to.push({ text: value, caret: caretNow() });
+    value = prev.text;
+    render(); setCaret(prev.caret);
+    onInput && onInput(value);
+  }
+  const doUndo = () => restore(undo, redo);
+  const doRedo = () => restore(redo, undo);
+
+  /* ── writing ───────────────────────────────────────────────────────── */
+
+  function commit(text, caret) {
+    value = text;
+    render(); setCaret(caret);
+    onInput && onInput(value);
+  }
+  /* Replace the selection with `ins` — the one path every command shares, so
+     there is a single place where a selection is consumed. */
+  function splice(ins, sr) {
+    const ls = lines();
+    const a = toAbs(ls, sr.a), b = toAbs(ls, sr.b);
+    const text = ls.join('\n');
+    const next = text.slice(0, a) + ins + text.slice(b);
+    commit(next, toPos(next.split('\n'), a + ins.length));
+  }
+
+  function onEnter() {
+    const sr = selRange(); if (!sr) return;
+    snap();
+    let ls = lines(), c = sr.a;
+    if (!sr.collapsed) {
+      const a = toAbs(ls, sr.a), b = toAbs(ls, sr.b);
+      const t = ls.join('\n');
+      const cut = t.slice(0, a) + t.slice(b);
+      ls = cut.split('\n'); c = toPos(ls, a);
+    }
+    const cur = ls[c.line] || '';
+    const inCode = lvCodeAt(ls, c.line);
+    const m = inCode ? null : LV_LIST.exec(cur);
+
+    if (m) {
+      // Enter on an item with no text ends the list, one level at a time.
+      if (!cur.slice(m[0].length).trim() && c.off >= m[0].length) {
+        ls[c.line] = m[1].length >= 2
+          ? m[1].slice(2) + m[2] + m[3] + (m[4] || '')
+          : '';
+        lvRenumber(ls, c.line);
+        commit(ls.join('\n'), { line: c.line, off: ls[c.line].length });
+        return;
+      }
+      const om = /^(\d+)([.)])$/.exec(m[2]);
+      const marker = om ? (parseInt(om[1], 10) + 1) + om[2] : m[2];
+      const box = m[4] ? '[ ] ' : '';
+      ls.splice(c.line, 1, cur.slice(0, c.off),
+                m[1] + marker + m[3] + box + cur.slice(c.off));
+      lvRenumber(ls, c.line + 1);
+      // Re-measure after renumbering: `9.` becoming `10.` moves the text.
+      const nm = LV_LIST.exec(ls[c.line + 1]);
+      commit(ls.join('\n'), { line: c.line + 1, off: nm ? nm[0].length : 0 });
+      return;
+    }
+
+    // A blockquote continues; anything else is a plain split.
+    const q = inCode ? null : /^(\s*>+[ \t]?)/.exec(cur);
+    // …and an empty quote line ends the quote, the way an empty item ends a
+    // list. Without this the second Enter leaves a stray `> ` behind, which
+    // is a line of markup the writer has to go back and delete.
+    if (q && !cur.slice(q[1].length).trim() && c.off >= q[1].length) {
+      ls[c.line] = '';
+      commit(ls.join('\n'), { line: c.line, off: 0 });
+      return;
+    }
+    const pre = q ? q[1] : '';
+    ls.splice(c.line, 1, cur.slice(0, c.off), pre + cur.slice(c.off));
+    commit(ls.join('\n'), { line: c.line + 1, off: pre.length });
+  }
+
+  function onTab(outdent) {
+    const sr = selRange(); if (!sr) return;
+    const ls = lines();
+    const from = Math.min(sr.a.line, sr.b.line);
+    const to = Math.max(sr.a.line, sr.b.line);
+    const multi = from !== to || !sr.collapsed;
+
+    // A lone caret on a line that is not a list item: Tab is just an indent.
+    if (!multi && !LV_LIST.test(ls[from])) {
+      snap();
+      const abs = toAbs(ls, sr.a), t = ls.join('\n');
+      if (outdent) {
+        const line = ls[from];
+        if (!/^[ \t]/.test(line)) return;
+        const cut = /^\t/.test(line) ? 1 : Math.min(2, /^ */.exec(line)[0].length);
+        ls[from] = line.slice(cut);
+        commit(ls.join('\n'), { line: from, off: Math.max(0, sr.a.off - cut) });
+      } else {
+        const next = t.slice(0, abs) + '  ' + t.slice(abs);
+        commit(next, toPos(next.split('\n'), abs + 2));
+      }
+      return;
+    }
+
+    snap();
+    let delta = 0;
+    for (let i = from; i <= to; i++) {
+      if (outdent) {
+        const cut = /^\t/.test(ls[i]) ? 1 : Math.min(2, /^ */.exec(ls[i])[0].length);
+        if (!cut) continue;
+        ls[i] = ls[i].slice(cut);
+        if (i === sr.a.line) delta = -cut;
+      } else {
+        ls[i] = '  ' + ls[i];
+        if (i === sr.a.line) delta = 2;
+      }
+    }
+    lvRenumber(ls, from);
+    commit(ls.join('\n'), { line: sr.a.line, off: Math.max(0, sr.a.off + delta) });
+  }
+
+  /* Backspace with the caret just past a marker removes the marker rather
+     than a space of it — otherwise unmaking a bullet takes three presses and
+     leaves `-` behind on the way. */
+  function onBackspace() {
+    const sr = selRange();
+    if (!sr || !sr.collapsed) return false;
+    const ls = lines();
+    const m = LV_LIST.exec(ls[sr.a.line] || '');
+    if (!m || sr.a.off !== m[0].length || lvCodeAt(ls, sr.a.line)) return false;
+    snap();
+    ls[sr.a.line] = ls[sr.a.line].slice(m[0].length);
+    lvRenumber(ls, sr.a.line);
+    commit(ls.join('\n'), { line: sr.a.line, off: 0 });
+    return true;
+  }
+
+  function wrap(mark) {
+    const sr = selRange(); if (!sr) return;
+    snap();
+    const ls = lines();
+    const a = toAbs(ls, sr.a), b = toAbs(ls, sr.b);
+    const t = ls.join('\n');
+    const next = t.slice(0, a) + mark + t.slice(a, b) + mark + t.slice(b);
+    const nl = next.split('\n');
+    commit(next, toPos(nl, sr.collapsed ? a + mark.length : b + mark.length * 2));
+  }
+
+  /* ── events ────────────────────────────────────────────────────────── */
+
+  root.addEventListener('beforeinput', (e) => {
+    if (e.inputType === 'historyUndo') { e.preventDefault(); doUndo(); }
+    else if (e.inputType === 'historyRedo') { e.preventDefault(); doRedo(); }
+    // The browser would happily put a <b> in here. This is source text.
+    else if (/^format/.test(e.inputType)) e.preventDefault();
+  });
+
+  root.addEventListener('input', (e) => {
+    /* Mid-composition the browser owns this line: a Pinyin or Hangul buffer
+       lives in the DOM as provisional text, and replacing the node under it
+       cancels the compose. Read the text so nothing is lost, but leave the
+       decoration until compositionend. */
+    if (composing || e.isComposing) {
+      value = Array.prototype.map.call(root.children, (el) => el.textContent).join('\n');
+      onInput && onInput(value);
+      return;
+    }
+    // `value` is still the pre-edit text, so this snapshot is the state to
+    // come back to. One per burst of typing, not one per keystroke.
+    if (!burst) { snap(); burst = true; }
+    clearTimeout(burstT);
+    burstT = setTimeout(() => { burst = false; }, 700);
+
+    value = Array.prototype.map.call(root.children, (el) => el.textContent).join('\n');
+    root.classList.toggle('is-empty', value === '');
+    onInput && onInput(value);
+
+    // Re-decorate. One line if the shape did not change, the document if it
+    // did — a fence flips every line below it, so it can never be local.
+    const c = caretNow();
+    const ls = lines();
+    if (c && ls.length === root.children.length && ls[c.line] != null
+        && !LV_FENCE.test(ls[c.line])) {
+      const r = lvLine(ls[c.line], lvCodeAt(ls, c.line));
+      root.replaceChild(r.el, root.children[c.line]);
+      setCaret(c);
+    } else {
+      render(); setCaret(c);
+    }
+  });
+
+  root.addEventListener('keydown', (e) => {
+    const mod = e.metaKey || e.ctrlKey;
+    if (e.key === 'Escape') { e.preventDefault(); root.blur(); return; }
+    if (mod && (e.key === 'z' || e.key === 'Z')) {
+      e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); return;
+    }
+    if (mod && e.key === 'y') { e.preventDefault(); doRedo(); return; }
+    if (mod && !e.altKey && (e.key === 'b' || e.key === 'i')) {
+      e.preventDefault(); wrap(e.key === 'b' ? '**' : '*'); return;
+    }
+    if (e.key === 'Enter' && !e.shiftKey && !mod) { e.preventDefault(); onEnter(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); onTab(e.shiftKey); return; }
+    if (e.key === 'Backspace' && !mod && onBackspace()) e.preventDefault();
+  });
+
+  root.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const sr = selRange();
+    const t = e.clipboardData && e.clipboardData.getData('text/plain');
+    if (!sr || !t) return;
+    snap();
+    splice(t.replace(/\r\n?/g, '\n'), sr);
+  });
+
+  root.addEventListener('compositionstart', () => { snap(); composing = true; });
+  root.addEventListener('compositionend', () => {
+    composing = false;
+    const c = caretNow();
+    render(); setCaret(c);
+  });
+
+  root.addEventListener('blur', () => { burst = false; onBlur && onBlur(); });
+
+  render();
+
+  return {
+    el: root,
+    get value() { return value; },
+    set value(v) {
+      const next = v || '';
+      if (next === value) return;
+      value = next; render();
+    },
+    focus(atEnd) {
+      root.focus();
+      const n = root.children.length - 1;
+      if (atEnd && n >= 0) setCaret({ line: n, off: (lines()[n] || '').length });
+    },
+    blur() { root.blur(); },
+  };
+}
+
 /* ── ProseEditor ────────────────────────────────────────────────────────
    ONE writing surface, used by every kind that holds prose.
 
@@ -6061,30 +6576,19 @@ function ProseEditor(opts) {
 
   const wrap = h('div', { className: 'prose-editor' });
   const view = h('div', { className: 'md-rendered' + (measure ? '' : ' md-wide') });
-  const ta = h('textarea', {
-    className: 'page-body-ta md-edit-ta',
+  const src = LiveSource({
     placeholder,
+    minHeight,
     value: getValue() || '',
-    style: { minHeight: minHeight + 'px' },
-    onInput: (e) => { setValue(e.target.value); grow(); schedule(); },
+    onInput: (text) => { setValue(text); schedule(); },
     /* Leaving the field IS finishing. The mode was previously exited by
        finding a "Done" button, which is the ceremony this editor is trying
        not to have — and it is also the moment the text should reach disk,
        so the blur both renders and commits rather than waiting out a timer. */
     onBlur: () => { if (mode === 'edit') setMode('view'); },
-    onKeyDown: (e) => {
-      // Escape leaves the field the same way clicking away does.
-      if (e.key === 'Escape') { e.preventDefault(); ta.blur(); }
-    },
   });
-
-  /* The textarea grows to its content instead of scrolling inside a fixed
-     box. A pane that scrolls independently of the page is the other half of
-     what made this feel like a separate mode. */
-  function grow() {
-    ta.style.height = 'auto';
-    ta.style.height = Math.max(minHeight, ta.scrollHeight) + 'px';
-  }
+  const ta = src.el;
+  if (!measure) ta.classList.add('md-wide');
 
   let mode = (getValue() || '').trim() ? 'view' : 'edit';
   let timer = null;
@@ -6148,13 +6652,9 @@ function ProseEditor(opts) {
       // for the gap between finishing and closing the tab.
       if (opts.onDone) opts.onDone();
     } else {
-      grow();
-      setTimeout(() => {
-        ta.focus();
-        // Caret at the end rather than at 0 — you are almost always adding.
-        const n = ta.value.length;
-        try { ta.setSelectionRange(n, n); } catch (_) {}
-      }, 0);
+      // Caret at the end rather than at 0 — you are almost always adding.
+      src.value = getValue() || '';
+      setTimeout(() => src.focus(true), 0);
     }
   }
 

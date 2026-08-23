@@ -22,13 +22,16 @@ and you will notice weeks later when backlinks look empty.
 | Default location for attachments | `attachments/` | keeps binaries out of `notes/` |
 | New link format | Shortest path when possible | matches how the convention writes links |
 | Automatically update internal links | ON | renames keep links alive on both sides |
-| Detect all file extensions | ON | so `.canvas` sidecars are visible |
+| Detect all file extensions | ON | so `.excalidraw.md` boards and any `.canvas` files are visible |
 
 ## Core plugins worth turning on
 
-- **Canvas** — required. `canvas/` and `inspo/` pages pair a `.md` with a
-  `.canvas` sidecar, and *arranging happens in Obsidian*. The app renders boards
-  read-only and deliberately never writes geometry.
+- **Excalidraw** (community plugin) — optional, and the only way to edit a board
+  on this side. `canvas/*.excalidraw.md` is written in the format this plugin
+  reads, so the same board opens and edits in both places. Without it the file
+  still opens as an ordinary note: you see its text and links, not the picture.
+- **Canvas** (core) — only if you keep `.canvas` files. Those are Obsidian's
+  alone; this app does not render, list or count them, and never writes one.
 - **Backlinks** and **Outgoing links** — this is where the tag-page design pays
   off. A subject page in `tags/` is empty on purpose; its backlink pane *is* the
   collection.
@@ -81,7 +84,8 @@ Open any page, then:
 
 - the Properties panel shows `id`, `kind`, `title`, `created`, `updated`;
 - `[[links]]` in the body are clickable and resolve;
-- a `canvas/` page renders its board rather than showing a broken embed;
+- a `canvas/*.excalidraw.md` page opens as a drawing with the Excalidraw plugin
+  installed, and as a readable note without it;
 - an empty page in `tags/` has a populated Backlinks pane.
 
 If links show as unresolved, it is the Wikilinks setting at the top of this page

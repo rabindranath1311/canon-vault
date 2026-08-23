@@ -122,13 +122,34 @@ never needed any of it.
 `app/package.json` exists only so Node treats the files as ES modules. It has
 zero dependencies and CI fails if it gains one.
 
-## Why the app never writes canvas geometry
+## Why there is one writer per spatial format
 
-Obsidian has a good canvas. Competing with it would mean maintaining a worse one
-and, more importantly, deciding what happens when both apps move the same node.
+Two apps moving the same node is a merge problem nobody wants, and the cost of
+getting it wrong is not a conflict dialog — it is a scene silently overwritten
+with a worse version of itself.
 
-So the split is clean: **arranging happens in Obsidian; the app renders boards
-read-only and hands off.** One writer, no merge problem, no invented format.
+So each spatial format has exactly one writer, decided by the file extension:
+
+- **`.canvas` is Obsidian's.** JSON Canvas, Obsidian's format and Obsidian's to
+  edit. This app does not render it, list it or count it — the reader for it was
+  deleted rather than kept as a tempting half-feature. A bare `.canvas` still
+  reserves its wikilink name, so the app can never write a second file that
+  makes `[[Sketches]]` ambiguous in files it did not write.
+- **`.excalidraw.md` is this app's.** Shapes, arrows and handwriting, edited here
+  and saved here — and readable in Obsidian too, via the Excalidraw plugin.
+
+The page tells you which one you are looking at, because the label is the only
+thing saying whether your edits will be kept: a `.excalidraw.md` is a **Board**,
+a `.canvas` is a **Canvas**. Two things must never both be called Board.
+
+The rule underneath both: **never ship editing a surface cannot save.** A hidden
+toolbar over live handlers is how a stylus stroke once came to overwrite a
+board. If a surface cannot write, it must not accept the gesture.
+
+Boards stay legible outside the app for the same reason everything else does.
+Their text, element links and embedded images are regenerated into the markdown
+on every write, so the words in a sketch reach Obsidian, the backlink graph and
+an agent instead of sitting in a blob.
 
 ## What this project is bad at
 

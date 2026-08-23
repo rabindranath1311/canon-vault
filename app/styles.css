@@ -3147,47 +3147,136 @@ a.set-dl { display: inline-flex; align-items: center; text-decoration: none; }
 .md-mode-btn:hover { color: var(--fg); border-color: var(--i-2); background: var(--hover); }
 
 /* View vs edit toggling */
-.md-body.md-mode-view .md-edit-ta { display: none; }
-.md-body.md-mode-edit .md-article { display: none; }
-
 /* ── One surface, two states ───────────────────────────────────────────
    The editor used to be mono, 14% smaller, in a bordered sunken box with a
-   focus ring, sitting where proportional 15.5px prose had just been. The
-   argument for that was real — you are editing raw markdown, and `##`, `-`
-   and `[[…]]` are structure you want to see as characters. But the cost was
-   that reading and writing were visibly two different places: every toggle
-   reflowed the text, moved the first line, and changed the width of the
-   column, so a one-word fix meant leaving the document and coming back.
+   focus ring, sitting where proportional 15.5px prose had just been. That
+   was fixed once by matching the face, the size, the leading and the origin
+   — and it was still not the same surface, because a <textarea> cannot
+   style its own contents. `**bold**` was five plain characters, `## Rule`
+   was body-sized, and a list was a hyphen. The text stopped MOVING on
+   toggle; it still changed clothes.
 
-   The text is the same text. So it is set the same way in both states —
-   same family, same size, same leading, same measure, same origin — and the
-   only thing that changes between reading and writing is a caret. What is
-   lost is monospaced alignment inside the source; what is bought is that
-   there is no longer a mode to enter. Code and fences keep mono where it
-   actually carries meaning, in the rendered view.
+   So the editor is a contenteditable now (see LiveSource in app.js) and it
+   is styled here against .md-rendered, rule for rule. What it renders is
+   still the source: the markers are present and dimmed, not hidden. Two
+   reasons, and both matter. A character you cannot see is a character the
+   caret falls through. And it is the truth — you are editing markdown, and
+   the `##` really is there.
 
-   Every value below is `inherit`-or-match against .md-rendered on purpose.
-   If one of them drifts, the text jumps on toggle, which is the whole bug. */
-.md-edit-ta {
-  display: block; width: 100%;
-  background: transparent;
-  color: var(--fg);
+   Every value below is match-or-`inherit` against .md-rendered on purpose.
+   If one of them drifts, the text jumps on toggle, which is the whole bug.
+   The one deliberate difference is vertical rhythm: .md-rendered gets its
+   spacing from block margins, and here the source's own blank lines already
+   carry it, so headings take a hairline of extra space instead of 1.9em. */
+.md-live {
+  display: block;
+  position: relative;
   font-family: var(--font-sans);
   font-size: var(--fz-prose);
   line-height: 1.7;
   letter-spacing: var(--track-body);
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  resize: none;               /* it grows to its content instead */
-  overflow: hidden;
+  color: var(--fg);
+  max-width: var(--measure);
+  /* Source is significant whitespace: leading indent is list nesting. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   tab-size: 2;
+  /* No ring, no border, no colour change. The caret is the affordance — a
+     focus ring here would redraw the box the rest of this rule exists to
+     stop redrawing. Focus is still obvious: it is where the cursor is. */
+  outline: none;
+  caret-color: var(--accent);
 }
-/* No ring, no border, no colour change. The caret is the affordance — a
-   focus ring here would redraw the box the rest of this rule exists to
-   stop redrawing. Focus is still obvious: it is where the cursor is. */
-.md-edit-ta:focus { outline: none; }
-.md-edit-ta::placeholder { color: var(--faint); }
+/* The global `:focus-visible` ring is the same specificity as `.md-live` and
+   sits later in the file, so it won it — drawing exactly the box the rule
+   above exists to stop drawing, and only in edit mode. Focus here is not
+   invisible: it is the caret, blinking in the text you just clicked. */
+.md-live:focus,
+.md-live:focus-visible { outline: none; box-shadow: none; }
+.md-live.md-wide { max-width: none; }
+.md-live .ln { min-height: 1.7em; margin: 0; }
+
+/* Markers: present, quiet, and never sized up by the block they sit in — a
+   `##` at heading size shouts louder than the heading. */
+.md-live .lv-mk { color: var(--faint); font-weight: 400; }
+.md-live .ln-h1 .lv-mk,
+.md-live .ln-h2 .lv-mk,
+.md-live .ln-h3 .lv-mk,
+.md-live .ln-h4 .lv-mk { font-size: 0.68em; letter-spacing: 0; }
+
+.md-live .ln-h1,
+.md-live .ln-h2,
+.md-live .ln-h3,
+.md-live .ln-h4 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: var(--track-title);
+  line-height: 1.25;
+  margin: 0.35em 0 0.1em;
+}
+.md-live .ln-h1 {
+  font-size: 1.5em;
+  letter-spacing: var(--track-display);
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+.md-live .ln-h2 { font-size: 1.24em; }
+.md-live .ln-h3 { font-size: 1.06em; }
+.md-live .ln-h4 {
+  font-size: 0.95em;
+  color: var(--muted);
+  letter-spacing: var(--track-label);
+}
+
+/* Nesting is the source's own leading whitespace, so the indent is a
+   variable set from it rather than a class per level. */
+.md-live .ln-ul,
+.md-live .ln-ol { padding-left: calc(var(--lv-ind, 0) * 1.5em); }
+.md-live .lv-bullet { color: var(--faint); font-variant-numeric: tabular-nums; }
+.md-live .lv-box { color: var(--i-3); }
+.md-live .ln-done { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--i-3); }
+
+.md-live .ln-quote {
+  border-left: 2px solid var(--i-2);
+  padding-left: 1.1em;
+  color: var(--muted);
+}
+.md-live .ln-hr { color: var(--faint); }
+.md-live .ln-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--muted);
+}
+
+.md-live strong { font-weight: 600; color: var(--fg); }
+.md-live em { font-style: italic; }
+.md-live s { text-decoration-color: var(--i-3); }
+.md-live .lv-code {
+  font-family: var(--font-mono);
+  background: var(--paper-2);
+  border: 1px solid var(--line-very-soft);
+  border-radius: 4px;
+  padding: 0.1em 0.36em;
+  /* Mono runs large next to Inter at the same nominal size. */
+  font-size: 0.86em;
+}
+.md-live .lv-hl { background: var(--hl, rgba(255, 214, 0, 0.28)); color: inherit; }
+.md-live .lv-wiki { color: var(--accent); }
+.md-live .lv-link { color: var(--fg); text-decoration: underline; text-decoration-color: var(--i-3); text-underline-offset: 0.18em; }
+.md-live .lv-url { color: var(--muted); }
+.md-live .lv-tag { color: var(--k-topic, var(--accent)); }
+.md-live .lv-at { color: var(--k-mdwn, var(--accent)); }
+
+/* The placeholder cannot be a first-line ::before — that would sit inside a
+   line the caret can land in front of. It is painted over the empty box. */
+.md-live.is-empty::before {
+  content: attr(data-ph);
+  position: absolute;
+  top: 0; left: 0;
+  color: var(--faint);
+  pointer-events: none;
+}
 
 /* Article body */
 .md-article {
@@ -3773,9 +3862,9 @@ a.set-dl { display: inline-flex; align-items: center; text-decoration: none; }
 .list-row .id,
 .kbd,
 .md-frontmatter,
-/* `.md-edit-ta` was in this list. It is prose being written, not machine
+/* The prose editor was in this list. It is prose being written, not machine
    text being read, and mono here made the editor a visibly different place
-   from the view — see the note on .md-edit-ta. Mono stays where it carries
+   from the view — see the note on .md-live. Mono stays where it carries
    meaning: identifiers, frontmatter, code. */
 code, pre, kbd, samp {
   font-family: var(--font-mono);
@@ -4101,26 +4190,6 @@ code, pre, kbd, samp {
 .filter-input:hover, .set-input:hover { background: var(--paper-2); }
 .search-input { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: var(--paper); }
 .page-body-ta { background: var(--paper-2); }
-
-/* …except the prose editor, which is not a form field.
-   It carries `.page-body-ta` for the shared caret and selection behaviour,
-   and that class also hands it a sunken background, a border, a radius and
-   a focus ring from the three rules above — every one of which redraws the
-   box the moment you click into the text. Restated here with a tag selector
-   so it wins on specificity rather than on where it happens to sit in the
-   file, since a later section had already quietly re-enabled `resize`. */
-textarea.md-edit-ta,
-.pj-note textarea.md-edit-ta {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  resize: none;
-}
-textarea.md-edit-ta:focus {
-  box-shadow: none;
-  border-color: transparent;
-}
 
 /* — Buttons. The secondary button was white-on-white with a hairline; it
      needs a real edge and a hover that moves. The primary stays the
@@ -5411,9 +5480,9 @@ input[type="checkbox"], input[type="radio"] {
   text-transform: uppercase; font-weight: 550; color: var(--muted);
 }
 .md-mode-btn { display: inline-flex; align-items: center; gap: 5px; }
-.prose-editor .md-edit-ta { display: none; width: 100%; }
+.prose-editor .md-live { display: none; width: 100%; }
 .prose-editor.is-editing .md-rendered { display: none; }
-.prose-editor.is-editing .md-edit-ta { display: block; }
+.prose-editor.is-editing .md-live { display: block; }
 /* The prose is the control, so it says so on hover — a text caret over text
    you can type into. Only a caret: a background or an outline would be the
    view drawing a box that the editor then has to draw differently, which is

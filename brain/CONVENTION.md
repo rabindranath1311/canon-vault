@@ -17,8 +17,8 @@ context/         who you are — read before writing in your voice
 notes/           anything read as prose
 topics/          living hubs
 tags/            subjects — near-empty pages you link instead of #tagging
-canvas/          spatial surfaces (.excalidraw.md, or .md + .canvas)
-inspo/           visual reference (.md + .canvas)
+canvas/          spatial boards (.excalidraw.md)
+inspo/           visual reference — embeds and captions, ordinary markdown
 projects/        a folder per project
 raw/             immutable sources the vault cites but never edits
 attachments/     images and binaries
