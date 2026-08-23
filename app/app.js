@@ -6138,7 +6138,7 @@ function lvInline(src) {
 
 /* One source line → one `.ln`. `inCode` threads the fence state down the
    document, because whether a line is code is not a property of the line. */
-function lvLine(src, inCode) {
+function lvLine(src, inCode, depth) {
   const el = document.createElement('div');
   el.className = 'ln';
   let code = inCode, html, m;
@@ -6163,7 +6163,7 @@ function lvLine(src, inCode) {
     const box = m[4] || '';
     el.classList.add(/\d/.test(m[2]) ? 'ln-ol' : 'ln-ul');
     if (/\[[xX]\]/.test(box)) el.classList.add('ln-done');
-    el.style.setProperty('--lv-ind', Math.floor(m[1].replace(/\t/g, '  ').length / 2));
+    el.style.setProperty('--lv-ind', depth || 0);
     html = '<span class="lv-mk lv-bullet">' + lvEsc(m[1] + m[2] + m[3]) + '</span>'
          + (box ? '<span class="lv-mk lv-box">' + lvEsc(box) + '</span>' : '')
          + lvInline(src.slice(m[0].length));
@@ -6174,6 +6174,76 @@ function lvLine(src, inCode) {
   }
   el.innerHTML = html;
   return { el, code };
+}
+
+/* The column an item's own text starts at. This is the number that decides
+   nesting, and it is NOT a constant: `- ` is two, `1. ` is three, `10. ` is
+   four. A checkbox is content, not marker, so it does not count. */
+function lvContentCol(m) {
+  return (m[1] + m[2] + m[3]).replace(/\t/g, "  ").length;
+}
+const lvIndentOf = (m) => m[1].replace(/\t/g, "  ").length;
+
+/* Nesting depth per line, by CommonMark's rule: an item belongs to the
+   innermost open item whose CONTENT COLUMN it reaches.
+
+   The editor used to guess this as `floor(leadingSpaces / 2)`, which is right
+   for bullets and wrong for every numbered list — two spaces under `1. ` does
+   not reach column 3, so markdown-it flattens it while the editor happily drew
+   a sub-point. The document then changed shape on the way to view mode, which
+   is the one thing this editor exists to prevent. Now both agree, including
+   when they agree that something is NOT nested. */
+function lvDepths(lines) {
+  const out = new Array(lines.length).fill(0);
+  const stack = [];          // content columns of the open ancestor chain
+  let code = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (LV_FENCE.test(lines[i])) { code = !code; continue; }
+    if (code) continue;
+    const m = LV_LIST.exec(lines[i]);
+    if (!m) {
+      // A blank line does not close a list; anything else does.
+      if (lines[i].trim() !== "") stack.length = 0;
+      continue;
+    }
+    const ind = lvIndentOf(m);
+    while (stack.length && ind < stack[stack.length - 1]) stack.pop();
+    out[i] = stack.length;
+    stack.push(lvContentCol(m));
+  }
+  return out;
+}
+
+/* How far to push line `i` so it nests under the item above it: exactly to
+   that item's content column. Falls back to two, which is what a bullet needs
+   and the only sane default when there is nothing above to nest under. */
+function lvNestPad(lines, i) {
+  const cur = LV_LIST.exec(lines[i]);
+  const ind = cur ? lvIndentOf(cur) : 0;
+  for (let k = i - 1; k >= 0; k--) {
+    if (lines[k].trim() === "") continue;
+    const m = LV_LIST.exec(lines[k]);
+    if (!m) break;
+    if (lvIndentOf(m) <= ind) return Math.max(1, lvContentCol(m) - ind);
+  }
+  return 2;
+}
+
+/* The indent to fall back to when outdenting: the nearest shallower item's,
+   so Shift-Tab lands on a real level rather than two columns to the left of
+   one. */
+function lvOutdentTo(lines, i) {
+  const cur = LV_LIST.exec(lines[i]);
+  if (!cur) return 0;
+  const ind = lvIndentOf(cur);
+  for (let k = i - 1; k >= 0; k--) {
+    if (lines[k].trim() === "") continue;
+    const m = LV_LIST.exec(lines[k]);
+    if (!m) break;
+    const p = lvIndentOf(m);
+    if (p < ind) return p;
+  }
+  return 0;
 }
 
 /* Which lines sit inside a fence. Cheap, and recomputed rather than cached:
@@ -6219,19 +6289,21 @@ function LiveSource(opts) {
 
   let value = opts.value || '';
   const undo = [], redo = [];
-  let burst = false, burstT = null, composing = false;
+  let burst = false, burstT = null, composing = false, lastDepths = [];
 
   const lines = () => value.split('\n');
 
   function render() {
     clear(root);
+    const ls = lines();
+    lastDepths = lvDepths(ls);
     let code = false;
-    for (const line of lines()) {
-      const r = lvLine(line, code);
+    for (let i = 0; i < ls.length; i++) {
+      const r = lvLine(ls[i], code, lastDepths[i]);
       code = r.code;
       root.appendChild(r.el);
     }
-    if (!root.firstChild) root.appendChild(lvLine('', false).el);
+    if (!root.firstChild) root.appendChild(lvLine('', false, 0).el);
     root.classList.toggle('is-empty', value === '');
   }
 
@@ -6356,8 +6428,10 @@ function LiveSource(opts) {
     if (m) {
       // Enter on an item with no text ends the list, one level at a time.
       if (!cur.slice(m[0].length).trim() && c.off >= m[0].length) {
-        ls[c.line] = m[1].length >= 2
-          ? m[1].slice(2) + m[2] + m[3] + (m[4] || '')
+        // Outdent to the level that actually exists above, not two columns left.
+        const back = lvOutdentTo(ls, c.line);
+        ls[c.line] = lvIndentOf(m) > 0
+          ? ' '.repeat(back) + m[2] + m[3] + (m[4] || '')
           : '';
         lvRenumber(ls, c.line);
         commit(ls.join('\n'), { line: c.line, off: ls[c.line].length });
@@ -6417,14 +6491,21 @@ function LiveSource(opts) {
     snap();
     let delta = 0;
     for (let i = from; i <= to; i++) {
+      const cur = LV_LIST.exec(ls[i]);
       if (outdent) {
-        const cut = /^\t/.test(ls[i]) ? 1 : Math.min(2, /^ */.exec(ls[i])[0].length);
-        if (!cut) continue;
+        const cut = cur ? lvIndentOf(cur) - lvOutdentTo(ls, i)
+                        : Math.min(2, /^[ \t]*/.exec(ls[i])[0].length);
+        if (cut <= 0) continue;
         ls[i] = ls[i].slice(cut);
         if (i === sr.a.line) delta = -cut;
       } else {
-        ls[i] = '  ' + ls[i];
-        if (i === sr.a.line) delta = 2;
+        /* The width of the parent's marker, not two spaces. `- ` is two and
+           `1. ` is three, so a fixed indent nests under bullets and silently
+           fails under numbers — the bug that made sub-points vanish between
+           the editor and the view. */
+        const pad = ' '.repeat(Math.max(1, lvNestPad(ls, i)));
+        ls[i] = pad + ls[i];
+        if (i === sr.a.line) delta = pad.length;
       }
     }
     lvRenumber(ls, from);
@@ -6445,6 +6526,45 @@ function LiveSource(opts) {
     lvRenumber(ls, sr.a.line);
     commit(ls.join('\n'), { line: sr.a.line, off: 0 });
     return true;
+  }
+
+  /* Make the selected lines a list of `kind`, or strip the markers if they
+     already are one. The indent is preserved, so toggling a nested run keeps
+     its shape — and renumbering runs after, so `1.` on four lines becomes
+     1, 2, 3, 4 rather than four ones. */
+  function toggleList(kind) {
+    const sr = selRange(); if (!sr) return;
+    snap();
+    const ls = lines();
+    const from = Math.min(sr.a.line, sr.b.line);
+    const to = Math.max(sr.a.line, sr.b.line);
+    const want = kind === '-' ? /^[-*+]$/ : /^\d+[.)]$/;
+    // Already entirely this kind → this is an "off" press.
+    let allSame = true;
+    for (let i = from; i <= to; i++) {
+      const m = LV_LIST.exec(ls[i]);
+      if (!m || !want.test(m[2])) { allSame = false; break; }
+    }
+    let delta = 0;
+    for (let i = from; i <= to; i++) {
+      const m = LV_LIST.exec(ls[i]);
+      if (allSame) {
+        ls[i] = m[1] + ls[i].slice(m[0].length);
+        if (i === sr.a.line) delta = -(m[0].length - m[1].length);
+      } else if (m) {
+        const marker = kind === '-' ? '-' : '1.';
+        ls[i] = m[1] + marker + ' ' + (m[4] || '') + ls[i].slice(m[0].length);
+        if (i === sr.a.line) delta = (marker.length + 1) - (m[0].length - m[1].length);
+      } else {
+        if (ls[i].trim() === '' && from !== to) continue;
+        const ind = /^[ \t]*/.exec(ls[i])[0];
+        const marker = kind === '-' ? '-' : '1.';
+        ls[i] = ind + marker + ' ' + ls[i].slice(ind.length);
+        if (i === sr.a.line) delta = marker.length + 1;
+      }
+    }
+    if (!allSame) lvRenumber(ls, from);
+    commit(ls.join('\n'), { line: sr.a.line, off: Math.max(0, sr.a.off + delta) });
   }
 
   function wrap(mark) {
@@ -6491,10 +6611,17 @@ function LiveSource(opts) {
     // did — a fence flips every line below it, so it can never be local.
     const c = caretNow();
     const ls = lines();
+    /* One line is only safe to redraw alone when the nesting of every OTHER
+       line is unchanged — typing a space at the head of an item re-parents
+       everything under it, and a stale depth is the editor lying again. */
+    const depths = lvDepths(ls);
+    const shapeSame = depths.length === lastDepths.length
+      && depths.every((d, i) => i === (c && c.line) || d === lastDepths[i]);
     if (c && ls.length === root.children.length && ls[c.line] != null
-        && !LV_FENCE.test(ls[c.line])) {
-      const r = lvLine(ls[c.line], lvCodeAt(ls, c.line));
+        && !LV_FENCE.test(ls[c.line]) && shapeSame) {
+      const r = lvLine(ls[c.line], lvCodeAt(ls, c.line), depths[c.line]);
       root.replaceChild(r.el, root.children[c.line]);
+      lastDepths = depths;
       setCaret(c);
     } else {
       render(); setCaret(c);
@@ -6510,6 +6637,16 @@ function LiveSource(opts) {
     if (mod && e.key === 'y') { e.preventDefault(); doRedo(); return; }
     if (mod && !e.altKey && (e.key === 'b' || e.key === 'i')) {
       e.preventDefault(); wrap(e.key === 'b' ? '**' : '*'); return;
+    }
+    /* There was no way to MAKE a list except typing the marker, which is fine
+       on a fresh line and miserable inside one — to turn item 12 of a numbered
+       list into a bullet you had to delete `12. ` first. ⌘⇧8 and ⌘⇧7 are the
+       bindings every other editor uses for this. */
+    if (mod && e.shiftKey && (e.key === '8' || e.key === '*')) {
+      e.preventDefault(); toggleList('-'); return;
+    }
+    if (mod && e.shiftKey && (e.key === '7' || e.key === '&')) {
+      e.preventDefault(); toggleList('1.'); return;
     }
     if (e.key === 'Enter' && !e.shiftKey && !mod) { e.preventDefault(); onEnter(); return; }
     if (e.key === 'Tab') { e.preventDefault(); onTab(e.shiftKey); return; }
