@@ -10,8 +10,9 @@ reason the app is: `showDirectoryPicker` exists nowhere else.
 
 ## Where things land
 
-Nothing here is a new file format. A clip is one of two things the convention
-already has.
+**Three destinations, and the popup asks before the capture exists** — Note,
+Bookmark, Inspo. Nothing here is a new file format: all three are things the
+convention already has.
 
 **A wall card.** Images and screenshots go to an `inspo` page — an ordinary
 reference wall whose items live in the markdown body, so Obsidian renders the
@@ -26,12 +27,26 @@ https://stripe.com/docs
 ```
 
 **A bookmark.** A clipped page or link is a `note` carrying `url` plus the
-page's `og_*` keys, which is exactly what makes the app draw it as a card. A
-selection becomes a note whose body is the quotation.
+page's `og_*` keys, which is exactly what makes the app draw it as a card.
 
-The wall is named in the extension's settings — `Interface Inspiration` out of
+**A note.** A page to write on: the snapshot, then the highlighted text as a
+blockquote, then what the user typed, then `Source: [title](url)`. Its source
+link lives in the **body**, and that is deliberate — `url` in frontmatter is
+precisely what the app's Bookmarks facet matches on, so a note carrying one
+would be a bookmark in everything but name and the three destinations would
+collapse back into two. Notes are also not deduplicated: two notes from one page
+are two thoughts, where two bookmarks of one url are the same link twice.
+
+The wall's name is the clipper's only setting — `Interface Inspiration` out of
 the box. The first clip creates it. Rename it in Obsidian afterwards and the
 clipper still finds it: walls are matched by title, not by filename.
+
+Everything else that used to be a setting is a rule now: clips are written the
+moment you make them, and a link the vault already holds is not bookmarked
+twice. The popup is the destination, one note field (a `#word` in it becomes a
+tag), and — for Note and Inspo — which picture to take: the page's own image,
+the visible screen, or a dragged region. The right-click menu has one item per
+thing you can point at, and each is named for where it goes.
 
 ## What it refuses to do
 

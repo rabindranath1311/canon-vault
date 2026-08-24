@@ -4,9 +4,58 @@
   <meta charset="utf-8">
   <title>Canon Clip</title>
   <link rel="stylesheet" href="styles.css">
-  <style>body { width: 344px; }</style>
+  <style>body { width: 366px; }</style>
 </head>
-<body>
+<body class="popup">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <g id="p-text">
+        <path d="M3 4.5h10M3 8h10M3 11.5h6" stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" fill="none"/>
+      </g>
+      <g id="p-link">
+        <path d="M6.5 9.5a2.6 2.6 0 0 0 3.7 0l1.9-1.9a2.6 2.6 0 0 0-3.7-3.7L7.3 5"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M9.5 6.5a2.6 2.6 0 0 0-3.7 0L3.9 8.4a2.6 2.6 0 0 0 3.7 3.7L8.7 11"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+      <g id="p-list">
+        <circle cx="3.5" cy="4.5" r="1" fill="currentColor"/>
+        <circle cx="3.5" cy="8" r="1" fill="currentColor"/>
+        <circle cx="3.5" cy="11.5" r="1" fill="currentColor"/>
+        <path d="M6.5 4.5h7M6.5 8h7M6.5 11.5h4" stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" fill="none"/>
+      </g>
+      <g id="p-globe">
+        <circle cx="8" cy="8" r="5.2" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M2.8 8h10.4M8 2.8c1.6 1.7 1.6 8.7 0 10.4M8 2.8C6.4 4.5 6.4 11.5 8 13.2"
+              fill="none" stroke="currentColor" stroke-width="1.3"/>
+      </g>
+      <g id="p-title">
+        <path d="M3 4.5h10M3 8h7" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" fill="none"/>
+        <path d="M3 11.5h4" stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" fill="none" opacity=".6"/>
+      </g>
+      <g id="p-note">
+        <path d="M11.6 3.2l1.2 1.2-7 7-1.8.6.6-1.8z" fill="none"
+              stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M3 13.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+      <g id="p-tag">
+        <path d="M8.6 2.5H13v4.4l-6 6-4.4-4.4z" fill="none" stroke="currentColor"
+              stroke-width="1.3" stroke-linejoin="round"/>
+        <circle cx="10.6" cy="5" r="1" fill="currentColor"/>
+      </g>
+      <g id="p-mention">
+        <circle cx="8" cy="8" r="5.4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        <circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M10 8v1.6a1.8 1.8 0 0 0 3.4.6" fill="none" stroke="currentColor"
+              stroke-width="1.3" stroke-linecap="round"/>
+      </g>
+    </defs>
+  </svg>
+
   <header class="head">
     <svg class="mark" viewBox="0 0 144 100" fill="currentColor" aria-hidden="true">
       <path d="M49.6426 11.3103C58.0084 10.2422 66.4938 11.9487 73.7959 16.1687C79.489 19.4587 84.2172 24.1354 87.5654 29.7243C89.1394 32.3521 87.7727 35.6274 84.9463 36.8083C82.1207 37.9888 78.9145 36.6121 77.1885 34.0827C72.2514 26.8472 63.9417 22.0965 54.5215 22.0964C39.3753 22.0964 27.0967 34.375 27.0967 49.5212C27.0967 64.6673 39.3753 76.946 54.5215 76.946C61.1452 76.9459 67.2197 74.5962 71.959 70.6862C74.3225 68.7365 77.7872 68.3119 80.1709 70.237C82.5557 72.1631 82.9517 75.6935 80.7031 77.7771C75.9253 82.2042 70.0782 85.3689 63.6933 86.9343C55.5022 88.9424 46.8782 88.2067 39.1455 84.8405C31.4128 81.4742 24.998 75.6632 20.8867 68.2995C16.7755 60.9358 15.1949 52.4258 16.3867 44.0769C17.5787 35.7279 21.4779 28.0009 27.4853 22.0817C33.4929 16.1626 41.2768 12.3784 49.6426 11.3103ZM118.446 34.2038C120.06 31.4092 123.681 30.5291 126.397 32.2712C128.903 33.8786 129.734 37.1532 128.297 39.7605L104.945 82.1384C102.861 85.9205 97.4132 85.8849 95.3789 82.0759L82.4726 57.9099C80.797 54.7724 77.4572 52.8875 73.9053 53.0749L64.3369 53.5788C62.7427 57.431 58.9497 60.1421 54.5215 60.1423C48.6556 60.1423 43.9004 55.387 43.9004 49.5212C43.9004 43.6553 48.6556 38.9001 54.5215 38.9001C59.1359 38.9003 63.0619 41.8435 64.5273 45.9548H82.7578C86.0319 45.9549 89.0572 47.7014 90.6943 50.5368L99.8555 66.404L118.446 34.2038Z"/>
@@ -16,8 +65,6 @@
   </header>
 
   <main class="pad">
-    <!-- Shown only when a clip cannot be written. It says so BEFORE the click,
-         rather than after, and carries the button that fixes it. -->
     <section id="vault-banner" class="card card-pad banner row between hidden">
       <div class="stack grow">
         <strong id="banner-title"></strong>
@@ -26,74 +73,142 @@
       <button id="banner-do" class="primary tiny"></button>
     </section>
 
+    <!-- Where it goes, chosen first: the rest of the form is whatever that
+         destination can carry. -->
+    <div class="seg3" id="dest" role="tablist">
+      <button data-dest="note" role="tab">Note</button>
+      <button data-dest="bookmark" role="tab">Bookmark</button>
+      <button data-dest="inspo" role="tab">Inspo</button>
+    </div>
+    <p id="dest-where" class="note"></p>
+
+    <!-- ONE list, top to bottom, every row the same shape: glyph, label, value.
+         Title through mentions run without a break, because a break invites the
+         reader to work out what the two halves mean and there is nothing there
+         to work out — it is all the same act of describing what you saved. -->
     <section class="card">
-      <div class="preview">
-        <img id="thumb" alt="" hidden>
-        <div class="grow stack">
-          <div id="page-title" class="truncate" style="font-weight:600"></div>
-          <div id="page-host" class="tiny muted truncate"></div>
+      <div class="props" id="props">
+        <div class="prop" id="row-title">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-title"/></svg>
+          <label for="title">title</label>
+          <input id="title" type="text" placeholder="What to call it">
         </div>
-      </div>
-      <div class="card-pad stack" style="border-top:1px solid var(--i-1)">
-        <label class="field">Caption
-          <input id="caption" type="text" placeholder="what caught your eye…">
+        <div class="prop-hint" id="name-hint"></div>
+
+        <div class="prop" id="row-source">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-link"/></svg>
+          <label for="source">source</label>
+          <input id="source" type="text" placeholder="https://…">
+        </div>
+        <div class="prop" id="row-author">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-text"/></svg>
+          <label for="author">author</label>
+          <input id="author" type="text" placeholder="—">
+        </div>
+        <div class="prop" id="row-description">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-list"/></svg>
+          <label for="description">description</label>
+          <input id="description" type="text" placeholder="—">
+        </div>
+        <div class="prop" id="row-site">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-globe"/></svg>
+          <label for="siteName">site</label>
+          <input id="siteName" type="text" placeholder="—">
+        </div>
+        <div class="prop" id="row-note">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-note"/></svg>
+          <label for="note" id="note-label">note</label>
+          <input id="note" type="text" placeholder="What matters about this">
+        </div>
+        <div class="prop" id="row-tags">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-tag"/></svg>
+          <label for="tags">tags</label>
+          <input id="tags" type="text" placeholder="#ui #navigation">
+        </div>
+        <div class="prop" id="row-mentions">
+          <svg class="pglyph" aria-hidden="true"><use href="#p-mention"/></svg>
+          <label for="mention">mentions</label>
+          <input id="mention" type="search" placeholder="Link a page…">
+        </div>
+        <div class="prop-extra" id="mention-chips"></div>
+        <div class="prop-extra" id="mention-results"></div>
+
+        <label class="check" id="highlight-row">
+          <input id="highlight" type="checkbox">
+          <span id="highlight-label">Include the highlighted text</span>
         </label>
-        <!-- Two fields most clips never fill. Out of the way by default, so the
-             primary button sits where the eye already is. -->
-        <button id="more-toggle" class="ghost tiny disclose" aria-expanded="false">
-          <span class="caret">›</span><span id="more-label">Tags and wall</span>
-        </button>
-        <div id="more" class="stack hidden">
-          <label class="field">Tags
-            <input id="tags" type="text" placeholder="#ui #navigation">
-          </label>
-          <label class="field">Wall
-            <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
-          </label>
-          <datalist id="walls"></datalist>
-        </div>
       </div>
     </section>
 
-    <div class="row between">
-      <span class="tiny muted">A page or a link becomes</span>
-      <span class="seg" id="target">
-        <button data-target="bookmark">a bookmark</button>
-        <button data-target="wall">a wall card</button>
-      </span>
-    </div>
+    <!-- Then the picture. Its own card because it is the one thing here that is
+         not typed. -->
+    <section class="card card-pad stack" id="picture-row">
+      <div class="row between">
+        <span class="tiny muted">Image</span>
+        <span id="picture-hint" class="tiny muted truncate"></span>
+      </div>
+      <div class="seg3" id="picture">
+        <button data-pic="none">None</button>
+        <button data-pic="picked" class="hidden">This image</button>
+        <button data-pic="page">Preview</button>
+        <button data-pic="screen">Screen</button>
+        <button data-pic="region">Region</button>
+      </div>
+      <img id="pic-preview" alt="" hidden>
+    </section>
 
-    <div class="actions">
-      <button id="clip-page" class="primary">Clip page</button>
-      <button id="clip-region">Region</button>
-      <button id="clip-screen">Screen</button>
-    </div>
-    <div class="actions">
-      <button id="clip-selection" class="ghost tiny">Clip selection</button>
-      <button id="clip-og" class="ghost tiny">Clip page image</button>
-    </div>
+    <!-- Then which file it joins. -->
+    <section class="card card-pad stack">
+      <div class="seg3" id="mode">
+        <button data-mode="new" id="mode-new">New page</button>
+        <button data-mode="append">Add to a page</button>
+      </div>
+      <div class="prop" id="wall-row">
+        <svg class="pglyph" aria-hidden="true"><use href="#p-globe"/></svg>
+        <label for="wall">wall</label>
+        <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
+        <datalist id="walls"></datalist>
+      </div>
+      <div class="stack" id="pick-row">
+        <input id="pick" type="search" placeholder="Search your pages…">
+        <div id="pick-results" class="list picks"></div>
+        <span id="pick-chosen" class="tiny"></span>
+      </div>
+    </section>
 
     <p id="status" class="status" role="status"></p>
 
-    <section id="queue-box" class="card hidden">
-      <div class="card-pad row between">
-        <h2 id="queue-title">Waiting</h2>
-        <button id="flush" class="tiny">Save now</button>
+    <!-- Saves that have not landed yet, then the ones that have. Both here and
+         on the setup page: what happened to the last thing you saved is a
+         question you ask where you saved it. -->
+    <section id="waiting" class="card card-pad row between hidden">
+      <div class="stack grow">
+        <strong id="waiting-what"></strong>
+        <span id="waiting-why" class="note"></span>
       </div>
-      <div id="queue" class="list"></div>
+      <button id="flush" class="tiny">Save now</button>
     </section>
 
-    <section id="recent-box" class="card hidden">
-      <div class="card-pad"><h2>Just saved</h2></div>
-      <div id="recent" class="list"></div>
+    <section id="recent-box" class="hidden">
+      <div class="row between recent-head">
+        <span class="tiny muted">Recently saved</span>
+        <button id="open-history" class="link tiny">all</button>
+      </div>
+      <div id="recent" class="card list"></div>
     </section>
 
     <footer class="keys tiny muted">
-      <span><kbd>Enter</kbd> clip page</span>
+      <span><kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd> page</span>
       <span><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> region</span>
-      <span>right-click anything else</span>
+      <span>right-click anything to open this form</span>
     </footer>
   </main>
+
+  <!-- Anchored, always. The one button the window is for must never be the
+       thing you have to scroll to find. -->
+  <div class="savebar">
+    <button id="save" class="primary big">Save</button>
+  </div>
 
   <script type="module" src="popup.js"></script>
 </body>

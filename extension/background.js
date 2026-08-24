@@ -14,30 +14,42 @@
 // flushes everything at once.
 
 import { enqueue, pending, drop, patch, count, settings, logWrite, recent, setMeta, getMeta } from "./store.js";
-import { openVault, writeCapture, walls, storedHandle, permission } from "./writer.js";
+import { openVault, writeCapture, walls, pageList, storedHandle, permission } from "./writer.js";
 import { readPageMeta, fetchImageInPage, selectRegion } from "./injected.js";
 
 const WALLS_KEY = "walls";
+const PAGES_KEY = "pages";
+const PENDING_KEY = "pendingCapture";
 const iso = () => new Date().toISOString().replace(/\.\d+Z$/, "+00:00");
 
 // ── menus ───────────────────────────────────────────────────────────────────
 
+// One item per thing you can point at, and every title names where it lands —
+// the three destinations are the whole model, so the menu says them out loud
+// rather than leaving the user to find out after the click.
+//
+// No hand-built parent: Chrome nests an extension's items under its own name
+// as soon as more than one matches the context, so a right-click on an image
+// is a single "Save image to Inspo" rather than a submenu holding one thing.
 const MENUS = [
-  { id: "clip-page", title: "Clip this page", contexts: ["page", "frame"] },
-  { id: "clip-page-wall", title: "Add this page to the wall", contexts: ["page", "frame"] },
-  { id: "clip-region", title: "Clip a region…", contexts: ["page", "frame"] },
-  { id: "clip-image", title: "Save this image to the wall", contexts: ["image"] },
-  { id: "clip-link", title: "Clip this link", contexts: ["link"] },
-  { id: "clip-link-wall", title: "Add this link to the wall", contexts: ["link"] },
-  { id: "clip-selection", title: "Clip selection", contexts: ["selection"] },
-  { id: "clip-selection-wall", title: "Add selection to the wall", contexts: ["selection"] },
+  { id: "clip-image", title: "Save image…", contexts: ["image"] },
+  { id: "clip-link", title: "Save link…", contexts: ["link"] },
+  { id: "clip-selection", title: "Save selection…", contexts: ["selection"] },
+  { id: "clip-page", title: "Save this page…", contexts: ["page", "frame"] },
+  { id: "clip-region", title: "Save a region…", contexts: ["page", "frame"] },
 ];
+
+/** Which destination a menu item arrives pointing at. The form can be changed
+ *  before saving — this is a starting position, not a decision. */
+const MENU_DEST = {
+  "clip-image": "inspo", "clip-region": "inspo",
+  "clip-link": "bookmark", "clip-page": "bookmark",
+  "clip-selection": "note",
+};
 
 function buildMenus() {
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: "canon", title: "Canon Clip",
-                                 contexts: ["page", "frame", "image", "link", "selection"] });
-    for (const m of MENUS) chrome.contextMenus.create({ ...m, parentId: "canon" });
+    for (const m of MENUS) chrome.contextMenus.create(m);
   });
 }
 
@@ -152,6 +164,47 @@ async function shoot(tab, rect = null) {
 }
 
 /**
+ * The picture a destination may carry, from the one word the popup sends.
+ *
+ *   none    no picture at all
+ *   page    the image the page already advertises as its own (og:image)
+ *   screen  the visible window, as it is
+ *   region  a rectangle dragged out of the visible window
+ *
+ * Returns `null` for "none", `{blob, mime, src}` for bytes, or `{error}` /
+ * `{cancelled}` — the caller reports which, because "you pressed Escape" and
+ * "that image would not load" are not the same news.
+ */
+async function pictureFor(tab, picture, meta, imageSrc = null) {
+  if (!picture || picture === "none") return null;
+  // The image the user right-clicked. The only case where a picture is
+  // genuinely *pointed at* rather than derived from the page or the screen.
+  if (picture === "picked") {
+    if (!imageSrc) return { error: "no image was picked" };
+    const got = await imageBytes(imageSrc, tab.id);
+    return got.error ? { error: got.error }
+                     : { blob: got.blob, mime: got.mime, src: imageSrc };
+  }
+  if (picture === "page") {
+    const src = meta && meta.og && meta.og.image;
+    if (!src) return { error: "this page offers no image of its own" };
+    const got = await imageBytes(src, tab.id);
+    return got.error ? { error: got.error } : { blob: got.blob, mime: got.mime, src };
+  }
+  if (picture === "screen") return { ...(await shoot(tab)), src: null };
+  if (picture === "region") {
+    if (!/^https?:/i.test(tab.url || "")) return { error: "that page cannot be captured" };
+    const [res] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, frameIds: [0] }, func: selectRegion,
+    });
+    const rect = res && res.result;
+    if (!rect) return { cancelled: true };
+    return { ...(await shoot(tab, rect)), src: null };
+  }
+  return { error: `unknown picture: ${picture}` };
+}
+
+/**
  * Queue a capture, then try to write it. The return value describes both
  * halves, because "saved" and "queued until you unlock the folder" are
  * genuinely different outcomes and the UI says which.
@@ -159,8 +212,6 @@ async function shoot(tab, rect = null) {
 async function save(capture) {
   const rec = await enqueue(capture);
   await paintBadge();
-  const s = await settings();
-  if (!s.autoSave) return { queued: rec.id, ok: true, wrote: 0, failed: 0, left: await count() };
   const out = await flush();
   if (out.wrote) await paintBadge("ok");
   else if (out.failed) await paintBadge("bad");
@@ -181,9 +232,11 @@ export async function flush() {
     const ctx = await openVault();
     if (!ctx.ok) return { ok: false, reason: ctx.reason, message: ctx.message, left: q.length };
 
-    // Cache the wall list while the vault is open, so the popup can offer real
-    // names without paying for an index rebuild every time it opens.
+    // Cache the wall list and the page list while the vault is open, so the
+    // popup can offer real names without paying for an index rebuild every time
+    // it opens — and can still offer them while the folder is locked.
     await setMeta(WALLS_KEY, walls(ctx));
+    await setMeta(PAGES_KEY, pageList(ctx));
 
     const s = await settings();
     let wrote = 0, failed = 0;
@@ -208,18 +261,66 @@ export async function flush() {
       }
     }
     await paintBadge();
-    return { ok: true, wrote, failed, left: await count(), vault: ctx.name };
+    return { ok: true, wrote, failed, left: await count(),
+             vault: ctx.name, pages: ctx.vault.list().length };
   })();
   try { return await flushing; } finally { flushing = null; }
 }
 
 // ── the actions the UI and the menus share ──────────────────────────────────
 
-// `fields` is what the popup had on screen — caption, tags, wall. A clip from
-// the context menu simply has none, which is why every one of these takes it
-// last and defaults it away.
+// Two layers, on purpose.
+//
+// **The three verbs** — `saveNote`, `saveBookmark`, `saveInspo` — are what the
+// popup calls, one per destination. The user chose the destination before the
+// capture existed, so each verb states its own `target` and never guesses.
+//
+// **The five clippers** below them are what the right-click menu and the
+// keyboard shortcuts call: there the user pointed at a thing rather than
+// choosing a place, so each carries the destination its menu item promised.
+//
+// `fields` is what the popup had on screen — the note, and the `#tags` in it. A
+// clip from the context menu simply has none, which is why every one of these
+// takes it last and defaults it away.
 
-async function clipPage(tab, target, fields = {}) {
+/**
+ * Save what the form describes.
+ *
+ * One verb for all three destinations, because the form is one form: the user
+ * chose where it goes and then edited the fields that destination has. The
+ * differences that remain are which picture is fetched and which builder in
+ * vault/clip.js writes the file — and that second one is decided there, not
+ * here, by the `target` this sets.
+ */
+async function saveCapture(tab, dest = "bookmark", form = {}) {
+  const m = await tabMeta(tab, form.imageSrc || null);
+  const pic = await pictureFor(tab, form.picture, m, form.imageSrc);
+  if (pic && pic.cancelled) return { ok: false, reason: "cancelled" };
+  if (pic && pic.error) { await paintBadge("bad"); return { ok: false, reason: pic.error }; }
+  if (dest === "inspo" && !pic) return { ok: false, reason: "a wall card needs a picture" };
+
+  const url = form.url || m.url || tab.url;
+  return save({
+    type: dest === "inspo" ? (form.picture === "picked" ? "image" : "screenshot") : dest,
+    target: dest === "inspo" ? "wall" : dest,
+    url, pageUrl: m.url || tab.url,
+    title: form.title != null ? form.title : (m.title || tab.title || ""),
+    og: m.og || {}, alt: m.alt || "",
+    // Only when asked for: a highlight is evidence the user chose to keep, not
+    // something the page volunteered.
+    text: form.highlight ? (form.selection || m.selection || "") : "",
+    ...(pic && { blob: pic.blob, mime: pic.mime, src: pic.src }),
+    ...(form.appendTo && { appendTo: form.appendTo }),
+    ...(form.wall && { wall: form.wall }),
+    note: form.note || "", tags: form.tags || "",
+    ...(form.author != null && { author: form.author }),
+    ...(form.description != null && { description: form.description }),
+    ...(form.siteName != null && { siteName: form.siteName }),
+    capturedAt: iso(),
+  });
+}
+
+async function clipPage(tab, target = "bookmark", fields = {}) {
   const m = await tabMeta(tab);
   return save({
     type: "page", target, url: m.url || tab.url, pageUrl: m.url || tab.url,
@@ -227,7 +328,7 @@ async function clipPage(tab, target, fields = {}) {
   });
 }
 
-async function clipLink(tab, url, target, fields = {}) {
+async function clipLink(tab, url, target = "bookmark", fields = {}) {
   const m = await tabMeta(tab);
   return save({
     // No title on purpose: a link picked out of a context menu has no name
@@ -238,7 +339,7 @@ async function clipLink(tab, url, target, fields = {}) {
   });
 }
 
-async function clipSelection(tab, text, target, fields = {}) {
+async function clipSelection(tab, text, target = "note", fields = {}) {
   const m = await tabMeta(tab);
   const said = text || m.selection || "";
   return save({
@@ -248,47 +349,73 @@ async function clipSelection(tab, text, target, fields = {}) {
   });
 }
 
-async function clipImage(tab, src, fields = {}) {
+async function clipImage(tab, src, target = "wall", fields = {}) {
   const m = await tabMeta(tab, src);
   const got = await imageBytes(src, tab.id);
   if (got.error) { await paintBadge("bad"); return { ok: false, reason: got.error }; }
   return save({
-    type: "image", target: "wall", src, mime: got.mime, blob: got.blob,
+    type: "image", target, src, mime: got.mime, blob: got.blob,
     url: m.url || tab.url, pageUrl: m.url || tab.url,
     title: m.title || tab.title || "", alt: m.alt || "", capturedAt: iso(), ...fields,
   });
 }
 
-async function clipShot(tab, { region = false } = {}, fields = {}) {
-  let rect = null;
-  if (region) {
-    if (!/^https?:/i.test(tab.url || "")) return { ok: false, reason: "that page cannot be clipped" };
-    const [res] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id, frameIds: [0] }, func: selectRegion,
-    });
-    rect = res && res.result;
-    if (!rect) return { ok: false, reason: "cancelled" };
-  }
-  const shot = await shoot(tab, rect);
+async function clipShot(tab, { region = false, target = "wall" } = {}, fields = {}) {
+  const pic = await pictureFor(tab, region ? "region" : "screen", null);
+  if (pic.cancelled) return { ok: false, reason: "cancelled" };
+  if (pic.error) return { ok: false, reason: pic.error };
   const m = await tabMeta(tab);
   return save({
-    type: "screenshot", target: "wall", mime: shot.mime, blob: shot.blob,
+    type: "screenshot", target, mime: pic.mime, blob: pic.blob,
     src: null, url: m.url || tab.url, pageUrl: m.url || tab.url,
     title: m.title || tab.title || "", capturedAt: iso(), ...fields,
   });
 }
 
+/**
+ * A right-click opens the form, prefilled with what was pointed at.
+ *
+ * The popup cannot be handed arguments, so the capture-in-waiting is written
+ * where the popup will look for it and `openPopup()` is asked to show it. That
+ * call is Chrome 127+ and can still be refused — a window that is not focused,
+ * a policy — so the fallback is the old behaviour: save it immediately with the
+ * destination the menu item named, and flash the badge to say it happened. A
+ * menu item that silently does nothing is worse than one that saves without
+ * asking.
+ */
+async function openForm(pending) {
+  await setMeta(PENDING_KEY, pending);
+  if (!chrome.action.openPopup) return false;
+  try {
+    await chrome.action.openPopup();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab) return;
+  const dest = MENU_DEST[info.menuItemId];
+  if (!dest) return;
+  const picture = info.menuItemId === "clip-image" ? "picked"
+    : info.menuItemId === "clip-region" ? "region" : "none";
   try {
+    const opened = await openForm({
+      dest, picture, tabId: tab.id,
+      imageSrc: info.srcUrl || null,
+      url: info.linkUrl || null,
+      selection: info.selectionText || "",
+      highlight: Boolean(info.selectionText),
+      at: Date.now(),
+    });
+    if (opened) return;                       // the popup takes it from here
+    await setMeta(PENDING_KEY, null);
     if (info.menuItemId === "clip-page") await clipPage(tab);
-    else if (info.menuItemId === "clip-page-wall") await clipPage(tab, "wall");
     else if (info.menuItemId === "clip-region") await clipShot(tab, { region: true });
     else if (info.menuItemId === "clip-image") await clipImage(tab, info.srcUrl);
     else if (info.menuItemId === "clip-link") await clipLink(tab, info.linkUrl);
-    else if (info.menuItemId === "clip-link-wall") await clipLink(tab, info.linkUrl, "wall");
     else if (info.menuItemId === "clip-selection") await clipSelection(tab, info.selectionText);
-    else if (info.menuItemId === "clip-selection-wall") await clipSelection(tab, info.selectionText, "wall");
   } catch (e) {
     await paintBadge("bad");
     console.error("Canon Clip:", e);
@@ -313,28 +440,65 @@ async function state() {
     settings: await settings(),
     pending: (await pending()).map((r) => ({
       id: r.id, type: r.type, title: r.title, url: r.url,
-      target: r.target || null, error: r.error || null, queuedAt: r.queuedAt,
+      error: r.error || null, queuedAt: r.queuedAt,
     })),
     walls: (await getMeta(WALLS_KEY)) || [],
+    pages: (await getMeta(PAGES_KEY)) || [],
     recent: await recent(),
   };
 }
 
 const HANDLERS = {
   state,
+  saveCapture: ({ tab, dest, form }) => saveCapture(tab, dest, form),
+  /** What a right-click left for the popup, taken rather than read: a pending
+   *  capture is for the next popup that opens, not for every one after it. */
+  takePending: async () => {
+    const pending = await getMeta(PENDING_KEY);
+    if (pending) await setMeta(PENDING_KEY, null);
+    return { ok: true, pending: pending || null };
+  },
   flush: () => flush(),
+  saveNote: ({ tab, picture, highlight, fields }) =>
+    saveNote(tab, { picture, highlight }, fields),
+  saveBookmark: ({ tab, fields }) => saveBookmark(tab, fields),
+  saveInspo: ({ tab, picture, fields }) => saveInspo(tab, { picture }, fields),
   clipPage: ({ tab, target, fields }) => clipPage(tab, target, fields),
   clipLink: ({ tab, url, target, fields }) => clipLink(tab, url, target, fields),
   clipSelection: ({ tab, text, target, fields }) => clipSelection(tab, text, target, fields),
-  clipImage: ({ tab, src, fields }) => clipImage(tab, src, fields),
-  clipShot: ({ tab, region, fields }) => clipShot(tab, { region }, fields),
+  clipImage: ({ tab, src, target, fields }) => clipImage(tab, src, target, fields),
+  clipShot: ({ tab, region, target, fields }) => clipShot(tab, { region, target }, fields),
   meta: ({ tab }) => tabMeta(tab),
   dropOne: async ({ id }) => { await drop(id); await paintBadge(); return { ok: true }; },
+  /**
+   * Open the vault and report what is there — the honest answer to "is my
+   * folder actually connected?", which no amount of permission state can give.
+   * A grant says Chrome will let us read the folder; only reading it says the
+   * folder is the vault, and how much of it there is.
+   */
+  check: async () => {
+    const started = Date.now();
+    const ctx = await openVault();
+    if (!ctx.ok) {
+      return { ok: false, reason: ctx.reason, message: ctx.message,
+               name: ctx.handle ? ctx.handle.name : null };
+    }
+    const list = ctx.vault.list();
+    await setMeta(WALLS_KEY, walls(ctx));
+    await setMeta(PAGES_KEY, pageList(ctx));
+    return {
+      ok: true, name: ctx.name, pages: list.length,
+      walls: list.filter((e) => e.kind === "inspo").length,
+      notes: list.filter((e) => e.kind === "note").length,
+      ms: Date.now() - started,
+    };
+  },
   refreshWalls: async () => {
     const ctx = await openVault();
     if (!ctx.ok) return { ok: false, reason: ctx.reason };
     const list = walls(ctx);
     await setMeta(WALLS_KEY, list);
+    await setMeta(PAGES_KEY, pageList(ctx));
     return { ok: true, walls: list };
   },
   badge: () => paintBadge(),

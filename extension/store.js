@@ -103,25 +103,31 @@ export async function recent() {
 
 // ── settings ────────────────────────────────────────────────────────────────
 
+// One setting, because one is all a clipper needs an opinion about: the wall
+// clipped pictures land on. An ordinary inspo page — created on the first clip,
+// and editable in the app or Obsidian like any other.
+//
+// Everything that used to be here (which wall group, whether a page became a
+// bookmark or a card, whether to write immediately, whether to skip duplicates)
+// is now a rule rather than a question: pictures go to the wall, everything else
+// becomes a note, clips are written at once, and the same link is never saved
+// twice. A preference nobody can answer better than the default is not a
+// preference, it is a decision left lying on the floor.
 export const DEFAULTS = {
-  // The wall clipped images land on. An ordinary inspo page — created on the
-  // first clip, and editable in the app or Obsidian like any other.
   wall: "Interface Inspiration",
-  group: "",
-  // Where a page or a link goes: "bookmark" (a note carrying `url`, which is
-  // what the convention calls a bookmark) or "wall" (a card on the wall).
-  linkTarget: "bookmark",
-  // Write as soon as the clip is made, when the folder permission still holds.
-  autoSave: true,
-  dedupe: true,
-  // Whether the popup's tags-and-wall fields start open. A preference the user
-  // sets by using them, not by finding a setting.
-  details: false,
 };
 
 export async function settings() {
   const got = await chrome.storage.local.get("settings");
-  return { ...DEFAULTS, ...(got.settings || {}) };
+  // Only the keys DEFAULTS knows about. An install from an older version has
+  // `autoSave: false` or `linkTarget: "wall"` sitting in storage, and a setting
+  // with no control left to change it would be a mode nobody could get out of.
+  const kept = {};
+  for (const k of Object.keys(DEFAULTS)) {
+    const v = (got.settings || {})[k];
+    if (v !== undefined && v !== null && v !== "") kept[k] = v;
+  }
+  return { ...DEFAULTS, ...kept };
 }
 
 export async function saveSettings(patchObj) {

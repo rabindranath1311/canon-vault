@@ -11,10 +11,12 @@ import assert from "node:assert/strict";
 
 import {
   addItemToWall, applyCapture, attachmentName, canonicalUrl, captureToBookmark,
-  captureToItem, captureToQuote, clipFrontmatter, itemKey, normalizeTags,
+  captureToBlock, captureToItem, captureToNote, captureToQuote, clipFrontmatter, itemKey,
+  normalizeMentions, normalizeTags,
   safeCaption, safeStem, safeUrl, targetFor, urlsFromText, wallPath,
 } from "../vault/clip.js";
 import { parseInspoBody } from "../vault/inspo.js";
+import { noteChrome } from "../vault/data.js";
 import { parse } from "../vault/mdfile.js";
 import { MemoryBackend, Vault } from "../vault/vault.js";
 import { Data } from "../vault/data.js";
@@ -337,4 +339,144 @@ test("urlsFromText reads links out of whatever shape the paste arrives in", () =
   assert.deepEqual(urlsFromText("ftp://a.test/x file:///etc/passwd"), []);
   assert.deepEqual(urlsFromText(""), []);
   assert.deepEqual(urlsFromText(null), []);
+});
+
+// ── the third destination ───────────────────────────────────────────────────
+//
+// The popup asks where a capture goes before it is made — Note, Bookmark or
+// Inspo — so `target` is now usually explicit. What must hold is that the three
+// stay three: a note that carried `url` in its frontmatter would be counted as
+// a bookmark by the app's own facet rule, and the choice would be a lie.
+
+test("a note keeps its source in `source:`, so it is not drawn as a bookmark", async () => {
+  const { be, vault, data } = stand();
+  await vault.buildIndex();
+  const r = await applyCapture(data, vault, {
+    type: "note", target: "note",
+    url: "https://stripe.com/docs", title: "Stripe Docs",
+    text: "the whole hierarchy in one column",
+    note: "worth stealing for settings", tags: "#ui",
+    capturedAt: "2026-08-24T10:00:00+00:00",
+  });
+  assert.equal(r.ok, true);
+  assert.ok(r.path.startsWith("notes/"), r.path);
+  const [fm, body] = parse(await be.readText(r.path));
+  assert.equal(fm.kind, "note");
+  // `noteChrome` keys off `url` alone: a note carrying one is drawn with
+  // bookmark chrome and its body is never shown. That is the bug this test is
+  // here to prevent, so it asserts the absence as well as the presence.
+  assert.equal(fm.url, undefined, "a url in frontmatter would hide the body");
+  assert.equal(fm.source, "https://stripe.com/docs");
+  assert.equal(noteChrome({ frontmatter: fm, body }), "article");
+  assert.deepEqual(fm.tags, ["ui"]);
+  assert.match(body, /^> the whole hierarchy in one column$/m);
+  assert.match(body, /^worth stealing for settings$/m);
+  assert.ok(!/^Source:/m.test(body), "the property says it once; the body does not repeat it");
+});
+
+test("a note may carry a snapshot, embedded above the quotation", async () => {
+  const { be, vault, data } = stand();
+  await vault.buildIndex();
+  const r = await applyCapture(data, vault, {
+    type: "note", target: "note", mime: "image/png", blob: blobOf("PNG"),
+    url: "https://stripe.com/docs", title: "Stripe Docs",
+    text: "one column", note: "the nav", capturedAt: "2026-08-24T10:00:00+00:00",
+  });
+  assert.equal(r.ok, true);
+  const [, body] = parse(await be.readText(r.path));
+  const lines = body.split("\n").filter(Boolean);
+  assert.match(lines[0], /^!\[\[attachments\/.*\.png\]\]$/);
+  assert.match(lines[1], /^> one column$/);
+  assert.equal(await be.readText(r.assetPath), "PNG");
+});
+
+test("a title that would break its own link cannot", () => {
+  // The label matters where the link IS a line: a block appended to somebody
+  // else's page, which cannot use frontmatter.
+  const block = captureToBlock({ title: "Fix [this] bug", note: "x",
+                                 url: "https://example.com/a" });
+  assert.match(block, /^Source: \[Fix this bug\]\(https:\/\/example\.com\/a\)$/m);
+  const bare = captureToBlock({ note: "x", url: "https://www.example.com/a" });
+  // The label drops `www.`; the href is kept exactly as the page gave it.
+  assert.match(bare, /^Source: \[example\.com\]\(https:\/\/www\.example\.com\/a\)$/m);
+});
+
+test("an edited property beats the meta tag it was edited against", () => {
+  const plan = captureToNote({
+    url: "https://example.com/a", title: "My own title",
+    author: "Me", description: "",
+    og: { title: "Their title", author: "Their byline", description: "Their blurb" },
+  });
+  assert.equal(plan.title, "My own title");
+  assert.equal(plan.frontmatter.author, "Me");
+  assert.equal(plan.frontmatter.og_description, undefined, "a cleared field stays cleared");
+});
+
+test("a capture can join a page that already exists", async () => {
+  const { be, vault, data } = stand();
+  await vault.buildIndex();
+  const host = await data.createPage({ kind: "note", title: "Reading list",
+                                       body: "Things to read.\n" });
+  const r = await applyCapture(data, vault, {
+    appendTo: host.id, url: "https://stripe.com/docs", title: "Stripe Docs",
+    note: "the settings nav", tags: "#ui",
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.appended, true);
+  assert.equal(r.path, host.path, "no second file was made");
+  const [, body] = parse(await be.readText(host.path));
+  assert.match(body, /^Things to read\.$/m, "what was already there survives");
+  assert.match(body, /^the settings nav$/m);
+  assert.match(body, /^#ui$/m);
+  assert.match(body, /^Source: \[Stripe Docs\]\(https:\/\/stripe\.com\/docs\)$/m);
+});
+
+test("a picture appended to a wall becomes a real wall item", async () => {
+  const { be, vault, data } = stand();
+  await vault.buildIndex();
+  const wall = await data.createPage({ kind: "inspo", title: "Shelf" });
+  const r = await applyCapture(data, vault, {
+    appendTo: wall.id, blob: blobOf("PNG"), mime: "image/png",
+    src: "https://x.test/a/nav.png", url: "https://x.test/a",
+    note: "the nav", capturedAt: "2026-08-24T10:00:00+00:00",
+  });
+  assert.equal(r.ok, true);
+  const [, body] = parse(await be.readText(wall.path));
+  const items = parseInspoBody(body).groups.flatMap((g) => g.items);
+  assert.equal(items.length, 1, "it parses back as one item, not loose prose");
+  assert.equal(items[0].caption, "the nav");
+  assert.equal(items[0].image, r.assetPath);
+});
+
+test("two notes from one page are two notes; two bookmarks are one", async () => {
+  const { vault, data } = stand();
+  await vault.buildIndex();
+  const cap = { url: "https://stripe.com/docs", title: "Stripe Docs", note: "a thought" };
+  const a = await applyCapture(data, vault, { ...cap, target: "note" });
+  const b = await applyCapture(data, vault, { ...cap, target: "note", note: "another" });
+  assert.equal(a.ok, true);
+  assert.equal(b.ok, true);
+  assert.notEqual(a.path, b.path, "a second thought is a second note");
+
+  const c = await applyCapture(data, vault, { ...cap, target: "bookmark" });
+  const d = await applyCapture(data, vault, { ...cap, target: "bookmark" });
+  assert.equal(d.skipped, "duplicate", "the same link twice is the same link");
+  assert.equal(d.path, c.path);
+});
+
+test("mentions become wikilinks, wherever the capture lands", () => {
+  const note = captureToNote({
+    url: "https://example.com/a", title: "A", note: "worth reading",
+    mentions: ["Design system", "Design system", "Reading list"],
+  });
+  assert.match(note.body, /^\[\[Design system\]\] \[\[Reading list\]\]$/m,
+               "said once each, on their own line");
+
+  // A wall item is read line-by-shape, so a bare wikilink line would be lost.
+  const item = captureToItem({ note: "the nav", mentions: ["Design system"] },
+                              "attachments/a.png");
+  assert.equal(item.caption, "the nav [[Design system]]");
+
+  // A name that would end its own link early cannot.
+  assert.deepEqual(normalizeMentions(["Fix [this] | now"]), ["Fix this now"]);
 });

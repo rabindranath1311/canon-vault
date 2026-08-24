@@ -507,6 +507,14 @@ export class Vault {
        wikilink resolves against files, not against what this app can open. */
     this.reservedNames = new Set();
     this.warnings = [];
+    /* The same findings as `warnings`, in a shape something can act on.
+       A sentence in a banner is a dead end: "duplicate filename Untitled" told
+       you a thing was wrong and left the fixing to a file manager. Each entry
+       here names the type, the files, and — for a collision — which name is
+       contested, which is everything the resolve dialog needs to offer a
+       rename. The strings stay because the banner, the clipper and
+       `vaultNotices` all read them. */
+    this.problems = [];
     this.historyKeep = opts.historyKeep ?? HISTORY_KEEP;
     this.election = opts.election ?? { isWriter: true };
     this.now = opts.now ?? (() => new Date().toISOString().replace(/\.\d+Z$/, "+00:00"));
@@ -527,6 +535,13 @@ export class Vault {
     return !!(this.election.isWriter || this.election.closing);
   }
 
+  /** Record one finding twice: as the sentence the banner shows, and as the
+   *  object the resolve dialog acts on. Never one without the other. */
+  #flag(text, problem) {
+    this.warnings.push(text);
+    this.problems.push({ ...problem, text });
+  }
+
   // 5.5 / 5.12 / 5.13 / 5.16 / 5.17
   async buildIndex() {
     const files = await this.be.listAll();
@@ -534,6 +549,7 @@ export class Vault {
     const nextIndex = new Map();
     const nextByPath = new Map();
     this.warnings = [];
+    this.problems = [];
     this.reservedNames = new Set();   // rebuilt from disk, like the index
     let reread = 0;
 
@@ -637,8 +653,10 @@ export class Vault {
         // 5.12 — duplicate id. Warn naming both paths; get() resolves to the
         // lexicographically first path, deterministically.
         const other = seenIds.get(id);
-        this.warnings.push(
-          `duplicate id ${id}: ${other} and ${f.path} — get() resolves ${[other, f.path].sort()[0]}`);
+        this.#flag(
+          `duplicate id ${id}: ${other} and ${f.path} — get() resolves ${[other, f.path].sort()[0]}`,
+          { type: "duplicate-id", id, paths: [other, f.path],
+            resolves: [other, f.path].sort()[0] });
         if ([other, f.path].sort()[0] === other) {
           this._mtimes.set(f.path, f.mtime);
           nextByPath.set(f.path, entry);
@@ -664,8 +682,9 @@ export class Vault {
       const base = basenameOf(p);
       const k = base.toLowerCase();
       if (byBase.has(k)) {
-        this.warnings.push(
-          `duplicate filename "${base}": ${byBase.get(k)} and ${p} — [[${base}]] is ambiguous`);
+        this.#flag(
+          `duplicate filename "${base}": ${byBase.get(k)} and ${p} — [[${base}]] is ambiguous`,
+          { type: "duplicate-filename", name: base, paths: [byBase.get(k), p] });
       } else byBase.set(k, p);
     }
 
@@ -677,7 +696,20 @@ export class Vault {
       const first = byTitle.get(k);
       if (first === undefined) { byTitle.set(k, e.path); continue; }
       if (basenameOf(first).toLowerCase() === basenameOf(e.path).toLowerCase()) continue;
-      this.warnings.push(`duplicate title "${e.title}": ${first} and ${e.path}`);
+      this.#flag(`duplicate title "${e.title}": ${first} and ${e.path}`,
+        { type: "duplicate-title", title: e.title, paths: [first, e.path] });
+    }
+
+    /* A file the parser could not read is a problem the dialog must show — it
+       is the one kind the app refuses to write over, so it is also the one a
+       user can be stuck on for good. It is deliberately NOT a warning: the
+       banner counts collisions, and a broken file needs a different sentence
+       than "two files share a name". */
+    for (const e of nextIndex.values()) {
+      if (e.unparseable) {
+        this.problems.push({ type: "unreadable", paths: [e.path], why: e.unparseable,
+          text: `${e.path} could not be read: ${e.unparseable}` });
+      }
     }
 
     for (const p of this.byPath.keys()) if (!nextByPath.has(p)) this._mtimes.delete(p);
@@ -744,6 +776,33 @@ export class Vault {
     // the shape the rest of the vault was written for.
     const bare = resolved.endsWith(".canvas");
     const path = bare ? resolved.replace(/\.canvas$/, ".md") : resolved;
+
+    /* Prevention, at the last gate every write passes through.
+       `data.create` walks `freeStem` before it picks a path, so nothing the app
+       offers should ever land here — but "should" is how `projects/X/X.md` came
+       to be written without that walk, and how a name already owned by a bare
+       `.canvas` became a second file answering to `[[Sketches]]`. A new file at
+       a taken basename is refused by name, with the file that holds it named,
+       rather than quietly making every link to that name ambiguous. Only NEW
+       files: an existing one keeps its own name, collision or not, because
+       refusing to save it would strand the user's edit over a problem they did
+       not just cause. */
+    if (!entry && !(await this.be.exists(path))) {
+      // `basenameOf`, the same reading the duplicate-filename check uses — this
+      // guard exists to stop exactly what that check reports.
+      const base = basenameOf(path).toLowerCase();
+      // A bare `.canvas` gaining its `.md` (5.15) is the documented pair, not a
+      // collision: the sidecar reserved that name and this write is the page
+      // that owns it arriving. Refusing here would make the redirect above
+      // unreachable — which is what it did.
+      const sidecar = path.replace(/\.md$/, ".canvas");
+      const held = [...this.byPath.keys(), ...this.reservedNames]
+        .find((p) => p !== path && p !== sidecar && basenameOf(p).toLowerCase() === base);
+      if (held) {
+        return { ok: false, reason: "name-taken", path, held,
+                 message: `${held} already answers to [[${basenameOf(path)}]]` };
+      }
+    }
 
     // 5.19 — conflict check FIRST, so a refused write leaves no history.
     const onDisk = await this.be.stat(path);

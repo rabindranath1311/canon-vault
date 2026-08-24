@@ -10,17 +10,48 @@
 //
 //   onboard    no folder yet — one button, and nothing else to read
 //   locked     a folder whose grant lapsed — a banner whose only button fixes it
-//   connected  the settings, the queue and the log
+//   connected  the folder, the one setting, and the log
 //
-// The reason is what first run used to look like: five sections, four of them
-// empty, and the one decision that mattered competing with a Defaults form the
-// user could not yet have an opinion about.
+// **Every action here reports what actually happened.** That is not a nicety:
+// Unlock used to say "Unlocked." in green whatever the write pump replied, so a
+// flush that had refused all eight clips looked identical to one that wrote
+// them, and pressing the button again looked like pressing a dead button. The
+// rules that came out of that:
+//
+//   - no await may run between the click and `requestAccess` (see writer.js);
+//   - every handler is wrapped, because an unhandled rejection IS the silence;
+//   - `ok === false` is never reported as success, and the reason is shown;
+//   - a message that cannot be acted on carries the control that can.
 
 import { settings, saveSettings, pending, clear, drop } from "./store.js";
-import { rememberHandle, forgetHandle, storedHandle, permission, openVault } from "./writer.js";
+import { rememberHandle, forgetHandle, storedHandle, permission, requestAccess, openVault }
+  from "./writer.js";
 
 const $ = (id) => document.getElementById(id);
-const send = (type, extra = {}) => chrome.runtime.sendMessage({ type, ...extra });
+
+/** The stored handle, held so a click can spend its gesture immediately. */
+let HANDLE = null;
+
+/**
+ * Talk to the service worker.
+ *
+ * A worker that failed to start, or died on an import error, makes every
+ * `sendMessage` reject — and an uncaught rejection here is a button that does
+ * nothing at all. So the failure becomes an ordinary answer with a reason the
+ * page can print.
+ */
+async function send(type, extra = {}) {
+  try {
+    const r = await chrome.runtime.sendMessage({ type, ...extra });
+    return r ?? { ok: false, reason: "no-reply",
+                  message: "The clipper's background worker did not answer." };
+  } catch (e) {
+    return { ok: false, reason: "worker",
+             message: "The clipper's background worker is not responding — reload the "
+                    + "extension at chrome://extensions and try again. "
+                    + `(${(e && e.message) || e})` };
+  }
+}
 
 /** Two status lines — one per visible state — so the message always lands
  *  where the user is looking. They are never on screen at the same time. */
@@ -31,16 +62,52 @@ function status(text, tone = "") {
   }
 }
 
+/**
+ * Wrap a handler so a thrown error becomes a message rather than silence, and
+ * so the button it belongs to shows that it is working.
+ *
+ * The second half matters more than it looks: opening the vault rebuilds the
+ * index, which reads every markdown file in the folder. On a large vault that
+ * is several seconds during which the old page said nothing at all — and a
+ * button that looks idle while it works is a button people press again.
+ */
+function guard(fn, busy = null) {
+  return async (event) => {
+    const btn = event && event.currentTarget;
+    const label = btn ? btn.textContent : null;
+    if (btn && busy) { btn.textContent = busy; btn.disabled = true; }
+    try {
+      await fn(event);
+    } catch (e) {
+      status(`That did not work: ${(e && e.message) || e}`, "bad");
+      await refresh().catch(() => {});
+    } finally {
+      if (btn && busy) { btn.textContent = label; btn.disabled = false; }
+    }
+  };
+}
+
 function when(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   return Number.isNaN(+d) ? "" : d.toLocaleString();
 }
 
+/** The permission state, in words, always on screen. The complaint that led
+ *  here was not "it failed" — it was "I cannot tell what it is doing". */
+function accessWord(state) {
+  return state === "granted" ? "connected"
+    : state === "denied" ? "blocked by Chrome"
+    : state === "prompt" ? "locked"
+    : "no folder";
+}
+
 async function paintVault() {
-  const handle = await storedHandle();
+  HANDLE = await storedHandle();
+  const handle = HANDLE;
   const state = await permission(handle);
   const locked = Boolean(handle) && state !== "granted";
+  const waiting = await pending();
 
   $("onboard").classList.toggle("hidden", Boolean(handle));
   $("connected").classList.toggle("hidden", !handle);
@@ -49,17 +116,19 @@ async function paintVault() {
   if (locked) {
     $("lock-title").textContent = `${handle.name} is locked`;
     $("lock-why").textContent = state === "denied"
-      ? "Chrome is refusing access to this folder. Choose it again below."
+      ? "Chrome is refusing access to this folder. Choose it again — picking a folder "
+        + "always grants access, where Unlock only asks."
       : "Chrome hands out folder access for the session, and this one has lapsed. "
         + "One click restores it and writes everything waiting.";
-    $("unlock").textContent = state === "denied" ? "Try again" : `Unlock ${handle.name}`;
+    $("unlock").textContent = "Unlock";
+    $("unlock").disabled = state === "denied";
   }
 
   $("vault-name").textContent = handle ? handle.name : "Not connected";
-  $("vault-why").textContent = !handle ? ""
-    : state === "granted" ? "Connected. Clips are written as they are made."
-    : state === "denied" ? "Chrome is refusing access to this folder. Choose it again."
-    : "Access has lapsed. Unlock to write the clips waiting below.";
+  $("vault-state").textContent = handle
+    ? `${accessWord(state)}${waiting.length ? ` · ${waiting.length} waiting` : ""}`
+    : "";
+  $("vault-state").className = `pill ${state === "granted" ? "ok" : "warn"}`;
   return { handle, state };
 }
 
@@ -74,19 +143,13 @@ async function paintWalls() {
 
 async function paintQueue() {
   const items = await pending();
-  $("queue-title").textContent = items.length
-    ? (items.length === 1 ? "1 waiting" : `${items.length} waiting`)
-    : "Nothing waiting";
-  $("flush").disabled = !items.length;
-  $("clear").disabled = !items.length;
+  // Nothing waiting is the normal state, and it has nothing to say: the section
+  // appears only when there is a clip the user thinks is saved and is not.
+  $("queue-sec").classList.toggle("hidden", !items.length);
+  if (!items.length) return;
+  $("queue-title").textContent = items.length === 1 ? "1 waiting" : `${items.length} waiting`;
   const box = $("queue");
   box.textContent = "";
-  if (!items.length) {
-    box.appendChild(Object.assign(document.createElement("div"), {
-      className: "item muted", textContent: "Every clip has been written.",
-    }));
-    return;
-  }
   for (const rec of items) {
     const row = document.createElement("div");
     row.className = "item";
@@ -97,7 +160,7 @@ async function paintQueue() {
     t.textContent = rec.title || rec.url || rec.type;
     const sub = document.createElement("div");
     sub.className = "tiny muted truncate";
-    sub.textContent = `${rec.type}${rec.wall ? ` → ${rec.wall}` : ""} · ${when(rec.queuedAt)}`;
+    sub.textContent = `${rec.type} · ${when(rec.queuedAt)}`;
     main.append(t, sub);
     if (rec.error) {
       const e = document.createElement("div");
@@ -108,7 +171,7 @@ async function paintQueue() {
     const del = document.createElement("button");
     del.className = "ghost tiny";
     del.textContent = "Discard";
-    del.addEventListener("click", async () => { await drop(rec.id); await refresh(); });
+    del.addEventListener("click", guard(async () => { await drop(rec.id); await refresh(); }));
     row.append(main, del);
     box.appendChild(row);
   }
@@ -116,7 +179,7 @@ async function paintQueue() {
 
 async function paintRecent() {
   const st = await send("state");
-  const items = (st && st.recent) || [];
+  const items = ((st && st.recent) || []).slice(0, 10);
   const box = $("recent");
   box.textContent = "";
   if (!items.length) {
@@ -146,10 +209,6 @@ async function paintRecent() {
 async function paintSettings() {
   const s = await settings();
   $("wall").value = s.wall || "";
-  $("group").value = s.group || "";
-  $("linkTarget").value = s.linkTarget || "bookmark";
-  $("autoSave").checked = s.autoSave !== false;
-  $("dedupe").checked = s.dedupe !== false;
 }
 
 async function refresh() {
@@ -160,19 +219,54 @@ async function refresh() {
   await send("badge");
 }
 
+// ── saying what the write pump did ──────────────────────────────────────────
+
+/**
+ * One place that turns a flush result into a sentence, because the two buttons
+ * that flush used to disagree about what counted as success.
+ *
+ * `different-vault` gets its own treatment: it is the one failure the user
+ * cannot fix with the button they just pressed, so it names the one that works.
+ */
+function reportFlush(r, prefix = "") {
+  if (!r || r.ok === false) {
+    const reason = r && r.reason;
+    if (reason === "permission") {
+      status(`${prefix}The folder is still locked — Chrome did not grant access.`, "warn");
+    } else if (reason === "no-vault") {
+      status(`${prefix}No folder is connected yet.`, "warn");
+    } else if (reason === "different-vault") {
+      status(`${prefix}${(r && r.message) || "That is a different folder."} `
+             + "Press “Change folder…” and pick it again to adopt it.", "bad");
+    } else {
+      status(`${prefix}${(r && (r.message || reason)) || "Could not write."}`, "bad");
+    }
+    return false;
+  }
+  const bits = [];
+  if (r.vault) bits.push(`read ${r.vault}${r.pages != null ? ` (${r.pages} pages)` : ""}`);
+  if (r.wrote) bits.push(`wrote ${r.wrote} clip${r.wrote === 1 ? "" : "s"}`);
+  if (r.failed) bits.push(`${r.failed} failed — the reason is on each one below`);
+  if (!r.wrote && !r.failed) bits.push("nothing was waiting");
+  status(prefix + bits.join(", ") + ".", r.failed ? "warn" : "ok");
+  return !r.failed;
+}
+
 // ── actions ─────────────────────────────────────────────────────────────────
 
-/** Pick the folder. Shared by the first-run button and "Change folder…", which
- *  are the same act seen from two different states. */
-async function chooseFolder() {
+/** Pick the folder. Shared by the first-run button, "Change folder…" and the
+ *  locked banner's escape hatch — they are one act seen from three states. */
+const chooseFolder = guard(async () => {
+  status("Waiting for the folder dialog…");
   let handle;
   try {
     handle = await showDirectoryPicker({ mode: "readwrite", id: "canon-vault" });
   } catch (e) {
-    if (e && e.name === "AbortError") return;              // dismissed: say nothing
-    status("Could not open that folder.", "bad");
+    if (e && e.name === "AbortError") { status(""); return; }   // dismissed: say nothing
+    status(`Could not open that folder: ${(e && e.message) || e}`, "bad");
     return;
   }
+  status(`Opening ${handle.name}…`);
   await rememberHandle(handle);
   // A vault is a folder someone already made — with the app, or by hand, or by
   // cloning one. The clipper writes *into* it and never conjures one, so a
@@ -185,64 +279,92 @@ async function chooseFolder() {
     return;
   }
   const known = opened.vault.list().length;
-  status(known
-    ? `Connected to ${handle.name} — ${known} pages. Clip anything and it lands here.`
-    : `Connected to ${handle.name}. It looks empty — open it in the app once to set it up.`,
-    known ? "ok" : "warn");
+  const head = known
+    ? `${handle.name} · ${known} pages. `
+    : `${handle.name} looks empty — open it in the app once to set it up. `;
   await send("refreshWalls");
-  await send("flush");
+  const waiting = (await pending()).length;
+  if (waiting) reportFlush(await send("flush"), head);
+  else status(head + "Ready.", known ? "ok" : "warn");
   await refresh();
-}
+});
 
 $("connect").addEventListener("click", chooseFolder);
 $("choose").addEventListener("click", chooseFolder);
+$("lock-repick").addEventListener("click", chooseFolder);
 
-$("unlock").addEventListener("click", async () => {
-  const handle = await storedHandle();
-  const state = await permission(handle, { request: true });
-  if (state !== "granted") { status("Chrome did not grant access.", "warn"); return; }
-  const r = await send("flush");
-  status(r && r.wrote ? `Unlocked — wrote ${r.wrote} clip${r.wrote === 1 ? "" : "s"}.` : "Unlocked.", "ok");
+/**
+ * Unlock. The handle is already in hand and `requestAccess` is the first thing
+ * the click does, so the gesture is still warm when Chrome checks for one.
+ */
+$("unlock").addEventListener("click", guard(async () => {
+  if (!HANDLE) { status("No folder is connected yet.", "warn"); return; }
+  let asked;
+  try {
+    asked = requestAccess(HANDLE);          // no await before this line
+    status("Asking Chrome for access…");
+    asked = await asked;
+  } catch (e) {
+    // NotAllowedError here means the dialog never opened. Say that, rather
+    // than leaving the user to press a button that appears to do nothing.
+    status(`Chrome would not show the access dialog (${(e && e.name) || "error"}: `
+           + `${(e && e.message) || e}). Press “Choose folder again” instead — `
+           + "picking a folder always grants access.", "bad");
+    await refresh();
+    return;
+  }
+  if (asked !== "granted") {
+    status(asked === "denied"
+      ? "Chrome is blocking access to this folder. Press “Choose folder again” and pick it."
+      : "The dialog was dismissed, so access was not granted. Press Unlock and choose Allow, "
+        + "or use “Choose folder again”.", "warn");
+    await refresh();
+    return;
+  }
+  status(`Access granted — reading ${HANDLE.name}…`);
+  reportFlush(await send("flush"), `Unlocked ${HANDLE.name} — `);
   await refresh();
-});
+}, "Unlocking…"));
 
-$("forget").addEventListener("click", async () => {
+$("check").addEventListener("click", guard(async () => {
+  status("Reading the folder…");
+  const r = await send("check");
+  if (!r || r.ok === false) {
+    reportFlush(r, "Not connected — ");
+    await refresh();
+    return;
+  }
+  status(`${r.name} · ${r.pages} pages · ${r.notes} notes · ${r.walls} walls`
+         + `${r.ms != null ? ` · read in ${(r.ms / 1000).toFixed(1)}s` : ""}`, "ok");
+  await refresh();
+}, "Reading…"));
+
+$("forget").addEventListener("click", guard(async () => {
   await forgetHandle();
   status("Forgotten. Nothing on disk was touched.");
   await refresh();
-});
+}));
 
-$("flush").addEventListener("click", async () => {
-  status("Writing…");
-  const r = await send("flush");
-  if (!r || r.ok === false) {
-    status(r && r.reason === "permission"
-      ? "The folder is locked — press Unlock at the top of the page."
-      : (r && (r.message || r.reason)) || "Could not write.", "warn");
-  } else {
-    status(`Wrote ${r.wrote}${r.failed ? `, ${r.failed} failed` : ""}.`, r.failed ? "warn" : "ok");
-  }
+$("flush").addEventListener("click", guard(async () => {
+  status("Reading the folder, then writing…");
+  reportFlush(await send("flush"));
   await refresh();
-});
+}, "Writing…"));
 
-$("clear").addEventListener("click", async () => {
+$("clear").addEventListener("click", guard(async () => {
   const n = (await pending()).length;
   if (!confirm(`Discard ${n} unwritten clip${n === 1 ? "" : "s"}? They are not in the vault yet.`)) return;
   await clear();
   status("Queue discarded.");
   await refresh();
-});
+}));
 
-for (const [id, key, read] of [
-  ["wall", "wall", (el) => el.value.trim()],
-  ["group", "group", (el) => el.value.trim()],
-  ["linkTarget", "linkTarget", (el) => el.value],
-  ["autoSave", "autoSave", (el) => el.checked],
-  ["dedupe", "dedupe", (el) => el.checked],
-]) {
-  const el = $(id);
-  el.addEventListener("change", async () => { await saveSettings({ [key]: read(el) }); });
-}
+// The one setting. Blank means the default, which is why `settings()` drops
+// empty values rather than storing them.
+$("wall").addEventListener("change", guard(async () => {
+  await saveSettings({ wall: $("wall").value.trim() });
+  status(`Pictures now land on “${$("wall").value.trim() || "Interface Inspiration"}”.`, "ok");
+}));
 
 /** Arriving from the popup's locked chip. The button is already the only thing
  *  in the banner; focusing it means the whole recovery is one keystroke. */
@@ -252,4 +374,7 @@ function honourHash() {
   $("unlock").focus();
 }
 
-paintSettings().then(refresh).then(honourHash);
+paintSettings()
+  .then(refresh)
+  .then(honourHash)
+  .catch((e) => status(`The setup page could not read its own state: ${(e && e.message) || e}`, "bad"));

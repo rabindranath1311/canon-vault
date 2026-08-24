@@ -16,9 +16,9 @@ It is not in the Chrome Web Store; load it from this repo.
    holding your `CONVENTION.md`
 4. Pin the toolbar icon
 
-That is the whole setup: one folder, one click. Everything else on that page —
-the default wall, what a clipped link becomes — has a working default and can
-stay untouched, which is why none of it is shown until the folder is connected.
+That is the whole setup: one folder, one click. There is exactly one setting —
+the wall your pictures land on — and it has a working default, which is why it
+is not shown until the folder is connected.
 
 Chrome hands out folder access **per browser session**, so it lapses when Chrome
 restarts. Nothing is lost when it does: clips queue, the toolbar badge marks the
@@ -28,18 +28,46 @@ unlocks it in one click.
 Chromium only — the File System Access API does not exist in Safari or Firefox,
 which is the same constraint the app has.
 
-## What each thing does
+## How to use it
 
-| you do | you get |
-| --- | --- |
-| Right-click an image → **Save this image to the wall** | the image in `attachments/`, a card on your wall with its caption, tags and the page it came from |
-| <kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd>, or **Region** | drag a rectangle; the crop lands on the wall — the fastest way to keep one component rather than a whole page |
-| <kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd>, or **Clip page** | a bookmark: `notes/<Title>.md` with `url` and the page's `og_*` keys, which is what makes it render as a card |
-| Select text → **Clip selection** | a note whose body is that quotation, with the source url |
-| **Clip page image** | the page's own `og:image`, straight onto the wall |
-| Toolbar popup | the same, with a caption, tags and a choice of wall before it is written |
+**Three places, chosen before you save.** The popup's first control is where it
+goes, and the rest of the form is whatever that destination can carry.
 
-A wall is an ordinary `inspo` page. The first clip onto a name creates it; after
+| | goes to | carries |
+| --- | --- | --- |
+| **Note** | `notes/<Title>.md` | title, picture, the highlighted text, your words, tags, and `source` / `author` / `og_description` as properties |
+| **Bookmark** | `notes/<Title>.md` with `url` | title, your note, tags, and the same properties — the site as a card |
+| **Inspo** | `inspo/<Wall>.md` + `attachments/` | a picture, a caption, tags, and which wall |
+
+A Note carries its link in **`source:`**; a Bookmark carries it in **`url:`**.
+That is not decoration: [`noteChrome`](../app/vault/data.js) draws any note with
+a `url` as a bookmark card and does not display its body, so a clipped article
+with a highlight and a snapshot would render as a bare link with the capture
+hidden behind it. `source` is in the convention's own field list, no renderer
+keys off it, and it is the property Obsidian's clipper writes.
+
+**The title is the filename**, so it is editable, and the line under it shows
+the name the file will get — including *"“Canon Vault” is taken"* before you
+save rather than a mystery `Canon Vault 2.md` afterwards.
+
+**Picture**, under Note and Inspo: *This image* (the one you right-clicked),
+*Preview* (the `og:image` the site advertises when its link is shared), *Screen*
+(the visible window), or *Region* (drag a rectangle — the popup closes for the
+drag and keeps what you typed). Screen and Region photograph what is on screen;
+neither scrolls.
+
+**Add to a page** puts the capture at the bottom of a page you already have
+instead of making a new file — a highlight into a research note, an image onto
+any wall. On a wall it is written as a real inspo item, so the wall keeps
+parsing as one.
+
+**Right-click opens the same form**, loaded with what you pointed at: an image,
+a link, a selection, the page, or a region. Nothing is written until you press
+save. The two keyboard shortcuts skip the form on purpose —
+<kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd> bookmarks the page,
+<kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> drags a region onto the wall.
+
+A wall is an ordinary `inspo` page. The first save onto a name creates it; after
 that everything lands on the same one. Rename it in Obsidian and the clipper
 still finds it — it matches on the title, not the filename.
 
@@ -66,8 +94,8 @@ injected.js       the three functions that run in the page (metadata, image
                   bytes, the region overlay) — self-contained, by necessity
 store.js          the capture queue (IndexedDB), the handle, the settings
 writer.js         the handle, its permission, and standing the Vault up
-popup.js          one screen, three seconds
-vault.js          the setup page: folder picking, defaults, stuck clips
+popup.js          the capture form, aimed by the destination at the top
+vault.js          the setup page: folder picking, the one setting, stuck clips
 vault/            MIRROR of app/vault — never edit; run
                   `node scripts/sync-extension.mjs`
 ```

@@ -2004,6 +2004,16 @@ body.col-resizing * { cursor: col-resize !important; user-select: none !importan
   font-variant-numeric: tabular-nums;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* A description is a sentence, not a fact: it wraps rather than ending in an
+   ellipsis after three words. Capped, because the rail is a rail. */
+.side-row-wrap {
+  white-space: normal; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+  max-height: 5.6em; line-height: 1.4;
+}
+.side-row-v a { color: inherit; text-decoration: underline;
+                text-underline-offset: 2px; text-decoration-color: var(--faint); }
+.side-row-v a:hover { text-decoration-color: currentColor; }
 .side-children {
   display: flex; flex-direction: column; gap: 2px;
   margin-bottom: 6px;
@@ -3765,6 +3775,20 @@ a.set-dl { display: inline-flex; align-items: center; text-decoration: none; }
   background: var(--color-charcoal); color: var(--text);
   border: 1px solid var(--border); min-width: 11rem; }
 .set-input[type="number"] { min-width: 5rem; }
+
+/* The connection check. A row per question, in the order the app asks them,
+   so the first cross is the thing to fix — the list is a diagnosis, not a
+   status light. */
+.set-check { padding: 0.75rem 1rem 0.9rem; border-bottom: 1px solid var(--border);
+  background: var(--color-obsidian); }
+.set-check-row { display: flex; gap: 0.55rem; align-items: baseline;
+  font-size: 0.82rem; line-height: 1.5; padding: 0.15rem 0; }
+.set-check-mark { flex: 0 0 auto; font-size: 0.75rem; }
+.set-check-mark[data-ok="1"] { color: var(--signal-pos); }
+.set-check-mark[data-ok="0"] { color: var(--signal-alert); }
+.set-check-name { flex: 0 0 10rem; color: var(--text); }
+.set-check-detail { color: var(--faint); }
+.set-check-foot { margin-top: 0.5rem; font-size: 0.78rem; color: var(--faint); }
 
 /* 10.8: the empty-vault onboarding panel — a next action, not a dashed box. */
 .first-run { max-width: 42rem; padding: 2rem 2.25rem; border-radius: 10px;
@@ -6102,6 +6126,30 @@ body.cv-settled .screen, body.cv-settled .page {
 .history-when { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .history-go { color: var(--faint); font-size: var(--fz-micro); }
 .history-row:hover .history-go { color: var(--accent); }
+
+/* ── Vault problems ────────────────────────────────────────────────────
+   A list of things to settle, each with its fix beside it. Deliberately not
+   styled as an alert: nothing here is urgent, and a wall of red would make a
+   tidy-up read as a failure. */
+.prob-modal { width: 660px; max-width: 92vw; }
+.prob-lede { margin: 0 0 var(--sp-3); font-size: var(--fz-mini); color: var(--muted); }
+.prob-list { display: flex; flex-direction: column; gap: var(--sp-3);
+  max-height: 58vh; overflow-y: auto; }
+.prob { border: 1px solid var(--line); border-radius: var(--radius-btn);
+  padding: var(--sp-3); }
+.prob-hd { font-size: var(--fz-mini); font-weight: 550; }
+.prob-hd code { font-family: var(--font-mono); font-size: .92em; }
+.prob-why { font-size: var(--fz-micro); color: var(--faint); line-height: 1.5;
+  margin: .25rem 0 .6rem; }
+.prob-files { display: flex; flex-direction: column; gap: .4rem; }
+.prob-file { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.prob-path { font-family: var(--font-mono); font-size: var(--fz-micro);
+  color: var(--muted); flex: 1 1 14rem; overflow-wrap: anywhere; }
+.prob-input { min-width: 10rem; flex: 0 1 15rem; font-size: var(--fz-micro); }
+.prob-do { flex: 0 0 auto; }
+.prob-note { font-size: var(--fz-micro); color: var(--faint); flex: 0 1 auto; }
+.prob-empty { font-size: var(--fz-mini); color: var(--faint); padding: var(--sp-3);
+  border: 1px dashed var(--line); border-radius: var(--radius-btn); }
 
 /* ── Activity buckets ──────────────────────────────────────────────────
    The meter read as a stray dash: a 4px track with a 1px border and a 5%

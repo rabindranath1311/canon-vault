@@ -312,6 +312,174 @@ function historyDialog(snaps, title) {
   });
 }
 
+/* ── the vault's problems, and the buttons that fix them ────────────────────
+ *
+ * The banner said: 8 vault warnings, including: duplicate filename "Untitled":
+ * canvas/Untitled.md and inspo/Untitled.md — [[Untitled]] is ambiguous.
+ *
+ * Every word of that is true and none of it helps. It names two files in an app
+ * that reads and writes exactly those files, and then asks the user to go and
+ * sort it out somewhere else. So the same finding now arrives as a list you can
+ * act on: one row per problem, the files under it, and the fix beside each —
+ * rename, re-id, retitle — running here, through the same write path, `.history`
+ * snapshot and all.
+ *
+ * The dialog re-reads the vault after every fix, so the list shrinks as you work
+ * and you are never guessing whether the last button did anything.
+ */
+function problemsDialog() {
+  const data = window.SB_DATA;
+  if (!data || typeof data.vaultProblems !== 'function') {
+    toast('The data layer is not standing — reload the app.', { tone: 'error' });
+    return;
+  }
+  const close = () => {
+    bg.remove();
+    document.removeEventListener('keydown', onKey, true);
+    // Whatever was renamed is a different file now: the screen behind this is
+    // showing the old names until it is told otherwise.
+    render();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+
+  const list = h('div', { className: 'prob-list' });
+  const lede = h('p', { className: 'prob-lede' });
+
+  const TITLES = {
+    'duplicate-filename': (p) => ['Two files answer to ', h('code', null, `[[${p.name}]]`)],
+    'duplicate-id': (p) => ['Two files carry the id ', h('code', null, p.id)],
+    'duplicate-title': (p) => ['Two pages are titled ', h('b', null, p.title)],
+    unreadable: (p) => ['This file could not be read'],
+  };
+  const WHY = {
+    'duplicate-filename': 'Obsidian resolves a wikilink by filename, so every link to '
+      + 'that name is ambiguous — in this app and in Obsidian both. Rename either one.',
+    'duplicate-id': 'The id is what the app opens a page by, so one of these two is '
+      + 'unreachable. Give it an id of its own; nothing else about it changes.',
+    'duplicate-title': 'Nothing breaks — the two are still separate files. It is only '
+      + 'hard to tell them apart in a list.',
+    unreadable: 'The app refuses to write over a file it cannot parse, so this one is '
+      + 'read-only until the frontmatter is fixed — in Obsidian, or by your agent.',
+  };
+
+  const paint = () => {
+    const problems = data.vaultProblems();
+    clear(list);
+    clear(lede);
+    if (!problems.length) {
+      lede.appendChild(document.createTextNode('Nothing to fix — every page has a name of its own.'));
+      list.appendChild(h('div', { className: 'prob-empty' }, 'All clear.'));
+      return;
+    }
+    lede.appendChild(document.createTextNode(
+      `${problems.length} thing${problems.length === 1 ? '' : 's'} to settle. `
+      + 'Each fix is written straight into the vault, and the old version is kept in .history/.'));
+
+    problems.forEach((p) => {
+      const rows = h('div', { className: 'prob-files' });
+      const row = h('div', { className: 'prob' },
+        h('div', { className: 'prob-hd' }, ...(TITLES[p.type] || (() => [p.text]))(p)),
+        h('div', { className: 'prob-why' }, WHY[p.type] || ''),
+        rows);
+
+      (p.files || []).forEach((f) => {
+        const line = h('div', { className: 'prob-file' },
+          h('code', { className: 'prob-path' }, f.path));
+        /* A broken file gets no Rename button. It is not the name that is
+           wrong, and offering the one fix that cannot help is worse than
+           offering none — the frontmatter has to be repaired in something that
+           will open it, which is Obsidian or an agent. */
+        if (p.type === 'unreadable') {
+          line.appendChild(h('span', { className: 'prob-note' }, p.why || ''));
+          const url = obsidianUrl(f.path);
+          if (url) line.appendChild(h('a', { className: 'btn prob-do', href: url }, 'Open in Obsidian'));
+          rows.appendChild(line);
+          return;
+        }
+        if (!f.fixable) {
+          line.appendChild(h('span', { className: 'prob-note' },
+            f.path.endsWith('.canvas')
+              ? 'an Obsidian canvas — rename the other one'
+              : 'not editable from here'));
+          rows.appendChild(line);
+          return;
+        }
+        if (p.type === 'duplicate-id') {
+          line.appendChild(h('button', {
+            className: 'btn prob-do',
+            onClick: (e) => run(e.currentTarget, () => data.newIdFor(f.path),
+              'New id written — ' + f.path),
+          }, 'Give it a new id'));
+          rows.appendChild(line);
+          return;
+        }
+        // Rename and retitle are the same shape: a field prefilled with a name
+        // that is already free, so the common case is one click.
+        const isTitle = p.type === 'duplicate-title';
+        const input = h('input', {
+          className: 'set-input prob-input',
+          value: isTitle ? f.title : f.suggest,
+          'aria-label': (isTitle ? 'New title for ' : 'New filename for ') + f.path,
+        });
+        const go = h('button', {
+          className: 'btn prob-do',
+          onClick: (e) => run(e.currentTarget, () => isTitle
+            ? data.retitle(f.path, input.value)
+            : data.renameFile(f.path, input.value),
+            (r) => isTitle ? `Retitled — ${input.value}` : `Renamed to ${r.path}`),
+        }, isTitle ? 'Retitle' : 'Rename');
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); });
+        line.appendChild(input);
+        line.appendChild(go);
+        rows.appendChild(line);
+      });
+
+      list.appendChild(row);
+    });
+  };
+
+  /* One place where a fix is run, because every one of them can be refused —
+     the new name is taken too, the file changed on disk, another tab holds the
+     write lock — and a refusal that is not said out loud is the bug this whole
+     dialog exists to end. */
+  const run = async (btn, fn, said) => {
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Working…';
+    try {
+      const r = await fn();
+      if (!r || r.ok === false) {
+        toast((r && (r.message || r.reason)) || 'That did not work', { tone: 'error' });
+        return;
+      }
+      toast(typeof said === 'function' ? said(r) : said);
+      paint();
+    } catch (e) {
+      toast('That did not work — ' + e.message, { tone: 'error' });
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
+  };
+
+  const bg = h('div', {
+    className: 'modal-bg',
+    onClick: (e) => { if (e.target === bg) close(); },
+  },
+    h('div', { className: 'modal prob-modal' },
+      h('div', { className: 'modal-hd' },
+        h('b', null, 'Vault problems'),
+        h('button', { className: 'sb-twk-x', onClick: close }, '\u2715')),
+      h('div', { className: 'modal-body' }, lede, list)));
+  paint();
+  document.body.appendChild(bg);
+  document.addEventListener('keydown', onKey, true);
+  asDialog(bg);
+}
+
+/* The banner raises this from bridge.js, which cannot see app.js at all. */
+window.addEventListener('sb:resolve-vault', () => {
+  if (!document.querySelector('.prob-modal')) problemsDialog();
+});
+
 /* The shape of what is coming, instead of the word "loading".
  *
  * Seven screens printed a centred grey "loading…" — which tells you the app
@@ -5048,6 +5216,40 @@ function V2PageView(pageId, onChange, onDeleted) {
     const fileRow = sRow('File', page.path || '—');
     fileRow.className = 'side-row side-row-file';
     fileRow.querySelector('.side-row-v').title = page.path || '';
+
+    /* What a clipping knows about itself. `author`, `og_description` and
+       `source` are written by the clipper (and by Obsidian's own web clipper,
+       which uses the same three) and were readable in Obsidian's property
+       panel but nowhere in this app — so a clipped article showed its words
+       and not one fact about where they came from.
+
+       Only when present: a permanent "Author —" on every page written by hand
+       is a row that says nothing, five times a screen.
+
+       A bookmark's url already has chrome of its own above this rail, so
+       `source` is shown for the pages that have no other way to say it. */
+    const fm = (page.frontmatter) || {};
+    const ogDesc = fm.og_description
+      || (page.meta && page.meta.og && page.meta.og.description) || '';
+    const extra = [];
+    if (fm.author) extra.push(sRow('Author', String(fm.author)));
+    if (ogDesc) {
+      const row = sRow('About', String(ogDesc));
+      // The one value here that is a sentence rather than a fact, so it wraps
+      // instead of ending in an ellipsis three words in.
+      row.querySelector('.side-row-v').className = 'side-row-v side-row-wrap';
+      row.querySelector('.side-row-v').title = String(ogDesc);
+      extra.push(row);
+    }
+    if (fm.source && !page.url) {
+      const row = sRow('Source', '');
+      const href = String(fm.source);
+      row.querySelector('.side-row-v').appendChild(h('a', {
+        href, target: '_blank', rel: 'noopener noreferrer', title: href,
+      }, href.replace(/^https?:\/\/(www\.)?/, '')));
+      extra.push(row);
+    }
+
     aside.appendChild(h('div', { className: 'side-card' },
       h('div', { className: 'side-card-hd' }, 'Metadata'),
       h('div', { className: 'side-card-body' },
@@ -5056,6 +5258,7 @@ function V2PageView(pageId, onChange, onDeleted) {
         // reads it that way, and a bookmark that calls itself "Note" one line
         // below a badge saying "Bookmark" is the label being decided twice.
         sRow('Kind',     metaForPage(page).label),
+        ...extra,
         sRow('Created',  fmtDate(page.created)),
         sRow('Updated',  fmtDate(page.updated)),
         sRow('ID',       page.id.slice(0, 8) + '…'))));
@@ -7619,12 +7822,92 @@ function SettingsScreen() {
     h('div', { className: 'screen-sub' },
       'Local preferences only. Nothing here is written into your vault.')));
 
+  /* This button was `location.reload()`. With the folder grant still live that
+     reloads straight back into the same vault: no dialog, no message, nothing
+     visibly different — a control that looks broken because you cannot tell it
+     ran. Now it opens the folder picker and says what happened, every time,
+     including the two ways it can decline. */
+  const connected = vaultName !== '(not connected)';
+  const vaultBtn = h('button', { className: 'btn' }, connected ? 'reconnect…' : 'connect…');
+  const runConnect = async (opts = {}) => {
+    if (vaultBtn.disabled) return;
+    const label = vaultBtn.textContent;
+    vaultBtn.disabled = true;
+    vaultBtn.textContent = 'Choose a folder…';
+    try {
+      if (typeof window.SB_RECONNECT !== 'function') { location.reload(); return; }
+      const r = await window.SB_RECONNECT({ pick: true, quiet: true, ...opts });
+      if (r && r.ok) {
+        toast('Connected to ' + (r.name || 'your vault'));
+        render();
+        return;
+      }
+      if (r && r.cancelled) {
+        toast(connected ? 'Still connected to ' + vaultName + ' — no folder was picked.'
+                        : 'No folder picked.');
+        return;
+      }
+      toast((r && r.reason) || 'That folder could not be opened as a vault.', Object.assign(
+        { tone: 'error' },
+        r && r.adoptable
+          ? { actionLabel: 'Use it anyway', onAction: () => runConnect({ adopt: true }) }
+          : {}));
+    } catch (e) {
+      toast('Could not connect — ' + e.message, { tone: 'error' });
+    } finally {
+      vaultBtn.disabled = false;
+      vaultBtn.textContent = label;
+    }
+  };
+  vaultBtn.onclick = () => runConnect();
+
+  /* The check. The clipper's setup page has answered "is it actually
+     connected?" out loud since it was written; the app never did, so a lapsed
+     grant, a read-only second tab and a folder that is simply empty all looked
+     identical from in here — nothing happening, no reason given. It only
+     reads: a diagnostic must not be the thing that touches your notes. */
+  /* The clipper panel is built further down — it needs `row` — but the Vault
+     section points at it, so the slot it lands in is declared up here. */
+  const clipperSlot = h('div');
+
+  const checkOut = h('div', { className: 'set-check', style: { display: 'none' } });
+  const checkBtn = h('button', { className: 'btn' }, 'Check connection');
+  const paintCheck = (r) => {
+    clear(checkOut);
+    checkOut.style.display = '';
+    (r.steps || []).forEach((st) => {
+      checkOut.appendChild(h('div', { className: 'set-check-row' },
+        h('span', { className: 'set-check-mark', 'data-ok': st.ok ? '1' : '0' },
+          st.ok ? '\u2713' : '\u2715'),
+        h('span', { className: 'set-check-name' }, st.name),
+        h('span', { className: 'set-check-detail' }, st.detail)));
+    });
+    checkOut.appendChild(h('div', { className: 'set-check-foot' },
+      r.ok ? 'Everything the app needs in order to write is in place.'
+           : 'The first line with a cross is the one to fix.'));
+  };
+  checkBtn.onclick = async () => {
+    if (typeof window.SB_CHECK !== 'function') {
+      toast('The data layer is not standing — reload the app.', { tone: 'error' });
+      return;
+    }
+    const label = checkBtn.textContent;
+    checkBtn.disabled = true; checkBtn.textContent = 'Reading the folder…';
+    try {
+      paintCheck(await window.SB_CHECK());
+    } catch (e) {
+      toast('The check itself failed — ' + e.message, { tone: 'error' });
+    } finally {
+      checkBtn.disabled = false; checkBtn.textContent = label;
+    }
+  };
+
   wrap.appendChild(section('Vault', 'the folder this app reads and writes',
-    row('Connected folder', vaultName === '(not connected)'
-        ? 'No folder connected yet.' : 'Everything stays on your disk.',
-      h('button', {
-        className: 'btn', onClick: () => location.reload(),
-      }, vaultName === '(not connected)' ? 'connect…' : 'reconnect')),
+    row('Connected folder',
+      window.SB_DEMO ? 'The demo vault — invented pages held in memory, not a folder.'
+        : connected ? vaultName + ' — everything stays on your disk.'
+        : 'No folder connected yet.',
+      vaultBtn),
     row('Obsidian vault name',
       'Used for obsidian:// deep links. Blank derives it from the folder you picked.',
       h('input', {
@@ -7635,13 +7918,46 @@ function SettingsScreen() {
           savePrefs(prefs);
           window.SB_VAULT_NAME = prefs.obsidianVault || window.SB_VAULT_NAME;
         },
-      }))));
+      })),
+    (() => {
+      /* Only when there is something to fix. A row reading "0 problems" is
+         furniture; the vault having nothing wrong with it is not news. */
+      const probs = (window.SB_VAULT && window.SB_VAULT.problems) || [];
+      if (!probs.length) return null;
+      const names = probs.filter((p) => p.type !== 'unreadable').length;
+      return row('Vault problems',
+        (names ? `${names} name collision${names === 1 ? '' : 's'}` : '')
+        + (names && probs.length > names ? ', and ' : '')
+        + (probs.length > names
+            ? `${probs.length - names} file${probs.length - names === 1 ? '' : 's'} that could not be read`
+            : '')
+        + '. Ambiguous names break [[wikilinks]] here and in Obsidian — fix them from one list.',
+        h('button', { className: 'btn', onClick: () => problemsDialog() }, 'Resolve…'));
+    })(),
+    row('Is it connected?',
+      'Asks every question that stands between a click and a written file, and '
+      + 'answers each one. Reads the folder; never writes to it.',
+      checkBtn),
+    checkOut,
+    /* Said here because the opposite is the natural assumption, and acting on
+       it means closing the app to make the clipper work. They are two origins
+       with two folder grants and two copies of the data layer — neither waits
+       for the other. */
+    row('The Chrome clipper',
+      'Connects to the same folder separately, with its own permission. Both can be '
+      + 'connected at once — you never have to close one for the other.',
+      h('button', {
+        className: 'btn',
+        onClick: () => {
+          const el = clipperSlot.querySelector('.set-sec') || clipperSlot;
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      }, 'set it up'))));
 
-  /* The clipper panel is BUILT below (it needs `row`), but it belongs here —
+  /* BUILT below (it needs `row`), but it belongs here —
      second, under the vault it writes into. It was under Appearance, three
      scrolls down and shaped like a preference, and the one person who went
      looking for it did not find it. A thing you install is not a setting. */
-  const clipperSlot = h('div');
   wrap.appendChild(clipperSlot);
 
   wrap.appendChild(section('Getting around', 'how this app works, in seven steps',

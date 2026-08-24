@@ -54,6 +54,22 @@ export async function permission(handle, { request = false } = {}) {
 }
 
 /**
+ * Ask for the grant, from a click, with nothing awaited first.
+ *
+ * This exists apart from `permission(handle, {request:true})` because that one
+ * awaits `queryPermission` before asking — and an await inside a click handler
+ * can outlive Chrome's transient user activation. When it does,
+ * `requestPermission` rejects with a bare NotAllowedError instead of showing
+ * the dialog, which is exactly how "I press Unlock and nothing happens" looks
+ * from the outside. So: hold the handle already, call this synchronously, and
+ * let the caller await the promise it returns.
+ */
+export function requestAccess(handle) {
+  if (!handle) return Promise.resolve("none");
+  return handle.requestPermission({ mode: "readwrite" });
+}
+
+/**
  * Open the vault for writing, or explain why not.
  *
  * The identity check is the app's: a stored handle follows a rename, and one
@@ -79,6 +95,21 @@ export async function openVault({ request = false } = {}) {
   const vault = new Vault(be);
   await vault.buildIndex();
   return { ok: true, handle, vault, data: new Data(vault), name: handle.name };
+}
+
+/**
+ * Every page in the vault, flattened for the popup's "add to an existing page"
+ * picker. Cached in the extension's own storage while the vault is open, so the
+ * picker works before the folder has been unlocked — the alternative is a form
+ * that cannot answer "which page?" until you have already fixed something else.
+ */
+export function pageList(ctx) {
+  return ctx.vault.list()
+    // `url` comes along because it is what separates a bookmark from a note —
+    // the convention has one kind for both, and the picker offers one at a time.
+    .map((e) => ({ id: e.id, title: e.title, path: e.path, kind: e.kind,
+                   url: e.url || null, updated: e.updated }))
+    .sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || "")));
 }
 
 /** Every inspo page in the vault — what the popup offers as a target. */

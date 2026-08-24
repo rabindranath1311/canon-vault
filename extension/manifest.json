@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Canon Clip",
   "version": "0.1.0",
-  "description": "Collect interface inspiration — images, screenshots, links and quotes — straight into your Canon Vault folder. No server, no account.",
-  "minimum_chrome_version": "116",
+  "description": "Save images, screenshots, links and quotes straight into your Canon Vault folder. No server, no account.",
+  "minimum_chrome_version": "127",
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
     "default_title": "Canon Clip",
@@ -23,11 +23,11 @@
   "commands": {
     "clip-page": {
       "suggested_key": { "default": "Alt+Shift+C" },
-      "description": "Clip this page"
+      "description": "Save this page"
     },
     "clip-region": {
       "suggested_key": { "default": "Alt+Shift+S" },
-      "description": "Clip a region of this page"
+      "description": "Save a region of this page"
     }
   }
 }

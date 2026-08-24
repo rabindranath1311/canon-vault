@@ -20,6 +20,7 @@ import { computeDashboard } from "./dashboard.js";
 import { listImages, filterImages, isImagePath } from "./images.js";
 import { isExcalidrawPath, parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
 import { clipFrontmatter, urlsFromText, findByUrl, titleFromUrl } from "./clip.js";
+import { parse, unescapeUser } from "./mdfile.js";
 
 const DEFAULT_LIMIT = 200;
 
@@ -86,6 +87,27 @@ function freeStem(v, stem, except = null) {
   let out = stem;
   for (let n = 2; taken.has(out.toLowerCase()); n++) out = `${stem} ${n}`;
   return out;
+}
+
+/**
+ * A free name to offer for a file caught in a collision.
+ *
+ * In order of preference: its own title (a page called "Reading notes" living
+ * in `Untitled.md` wants that name back), then the folder it sits in as a
+ * qualifier — `Untitled (inspo)` says which of the two this is, where
+ * `Untitled 2` says only that it lost a race — and a numbered stem last.
+ */
+export function suggestStem(v, path, entry = null) {
+  const cur = pageStem(path);
+  const low = (x) => String(x).toLowerCase();
+  const taken = takenStems(v, path);
+  const wanted = [];
+  const fromTitle = entry && entry.title ? stemFor(entry.title) : "";
+  if (fromTitle && low(fromTitle) !== low(cur)) wanted.push(fromTitle);
+  const dir = String(path).split("/").slice(-2, -1)[0];
+  if (dir) wanted.push(`${cur} (${dir})`);
+  for (const w of wanted) if (w && !taken.has(low(w))) return w;
+  return freeStem(v, cur, path);
 }
 
 /**
@@ -870,7 +892,12 @@ export class Data {
   async createProject(title) {
     const fallback = `Project ${this.v.now().slice(0, 10)}`;
     const t = String(title || "").trim() || fallback;
-    const stem = stemFor(t) || fallback;
+    /* `freeStem`, like every other create. Without it this was the one path in
+       the app that could still mint a duplicate name: a project called
+       Research beside an existing `notes/Research.md` wrote
+       `projects/Research/Research.md` and made `[[Research]]` ambiguous — the
+       exact warning the resolve dialog now has to clean up after. */
+    const stem = freeStem(this.v, stemFor(t) || fallback);
     const aliases = stem === t ? [] : [t];
     const r = await this.v.put({
       path: `projects/${stem}/${stem}.md`,
@@ -881,6 +908,103 @@ export class Data {
     if (!r.ok) return r;
     await this.v.buildIndex();
     return this.page(r.id);
+  }
+
+  /* ── the vault's own problems, and how to fix each one ──────────────────
+     `vault.warnings` has always been able to say a thing is wrong. Nothing
+     could act on it: "duplicate filename Untitled" named two files and left
+     the user to go and rename one in Finder, in an app whose whole promise is
+     that it is the thing that reads and writes these files. So the strings got
+     a structured twin (`vault.problems`), and everything below turns one into
+     a fix that runs here. */
+
+  /** Every problem, each file annotated with what a fix would need. */
+  vaultProblems() {
+    const v = this.v;
+    const describe = (path) => {
+      const e = v.byPath.get(path);
+      return {
+        path,
+        id: e ? e.id : null,
+        title: e ? e.title : pageStem(path),
+        kind: e ? e.kind : null,
+        stem: pageStem(path),
+        suggest: suggestStem(v, path, e),
+        /* A `.canvas` is Obsidian's file and this app neither opens nor writes
+           it, so it is named as the other half of the collision and never
+           offered as the one to rename. Renaming it here would also strand the
+           board in whatever Obsidian canvas links to it. */
+        fixable: !!e && !path.endsWith(".canvas"),
+      };
+    };
+    return v.problems.map((p) => ({ ...p, files: (p.paths || []).map(describe) }));
+  }
+
+  /**
+   * Rename one file to settle a name collision.
+   *
+   * Deliberately WITHOUT the alias that `renamePlan` would add. That alias
+   * keeps inbound `[[Old Name]]` alive, which is right when a page moves and
+   * exactly wrong here: the old name is contested, and an alias claiming it
+   * would rebuild the ambiguity this rename exists to remove.
+   */
+  async renameFile(path, stem) {
+    const e = this.v.byPath.get(path);
+    if (!e) return { ok: false, reason: "unknown-path", message: `no such file: ${path}` };
+    const clean = stemFor(stem);
+    if (!clean) {
+      return { ok: false, reason: "bad-name",
+               message: "That cannot be a filename — try it without / \\ : * ? \" < > |" };
+    }
+    if (clean.toLowerCase() !== pageStem(path).toLowerCase()
+        && takenStems(this.v, path).has(clean.toLowerCase())) {
+      return { ok: false, reason: "name-taken", message: `[[${clean}]] is taken too.` };
+    }
+    const name = String(path).split("/").pop();
+    const oldStem = pageStem(path);
+    const dir = path.slice(0, path.length - name.length);
+    const r = await this.v.rename(e.id, `${dir}${clean}${name.slice(oldStem.length)}`);
+    if (r.ok) await this.v.buildIndex();
+    return r;
+  }
+
+  /**
+   * Give a file a new id, to settle two files claiming one.
+   *
+   * Read straight off disk rather than through `get()`: the *losing* half of a
+   * duplicate id is not in the index under that id — `index.get(id)` hands back
+   * the other file — so reading by id would rewrite the wrong one.
+   */
+  async newIdFor(path) {
+    const e = this.v.byPath.get(path);
+    if (!e) return { ok: false, reason: "unknown-path", message: `no such file: ${path}` };
+    let fm, body;
+    try {
+      const [f, b] = parse(await this.v.be.readText(path));
+      fm = f; body = unescapeUser(b);
+    } catch (err) {
+      return { ok: false, reason: "unreadable", message: String((err && err.message) || err) };
+    }
+    const r = await this.v.put({ path, frontmatter: { ...fm, id: this.v.newId() }, body });
+    if (r.ok) await this.v.buildIndex();
+    return r;
+  }
+
+  /** Retitle a page — the fix for two pages sharing one title. */
+  async retitle(path, title) {
+    const e = this.v.byPath.get(path);
+    if (!e) return { ok: false, reason: "unknown-path", message: `no such file: ${path}` };
+    const next = String(title || "").trim();
+    if (!next) return { ok: false, reason: "bad-title", message: "A title cannot be blank." };
+    const page = await this.v.get(e.id);
+    if (!page) return { ok: false, reason: "unknown-path" };
+    const r = await this.v.put({
+      path, id: page.id, kind: page.kind,
+      frontmatter: { ...(page.frontmatter || {}), title: next },
+      body: page.body || "",
+    });
+    if (r.ok) await this.v.buildIndex();
+    return r;
   }
 
   async deletePage(id) {

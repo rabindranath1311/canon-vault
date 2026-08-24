@@ -6,116 +6,180 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- One sprite, referenced by <use> wherever a glyph is needed. Inline
+       because a browser extension is a different origin from everything and an
+       icon font would be a second file to keep in step with nothing. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <g id="i-folder">
+        <path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.5 2h7.5A1.5 1.5 0 0 1 18 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 16.5z"
+              fill="none" stroke="currentColor" stroke-width="1.4"/>
+      </g>
+      <g id="i-image">
+        <rect x="2.5" y="3.5" width="15" height="13" rx="2" fill="none"
+              stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="7" cy="8" r="1.6" fill="currentColor"/>
+        <path d="M4 15l4-4 3 3 3-3 3 3" fill="none" stroke="currentColor"
+              stroke-width="1.4" stroke-linejoin="round"/>
+      </g>
+      <g id="i-link">
+        <path d="M8 12a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5L9 6"
+              fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M12 8a3.5 3.5 0 0 0-5 0L4.5 10.5a3.5 3.5 0 0 0 5 5L11 14"
+              fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </g>
+      <g id="i-quote">
+        <path d="M4 13V9.5C4 7 5.5 5.5 8 5.5M11 13V9.5c0-2.5 1.5-4 4-4"
+              fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M4 13h4V9H4zM11 13h4V9h-4z" fill="currentColor"/>
+      </g>
+      <g id="i-page">
+        <path d="M5 2.5h6L15 6.5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"
+              fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M10.5 2.5V7H15M6.5 11h6M6.5 14h4" fill="none"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </g>
+      <g id="i-region">
+        <rect x="3" y="4.5" width="14" height="11" rx="1.5" fill="none"
+              stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2.5"/>
+        <path d="M11 12l2.5 4 1-2.2 2.2-.6z" fill="currentColor"/>
+      </g>
+    </defs>
+  </svg>
+
   <main class="page">
-    <div class="hero stack">
-      <div class="row">
-        <svg class="mark" viewBox="0 0 144 100" fill="currentColor" aria-hidden="true">
-          <path d="M49.6426 11.3103C58.0084 10.2422 66.4938 11.9487 73.7959 16.1687C79.489 19.4587 84.2172 24.1354 87.5654 29.7243C89.1394 32.3521 87.7727 35.6274 84.9463 36.8083C82.1207 37.9888 78.9145 36.6121 77.1885 34.0827C72.2514 26.8472 63.9417 22.0965 54.5215 22.0964C39.3753 22.0964 27.0967 34.375 27.0967 49.5212C27.0967 64.6673 39.3753 76.946 54.5215 76.946C61.1452 76.9459 67.2197 74.5962 71.959 70.6862C74.3225 68.7365 77.7872 68.3119 80.1709 70.237C82.5557 72.1631 82.9517 75.6935 80.7031 77.7771C75.9253 82.2042 70.0782 85.3689 63.6933 86.9343C55.5022 88.9424 46.8782 88.2067 39.1455 84.8405C31.4128 81.4742 24.998 75.6632 20.8867 68.2995C16.7755 60.9358 15.1949 52.4258 16.3867 44.0769C17.5787 35.7279 21.4779 28.0009 27.4853 22.0817C33.4929 16.1626 41.2768 12.3784 49.6426 11.3103ZM118.446 34.2038C120.06 31.4092 123.681 30.5291 126.397 32.2712C128.903 33.8786 129.734 37.1532 128.297 39.7605L104.945 82.1384C102.861 85.9205 97.4132 85.8849 95.3789 82.0759L82.4726 57.9099C80.797 54.7724 77.4572 52.8875 73.9053 53.0749L64.3369 53.5788C62.7427 57.431 58.9497 60.1421 54.5215 60.1423C48.6556 60.1423 43.9004 55.387 43.9004 49.5212C43.9004 43.6553 48.6556 38.9001 54.5215 38.9001C59.1359 38.9003 63.0619 41.8435 64.5273 45.9548H82.7578C86.0319 45.9549 89.0572 47.7014 90.6943 50.5368L99.8555 66.404L118.446 34.2038Z"/>
-        </svg>
-        <h1>Canon Clip</h1>
-      </div>
-      <p class="muted">Images, screenshots, links and quotations, written straight
-        into your vault folder as plain markdown. No server, no account, nothing
-        uploaded — the same files the app and Obsidian open.</p>
+    <div class="hero row">
+      <svg class="mark" viewBox="0 0 144 100" fill="currentColor" aria-hidden="true">
+        <path d="M49.6426 11.3103C58.0084 10.2422 66.4938 11.9487 73.7959 16.1687C79.489 19.4587 84.2172 24.1354 87.5654 29.7243C89.1394 32.3521 87.7727 35.6274 84.9463 36.8083C82.1207 37.9888 78.9145 36.6121 77.1885 34.0827C72.2514 26.8472 63.9417 22.0965 54.5215 22.0964C39.3753 22.0964 27.0967 34.375 27.0967 49.5212C27.0967 64.6673 39.3753 76.946 54.5215 76.946C61.1452 76.9459 67.2197 74.5962 71.959 70.6862C74.3225 68.7365 77.7872 68.3119 80.1709 70.237C82.5557 72.1631 82.9517 75.6935 80.7031 77.7771C75.9253 82.2042 70.0782 85.3689 63.6933 86.9343C55.5022 88.9424 46.8782 88.2067 39.1455 84.8405C31.4128 81.4742 24.998 75.6632 20.8867 68.2995C16.7755 60.9358 15.1949 52.4258 16.3867 44.0769C17.5787 35.7279 21.4779 28.0009 27.4853 22.0817C33.4929 16.1626 41.2768 12.3784 49.6426 11.3103ZM118.446 34.2038C120.06 31.4092 123.681 30.5291 126.397 32.2712C128.903 33.8786 129.734 37.1532 128.297 39.7605L104.945 82.1384C102.861 85.9205 97.4132 85.8849 95.3789 82.0759L82.4726 57.9099C80.797 54.7724 77.4572 52.8875 73.9053 53.0749L64.3369 53.5788C62.7427 57.431 58.9497 60.1421 54.5215 60.1423C48.6556 60.1423 43.9004 55.387 43.9004 49.5212C43.9004 43.6553 48.6556 38.9001 54.5215 38.9001C59.1359 38.9003 63.0619 41.8435 64.5273 45.9548H82.7578C86.0319 45.9549 89.0572 47.7014 90.6943 50.5368L99.8555 66.404L118.446 34.2038Z"/>
+      </svg>
+      <h1 class="grow">Canon Clip</h1>
+      <span class="note">markdown, straight into your folder</span>
     </div>
 
-    <!-- The whole of first run. One decision, one button, and nothing else on
-         screen competing with it: every other section below is hidden until a
-         folder is connected, because none of them can do anything yet. -->
+    <!-- First run. One decision, drawn rather than described: the web on the
+         left, your folder on the right, the arrow between them is this
+         extension. -->
     <section id="onboard" class="section hidden">
       <div class="card onboard">
         <div class="onboard-main stack">
+          <svg class="flow" viewBox="0 0 300 64" aria-label="a page becomes a file in your folder">
+            <rect x="1" y="12" width="66" height="40" rx="5" fill="none"
+                  stroke="currentColor" stroke-width="1.5" opacity=".5"/>
+            <path d="M10 24h34M10 32h44M10 40h26" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round" opacity=".35"/>
+            <path d="M78 32h36" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+            <path d="M108 27l7 5-7 5z" fill="currentColor" opacity=".45"/>
+            <g transform="translate(124 16) scale(1.6)" opacity=".9">
+              <use href="#i-folder"/>
+            </g>
+            <path d="M168 32h36" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+            <path d="M198 27l7 5-7 5z" fill="currentColor" opacity=".45"/>
+            <rect x="214" y="8" width="26" height="34" rx="3" fill="none"
+                  stroke="currentColor" stroke-width="1.5" opacity=".55"/>
+            <rect x="232" y="16" width="26" height="34" rx="3" fill="none"
+                  stroke="currentColor" stroke-width="1.5" opacity=".7"/>
+            <rect x="250" y="24" width="26" height="34" rx="3" fill="currentColor"
+                  opacity=".08" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
           <h2 class="lead">Choose the folder your vault lives in</h2>
-          <p class="note">The one holding <span class="mono">CONVENTION.md</span> — the same
-            folder you open in the app and in Obsidian. Clips are written straight
-            into it. Nothing is uploaded, and nothing else on your disk is read.</p>
-          <div class="row">
-            <button id="connect" class="primary lead-btn">Choose vault folder…</button>
-            <span class="note">takes one click</span>
-          </div>
+          <p class="note">The one holding <span class="mono">CONVENTION.md</span>. Nothing
+            is uploaded; nothing else on your disk is read.</p>
+          <button id="connect" class="primary lead-btn">Choose vault folder…</button>
         </div>
         <ol class="steps">
-          <li><span class="step-t">Pin the toolbar icon</span>
-            <span class="step-d">Click the puzzle-piece in Chrome's toolbar, then the pin
-              beside Canon Clip. That icon is the popup.</span></li>
-          <li><span class="step-t">Clip anything</span>
-            <span class="step-d">Right-click an image or a selection, press
-              <kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd> for the page, or
-              <kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> to drag out a region.</span></li>
-          <li><span class="step-t">Open it in the app</span>
-            <span class="step-d">It is already there — a clip is a markdown file in the
-              folder you just picked.</span></li>
+          <li><span class="step-t">Pin the toolbar icon</span></li>
+          <li><span class="step-t">Right-click anything, or press the icon</span></li>
+          <li><span class="step-t">It is already a file in your folder</span></li>
         </ol>
       </div>
       <p id="status" class="status" role="status"></p>
     </section>
 
-    <!-- Chrome hands out folder access per session, so this is the single most
-         common thing that goes wrong. It gets a banner at the top of the page
-         with one button, rather than a control to go hunting for. -->
+    <!-- The one thing that regularly goes wrong, with the two buttons that
+         fix it. Chrome hands out folder access per session. -->
     <section id="lock" class="section hidden">
       <div class="card card-pad banner row between">
         <div class="stack grow">
           <strong id="lock-title">Vault locked</strong>
           <span id="lock-why" class="note"></span>
         </div>
-        <button id="unlock" class="primary">Unlock</button>
+        <div class="row">
+          <button id="unlock" class="primary">Unlock</button>
+          <button id="lock-repick">Choose folder again</button>
+        </div>
       </div>
     </section>
 
     <div id="connected" class="stack-lg hidden">
       <section class="section">
-        <h2>Vault folder</h2>
-        <div class="card card-pad stack">
-          <div class="row between">
-            <div class="stack grow">
-              <div id="vault-name" style="font-weight:600">Not connected</div>
-              <div id="vault-why" class="note"></div>
-            </div>
-            <div class="row">
-              <button id="choose">Change folder…</button>
-              <button id="forget" class="ghost">Forget</button>
+        <div class="card card-pad row between">
+          <div class="row grow">
+            <svg class="glyph lg" aria-hidden="true"><use href="#i-folder"/></svg>
+            <div class="stack">
+              <span id="vault-name" style="font-weight:600">Not connected</span>
+              <span id="vault-state" class="pill"></span>
             </div>
           </div>
-          <p class="note">Chrome grants folder access for the session, so it can lapse
-            when the browser restarts. Clips are never lost when it does — they
-            queue below and are written the moment access is restored.</p>
+          <div class="row">
+            <button id="check">Check</button>
+            <button id="choose">Change…</button>
+            <button id="forget" class="ghost">Forget</button>
+          </div>
         </div>
         <p id="status-connected" class="status" role="status"></p>
       </section>
 
+      <!-- The three destinations, drawn as what they look like when they get
+           there. The pictures carry the explanation; the labels name it. -->
       <section class="section">
-        <h2>Defaults</h2>
-        <div class="card card-pad stack">
-          <div class="grid2">
-            <label class="field">Wall for images and screenshots
-              <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
-              <datalist id="walls"></datalist>
-            </label>
-            <label class="field">Group on that wall (optional)
-              <input id="group" type="text" placeholder="ungrouped">
-            </label>
+        <h2>Three places</h2>
+        <div class="dests">
+          <div class="dest card">
+            <svg viewBox="0 0 120 76" class="dest-art" aria-hidden="true">
+              <rect x="8" y="6" width="104" height="64" rx="4" fill="none"
+                    stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+              <rect x="18" y="16" width="36" height="24" rx="2" fill="currentColor" opacity=".16"/>
+              <path d="M60 20h40M60 28h34" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" opacity=".3"/>
+              <path d="M18 50v10" stroke="currentColor" stroke-width="2.5" opacity=".55"/>
+              <path d="M24 52h60M24 59h44" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" opacity=".3"/>
+            </svg>
+            <div class="dest-name">Note</div>
+            <div class="mono tiny muted">notes/</div>
           </div>
-          <label class="field">A clipped page or link becomes
-            <select id="linkTarget">
-              <option value="bookmark">a bookmark — a note carrying the url</option>
-              <option value="wall">a card on the wall</option>
-            </select>
-          </label>
-          <label class="check">
-            <input id="autoSave" type="checkbox">
-            <span>Write each clip immediately<br>
-              <span class="note">Off means everything waits here until you press Save.</span></span>
-          </label>
-          <label class="check">
-            <input id="dedupe" type="checkbox">
-            <span>Skip references the vault already holds<br>
-              <span class="note">Matches on the link, ignoring tracking parameters.</span></span>
-          </label>
+          <div class="dest card">
+            <svg viewBox="0 0 120 76" class="dest-art" aria-hidden="true">
+              <rect x="18" y="6" width="84" height="64" rx="5" fill="none"
+                    stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+              <rect x="18" y="6" width="84" height="30" rx="5" fill="currentColor" opacity=".16"/>
+              <path d="M28 48h50M28 58h30" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" opacity=".3"/>
+              <g transform="translate(74 46) scale(.9)" opacity=".55"><use href="#i-link"/></g>
+            </svg>
+            <div class="dest-name">Bookmark</div>
+            <div class="mono tiny muted">notes/</div>
+          </div>
+          <div class="dest card">
+            <svg viewBox="0 0 120 76" class="dest-art" aria-hidden="true">
+              <rect x="10" y="8" width="32" height="28" rx="3" fill="currentColor" opacity=".22"/>
+              <rect x="46" y="8" width="30" height="40" rx="3" fill="currentColor" opacity=".14"/>
+              <rect x="80" y="8" width="30" height="22" rx="3" fill="currentColor" opacity=".2"/>
+              <rect x="10" y="40" width="32" height="28" rx="3" fill="currentColor" opacity=".14"/>
+              <rect x="46" y="52" width="30" height="16" rx="3" fill="currentColor" opacity=".22"/>
+              <rect x="80" y="34" width="30" height="34" rx="3" fill="currentColor" opacity=".16"/>
+            </svg>
+            <div class="dest-name">Inspo</div>
+            <div class="mono tiny muted">inspo/</div>
+          </div>
         </div>
+        <label class="field wall-field">Wall that Inspo saves to
+          <input id="wall" type="text" list="walls" placeholder="Interface Inspiration">
+          <datalist id="walls"></datalist>
+        </label>
       </section>
 
-      <section class="section">
+      <section id="queue-sec" class="section hidden">
         <div class="row between">
           <h2 id="queue-title">Waiting</h2>
           <div class="row">
@@ -127,17 +191,26 @@
       </section>
 
       <section class="section">
-        <h2>Recently written</h2>
+        <h2>Recently saved</h2>
         <div id="recent" class="card list"></div>
       </section>
 
+      <!-- What opens the form, as glyphs. Two keys skip it. -->
       <section class="section">
-        <h2>Shortcuts</h2>
-        <div class="card card-pad stack">
-          <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd><span class="note">clip this page</span></div>
-          <div class="row"><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd><span class="note">drag a region out of this page</span></div>
-          <p class="note">Right-click anything — an image, a link, a selection — for the
-            rest. Change these keys at <span class="mono">chrome://extensions/shortcuts</span>.</p>
+        <h2>Ways to save</h2>
+        <div class="card card-pad ways">
+          <div class="way"><svg class="glyph" aria-hidden="true"><use href="#i-image"/></svg>
+            <span>image</span></div>
+          <div class="way"><svg class="glyph" aria-hidden="true"><use href="#i-link"/></svg>
+            <span>link</span></div>
+          <div class="way"><svg class="glyph" aria-hidden="true"><use href="#i-quote"/></svg>
+            <span>selection</span></div>
+          <div class="way"><svg class="glyph" aria-hidden="true"><use href="#i-page"/></svg>
+            <span>page</span></div>
+          <div class="way"><svg class="glyph" aria-hidden="true"><use href="#i-region"/></svg>
+            <span>region</span></div>
+          <div class="way keys-way"><span class="note">right-click, or</span>
+            <kbd>Alt</kbd><kbd>Shift</kbd><kbd>C</kbd><kbd>·</kbd><kbd>S</kbd></div>
         </div>
       </section>
     </div>

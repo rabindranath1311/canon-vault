@@ -8,7 +8,7 @@
 //                                 behind a persistent reconnect banner.
 // A cold open never shows an empty shell, because an empty shell reads as broken.
 
-import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, MemoryBackend, WriterElection, PERSIST_KEY } from "./vault.js";
+import { connectVault, reconnectOutcome, vaultNotices, Vault, FSABackend, MemoryBackend, WriterElection, PERSIST_KEY, FINGERPRINT_KEY } from "./vault.js";
 import { Data, noteChrome } from "./data.js";
 import { parseExcalidraw, serializeExcalidraw } from "./excalidraw.js";
 import { parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout } from "./inspo.js";
@@ -72,6 +72,8 @@ const ASSET_V = new URL(import.meta.url).searchParams.get("v") || "0";
    would pin a returning user to the copy of that file the cache already has. */
 window.SB_ASSET_V = ASSET_V;
 
+let focusWatchInstalled = false;
+
 function loadApp() {
   if (window.__SB_APP_LOADED) return;
   window.__SB_APP_LOADED = true;
@@ -83,7 +85,7 @@ function loadApp() {
   }
 }
 
-function banner(text, actionLabel, onAction) {
+function banner(text, actionLabel, onAction, kind = "message") {
   let el = document.getElementById("sb-vault-banner");
   if (!el) {
     el = document.createElement("div");
@@ -91,6 +93,9 @@ function banner(text, actionLabel, onAction) {
     el.className = "sb-vault-banner";
     document.body.appendChild(el);
   }
+  // Which banner this is, so the live writer-status repaint below can take its
+  // own down without also wiping a reconnect message standing in the same slot.
+  el.dataset.kind = kind;
   el.textContent = "";
   el.appendChild(document.createTextNode(text + " "));
   if (actionLabel) {
@@ -245,7 +250,7 @@ async function openDemo() {
   be.root = { name: "demo-vault" };
   const vault = new Vault(be);
   clearBanner();
-  await build(vault);
+  await build(vault, { shared: false });
   loadApp();
   window.SB_DEMO = true;
   banner("Demo vault — invented pages, held in memory. Edits are lost on reload.",
@@ -253,7 +258,28 @@ async function openDemo() {
   window.dispatchEvent(new CustomEvent("sb:vault-connected"));
 }
 
-async function build(handleVault) {
+/** The standing sentence about this tab's own state — recomputed, never
+ *  cached, because the writer lock moves while the app is open. */
+function paintNotices() {
+  const vault = window.SB_VAULT;
+  if (!vault) return;
+  const el = document.getElementById("sb-vault-banner");
+  const notices = vaultNotices(
+    !(vault.election && vault.election.isWriter === false), vault.warnings || []);
+  /* The warning used to end at the sentence — two filenames, in an app that
+     reads and writes exactly those files, and no way to act on it from here.
+     app.js owns the dialog; this module cannot see it, so the button raises an
+     event and app.js answers. */
+  const fixable = (vault.problems || []).length > 0;
+  if (notices.length) {
+    banner(notices.join(" · "),
+      fixable ? "Resolve" : null,
+      fixable ? () => window.dispatchEvent(new CustomEvent("sb:resolve-vault")) : null,
+      "notice");
+  } else if (el && el.dataset.kind === "notice") el.remove();
+}
+
+async function build(handleVault, { shared = true } = {}) {
   // 10.7 / 10.2: first run into an empty folder writes the skeleton — the
   // convention doc, the agent contract, the context templates and the vault
   // directories. This call was missing entirely: scaffold.js was written and
@@ -267,8 +293,23 @@ async function build(handleVault) {
     await scaffold(handleVault.be);
   } catch { /* a read-only or full folder must not block opening the vault */ }
 
+  // A rebuild replaces the vault, so the election the old one held must be
+  // stood down first — otherwise this tab argues with itself over the lock and
+  // the new vault can lose to its own predecessor.
+  const prior = window.SB_VAULT && window.SB_VAULT.election;
+  if (prior && prior !== handleVault.election) { try { prior.release(); } catch { /* already gone */ } }
+
+  /* `onChange` was never passed, so the read-only notice was a snapshot taken
+     once at startup: open a second tab and the FIRST one silently became
+     read-only with nothing on screen, while the second — which had seen the
+     peer at build time — was the only one that said anything. Whoever holds
+     the lock changes at runtime, so the sentence about it has to as well. */
+  /* `shared: false` is the demo: each tab holds its own MemoryBackend, so a
+     cross-tab lock over them protects nothing and costs everything — the
+     second demo tab would refuse every edit to pages only it can see. */
   const election = new WriterElection(
-    "BroadcastChannel" in window ? new BroadcastChannel("sb-writer") : null);
+    shared && "BroadcastChannel" in window ? new BroadcastChannel("sb-writer") : null,
+    undefined, { onChange: () => paintNotices() });
   handleVault.election = election;
   const data = new Data(handleVault, { renderMarkdown: markdownRenderer() });
   await handleVault.buildIndex();
@@ -287,27 +328,165 @@ async function build(handleVault) {
   window.SB_WARNINGS = handleVault.warnings;
 
   // SPEC §7: re-scan on focus to pick up Obsidian's edits.
-  window.addEventListener("focus", () => {
-    handleVault.watchExternal().then((r) => {
-      if (r.created.length || r.removed.length || r.changed.length) {
-        window.dispatchEvent(new CustomEvent("sb:vault-changed", { detail: r }));
-      }
-    }).catch(() => {});
-  });
+  // Installed once, and it asks `window.SB_VAULT` rather than closing over
+  // `handleVault`: build() runs again on every reconnect, and a listener per
+  // build would keep re-scanning through the handle the user just replaced.
+  if (!focusWatchInstalled) {
+    focusWatchInstalled = true;
+    window.addEventListener("focus", () => {
+      const live = window.SB_VAULT;
+      if (!live) return;
+      live.watchExternal().then((r) => {
+        if (r.created.length || r.removed.length || r.changed.length) {
+          window.dispatchEvent(new CustomEvent("sb:vault-changed", { detail: r }));
+        }
+      }).catch(() => {});
+    });
+  }
 
-  const notices = vaultNotices(election.isWriter, handleVault.warnings);
-  if (notices.length) banner(notices.join(" · "));
+  paintNotices();
   return data;
 }
 
-async function boot() {
-  const deps = {
-    store,
-    picker: () => window.showDirectoryPicker({ mode: "readwrite" }),
-    queryPermission: (h) => h.queryPermission({ mode: "readwrite" }),
-    requestPermission: (h) => h.requestPermission({ mode: "readwrite" }),
-  };
+const deps = {
+  store,
+  picker: () => window.showDirectoryPicker({ mode: "readwrite" }),
+  queryPermission: (h) => h.queryPermission({ mode: "readwrite" }),
+  requestPermission: (h) => h.requestPermission({ mode: "readwrite" }),
+};
 
+/**
+ * The one interactive connect, shared by the reconnect screen and Settings.
+ *
+ * It always ends in something the user can see: a rebuilt app, or a returned
+ * reason the caller can say out loud. The Settings button used to be
+ * `location.reload()`, which — with a granted handle already in IndexedDB —
+ * restored the same vault silently. Nothing opened, nothing changed, nothing
+ * said so, and the only way to tell it had done anything was that the scroll
+ * position moved.
+ *
+ * `pick` forces the folder dialog: connectVault only calls the picker when
+ * there is no stored handle, so choosing a different folder is impossible
+ * without clearing it first. The old handle goes back if the picker is
+ * dismissed or the folder is refused — a cancelled dialog must not cost you
+ * the vault you already had.
+ *
+ * `quiet` leaves the banner to the caller. `adopt` clears the stored fingerprint, which is the deliberate "yes, this
+ * other folder" the S7 guard asks for. Without it that refusal is a dead end:
+ * every retry compares against the same old fingerprint and refuses again.
+ */
+async function reconnectInteractive({ pick = false, adopt = false, quiet = false } = {}) {
+  const prior = pick ? await store.get(PERSIST_KEY).catch(() => null) : null;
+  if (pick) await store.set(PERSIST_KEY, null).catch(() => {});
+  if (adopt) await store.set(FINGERPRINT_KEY, null).catch(() => {});
+
+  let again = null, err = null;
+  try {
+    again = await connectVault({ ...deps, interactive: true });
+  } catch (e) {
+    err = e;
+  }
+  const outcome = reconnectOutcome(again, err);
+
+  if (outcome.act !== "connect") {
+    if (prior) await store.set(PERSIST_KEY, prior).catch(() => {});
+    if (outcome.act === "nothing") return { ok: false, cancelled: true };
+    const adoptable = !!(again && again.reason === "different-vault");
+    // `quiet` is for a caller with its own voice — Settings answers in a toast,
+    // and the same sentence in a banner behind it says it twice.
+    if (!quiet) {
+      banner(outcome.text, adoptable ? "Use it anyway" : "Try again",
+             () => reconnectInteractive({ pick, adopt: adoptable }));
+    }
+    return { ok: false, reason: outcome.text, adoptable };
+  }
+
+  clearBanner();                 // same ordering as the cold path in boot()
+  await build(again.vault);
+  loadApp();
+  window.dispatchEvent(new CustomEvent("sb:vault-connected"));
+  return { ok: true, name: window.SB_VAULT_NAME };
+}
+
+/**
+ * Every question that stands between a click and a written file, asked in
+ * order, each one answered out loud.
+ *
+ * This exists because "it isn't connecting" was, from inside the app,
+ * indistinguishable from "it is connected and idle". The clipper's setup page
+ * has said its state out loud since it was written; the app said nothing at
+ * all, so a folder grant that had lapsed, a tab that had lost the write
+ * election, and a folder that was simply empty all looked the same: nothing
+ * happening.
+ *
+ * It only ever READS. A test write would be the more complete answer and it is
+ * deliberately not asked: a diagnostic must not be the thing that touches your
+ * notes.
+ */
+async function diagnose() {
+  const steps = [];
+  const step = (name, ok, detail) => { steps.push({ name, ok, detail }); return ok; };
+
+  const handle = await store.get(PERSIST_KEY).catch(() => null);
+  if (window.SB_DEMO) {
+    step("Vault", true, "The demo vault — invented pages held in memory, not a folder.");
+  } else if (!handle) {
+    step("Folder", false, "No folder is connected yet.");
+    return { ok: false, steps };
+  } else {
+    step("Folder", true, handle.name);
+    let perm = "unknown";
+    try { perm = await deps.queryPermission(handle); } catch (e) { perm = String(e && e.name); }
+    step("Chrome's permission", perm === "granted",
+      perm === "granted" ? "granted — this tab may read and write it"
+      : perm === "denied" ? "blocked by Chrome. Pick the folder again — choosing "
+                          + "a folder always grants access, where asking only asks."
+      : "lapsed. Chrome drops folder access between sessions; reconnect to restore it.");
+    if (perm !== "granted") return { ok: false, steps };
+  }
+
+  const vault = window.SB_VAULT;
+  if (!vault) { step("Vault", false, "The data layer is not standing. Reload the app."); return { ok: false, steps }; }
+
+  let files = [];
+  try {
+    files = await vault.be.listAll();
+    step("Reading the folder", true, `${files.length} files`);
+  } catch (e) {
+    step("Reading the folder", false, `could not be read — ${(e && e.message) || e}`);
+    return { ok: false, steps };
+  }
+
+  const pages = vault.list().length;
+  step("Pages", pages > 0, pages
+    ? `${pages} pages indexed`
+    : "no pages found — this folder may not be the vault you meant.");
+
+  const warnings = vault.warnings || [];
+  if (warnings.length) step("Vault warnings", false, warnings.join(" · "));
+
+  /* The one piece of state a user cannot see and cannot guess. A second tab is
+     read-only, and until this line existed the only symptom was that saving
+     quietly did not happen. The clipper is NOT a peer here: it holds its own
+     folder grant in its own origin and writes through its own copy of the data
+     layer, so it and this tab can both be connected at once. */
+  const el = vault.election || {};
+  const peers = el.peers ? el.peers.size : 0;
+  step("Writing from this tab", el.isWriter !== false,
+    el.isWriter === false
+      ? "another tab of this app has the vault open for editing, so this tab is read-only"
+      : peers ? `yes — ${peers} other tab${peers === 1 ? "" : "s"} open, read-only`
+              : "yes");
+
+  return { ok: steps.every((s) => s.ok), steps };
+}
+
+// app.js is a classic script and cannot import this module, so the Settings
+// screen reaches it through the window, the same seam SB_DATA uses.
+window.SB_RECONNECT = reconnectInteractive;
+window.SB_CHECK = diagnose;
+
+async function boot() {
   let r;
   try {
     r = await connectVault({ ...deps, interactive: false });
@@ -326,24 +505,9 @@ async function boot() {
     return;
   }
 
-  const reconnect = async () => {
-    let again = null, err = null;
-    try {
-      again = await connectVault({ ...deps, interactive: true });
-    } catch (e) {
-      err = e;
-    }
-    const outcome = reconnectOutcome(again, err);
-    if (outcome.act === "nothing") return;      // picker dismissed: leave the screen alone
-    if (outcome.act === "banner") {
-      banner(outcome.text, "Try again", reconnect);
-      return;
-    }
-    clearBanner();                 // same ordering as the cold path above
-    await build(again.vault);
-    loadApp();
-    window.dispatchEvent(new CustomEvent("sb:vault-connected"));
-  };
+  // The screen leaves itself alone on a dismissed picker; every other outcome
+  // is already on screen as a banner by the time this resolves.
+  const reconnect = () => reconnectInteractive();
 
   const stored = await store.get(PERSIST_KEY).catch(() => null);
   if (!stored) {

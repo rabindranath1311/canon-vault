@@ -85,7 +85,23 @@ a { color: inherit; }
 
 /* ── body ───────────────────────────────────────────────────────────────── */
 
-.pad { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.pad { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+/* The popup is a fixed window with one scrolling middle, so the save button can
+   be anchored to the bottom of it. A popup that grows with its content pushes
+   its own primary action off the screen — which is what this form, at eight
+   rows and three cards, would do. */
+body.popup { display: flex; flex-direction: column; height: 552px; }
+body.popup .pad { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* A flex column's children shrink before it scrolls, so without this the whole
+   form squashes itself into the window instead of overflowing it — cards
+   flattened to a few pixels, rows sitting on top of one another. */
+body.popup .pad > * { flex: none; }
+.savebar {
+  padding: 10px 12px; background: var(--s-raised);
+  border-top: 1px solid var(--i-1); flex: none;
+}
+.recent-head { padding: 0 2px 4px; }
 
 .card {
   background: var(--s-raised);
@@ -132,25 +148,78 @@ button.ghost { border-color: transparent; background: transparent; color: var(--
 button.ghost:hover { color: var(--i-7); background: var(--s-sunken); }
 button.tiny { padding: 3px 7px; font-size: 11px; }
 
-.seg { display: inline-flex; border: 1px solid var(--i-2); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; border-radius: 0; padding: 5px 10px; font-size: 11px; background: transparent; }
-.seg button.on { background: var(--i-7); color: var(--s-raised); }
+/* The one button the popup is for. */
+button.big { width: 100%; padding: 10px 12px; font-size: 14px; }
 
-.actions { display: flex; gap: 8px; }
-.actions button { flex: 1; }
+/* The two choices the popup makes: where it goes, and which picture. Equal
+   segments, one lit — the lit one is the answer, so it has to be unmissable. */
+.seg3 {
+  display: flex; border: 1px solid var(--i-2); border-radius: 9px; overflow: hidden;
+  background: var(--s-sunken);
+}
+.seg3 button {
+  flex: 1; border: 0; border-radius: 0; background: transparent;
+  padding: 7px 6px; font-size: 12px; color: var(--i-3); white-space: nowrap;
+}
+.seg3 button + button { border-left: 1px solid var(--i-1); }
+.seg3 button:hover:not(:disabled) { background: var(--s-raised); color: var(--i-7); }
+.seg3 button.on { background: var(--i-7); color: var(--s-raised); font-weight: 600; }
+.seg3 button:disabled { opacity: 0.4; }
+#picture button { font-size: 11px; padding: 6px 4px; }
 
-.list { display: flex; flex-direction: column; }
-.list > * + * { border-top: 1px solid var(--i-1); }
-.item { display: flex; gap: 8px; align-items: center; padding: 8px 10px; font-size: 12px; }
-.item .err { color: var(--bad); font-size: 11px; }
-.item .ok { color: var(--ok); }
+textarea { resize: vertical; min-height: 44px; }
 
-/* Said before the click, not after: the one card that appears when a clip
-   cannot be written, on both surfaces. Its button is the fix. */
-.banner { border-color: var(--warn); align-items: flex-start; }
-.banner strong { color: var(--warn); font-size: 12px; }
+/* The form. Labels are small and quiet; the values are what you read. */
+label.field > input, label.field > textarea { margin-top: 2px; }
+.field .warn { color: var(--warn); }
+.field .ok { color: var(--ok); }
 
-/* Tags and wall, folded away in the popup until they are wanted. */
+/* The property list: glyph, label, value, one line each. Borderless until
+   hovered or focused, so it reads as what the page said about itself rather
+   than as four empty boxes demanding to be filled. */
+.props { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; }
+.prop { display: grid; grid-template-columns: 16px 70px 1fr; align-items: center; gap: 6px; }
+.prop .pglyph { width: 16px; height: 16px; color: var(--i-3); }
+.prop label { font-size: 11px; color: var(--i-3); }
+.prop input {
+  border: 1px solid transparent; background: transparent;
+  padding: 4px 6px; font-size: 12px; border-radius: 6px;
+  text-overflow: ellipsis;
+}
+.prop input:hover { background: var(--s-sunken); }
+.prop input:focus { background: var(--s-sunken); border-color: var(--i-2); outline: none; }
+.prop input::placeholder { color: var(--i-2); }
+
+/* The filename this title will get. Sits under the title row, in the value
+   column, because it is a fact about that value. */
+.prop-hint {
+  grid-column: 3; margin: -1px 0 3px 92px;
+  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, monospace;
+  font-size: 10px; color: var(--i-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.prop-hint.is-taken { color: var(--warn); }
+.prop-extra { margin-left: 92px; }
+.prop-extra:empty { display: none; }
+
+/* Mentions, once picked. */
+.mention-chip {
+  font-size: 10px; padding: 2px 7px; margin: 3px 4px 0 0;
+  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, monospace;
+  max-width: 100%;
+}
+#mention-chips { display: flex; flex-wrap: wrap; }
+
+/* The check sits in the list, so it lines up with the values above it. */
+.props .check { margin: 4px 0 2px 92px; }
+
+/* One markup order, two readings. A wall item is a picture and a caption, so
+   the caption leads and the link it came from follows — the same rows, told in
+   the order that destination cares about. */
+.props.is-inspo #row-source { order: 9; }
+
+/* Properties, folded away until wanted — they are the page's account of
+   itself, and most captures accept it unedited. */
 .disclose {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
   margin-left: -4px; padding: 2px 4px;
@@ -158,11 +227,74 @@ button.tiny { padding: 3px 7px; font-size: 11px; }
 .disclose .caret { transition: transform 120ms ease; }
 .disclose.open .caret { transform: rotate(90deg); }
 
+/* The picture, shown rather than described. */
+#pic-preview {
+  width: 56px; height: 42px; object-fit: cover; border-radius: 6px;
+  background: var(--s-sunken); border: 1px solid var(--i-1); flex: none;
+}
+#pic-shown { align-items: flex-start; gap: 8px; min-height: 0; }
+
+/* The page picker: a search field and at most six answers. */
+.picks { border: 1px solid var(--i-1); border-radius: 8px; overflow: hidden; }
+.picks:empty { display: none; }
+button.item.pick {
+  width: 100%; border: 0; border-radius: 0; background: var(--s-raised);
+  text-align: left; padding: 6px 9px; font-size: 12px;
+}
+button.item.pick:hover { background: var(--s-sunken); }
+.status.ok, .tiny.ok { color: var(--ok); }
+.tiny.warn { color: var(--warn); }
+.check { display: flex; gap: 7px; align-items: flex-start; font-size: 12px; color: var(--i-4); }
+.check input { margin: 2px 0 0; width: auto; }
+
+.list { display: flex; flex-direction: column; }
+.list > * + * { border-top: 1px solid var(--i-1); }
+.item { display: flex; gap: 8px; align-items: center; padding: 8px 10px; font-size: 12px; }
+.item .err { color: var(--bad); font-size: 11px; }
+
+/* Said before the click, not after: the one card that appears when a clip
+   cannot be written, on both surfaces. Its button is the fix. */
+.banner { border-color: var(--warn); align-items: flex-start; }
+.banner strong { color: var(--warn); font-size: 12px; }
+
 .keys {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
   padding-top: 10px; border-top: 1px solid var(--i-1);
 }
 .keys kbd { margin-right: 2px; }
+
+/* The permission state, said out loud beside the folder name. */
+.pill {
+  font-size: 10px; letter-spacing: 0.02em; padding: 2px 7px; border-radius: 999px;
+  background: var(--s-sunken); border: 1px solid var(--i-1); color: var(--i-3);
+  white-space: nowrap;
+}
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+
+/* ── the setup page's pictures ───────────────────────────────────────────
+   Three destinations drawn as what they look like once they get there: a page
+   with a picture and a quotation in it, a card with its link, a wall of tiles.
+   The drawings carry the explanation the paragraphs used to. */
+.dests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.dest { padding: 12px 12px 11px; display: flex; flex-direction: column; gap: 3px; }
+.dest-art { width: 100%; height: auto; color: var(--i-7); display: block; margin-bottom: 4px; }
+.dest-name { font-weight: 600; font-size: 12px; }
+.wall-field { margin-top: 10px; }
+
+/* Glyphs. One sprite, sized by class, coloured by currentColor so both themes
+   get it right without a second copy. */
+.glyph { width: 20px; height: 20px; flex: none; color: var(--i-4); }
+.glyph.lg { width: 26px; height: 26px; color: var(--i-3); }
+
+/* What opens the form, as a row of things you can point at. */
+.ways { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.way { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--i-4); }
+.keys-way { margin-left: auto; gap: 4px; }
+.keys-way kbd { margin: 0; }
+
+/* First run: the web, the folder, the files. */
+.flow { width: 100%; max-width: 300px; height: auto; color: var(--i-7); margin-bottom: 4px; }
 
 .note { font-size: 11px; color: var(--i-3); line-height: 1.5; }
 .status { font-size: 12px; min-height: 18px; }
@@ -175,12 +307,11 @@ button.tiny { padding: 3px 7px; font-size: 11px; }
 .page { max-width: 680px; margin: 0 auto; padding: 32px 20px 64px; display: flex;
         flex-direction: column; gap: 20px; }
 .page .mark { width: 28px; height: 20px; }
+.hero { align-items: baseline; }
 .hero h1 { font-size: 20px; }
+.hero .mark { align-self: center; }
 .section { display: flex; flex-direction: column; gap: 10px; }
 .section > h2 { color: var(--i-4); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.check { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
-.check input { margin-top: 2px; }
 kbd {
   font: 11px/1 ui-monospace, monospace; padding: 3px 5px; border-radius: 5px;
   background: var(--s-sunken); border: 1px solid var(--i-1);
@@ -195,8 +326,8 @@ kbd {
 .lead { font-size: 17px; }
 .lead-btn { padding: 9px 16px; }
 .steps {
-  display: flex; flex-direction: column; gap: 12px;
-  margin: 0; padding: 16px 20px 18px 38px;
+  display: flex; flex-direction: column; gap: 7px;
+  margin: 0; padding: 14px 20px 15px 38px;
   background: var(--s-sunken); border-top: 1px solid var(--i-1);
 }
 .steps li::marker { color: var(--i-3); font-size: 11px; }
