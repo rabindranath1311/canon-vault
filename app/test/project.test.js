@@ -99,6 +99,41 @@ test("what is inside a project counts links, resolved as links resolve", async (
     + "would have pulled a page about something else inside");
 });
 
+test("the vault catalog is not inside every project", async () => {
+  // `index` lists the whole vault, so it mentions every project. Counting that
+  // as membership put one row inside every project that was equally true of
+  // all of them. The log and the plumbing say as little.
+  const page = (id, title, body) => serialize(
+    { id, kind: "note", title, created: TS, updated: TS }, body);
+  const d = await data({
+    "index.md": page("01IIIIIIIIIIIIIIIIIIIIIIII", "index", "[[Kiln]] and [[Bindery]]"),
+    "log.md": page("01GGGGGGGGGGGGGGGGGGGGGGGG", "log", "worked on [[Kiln]] today"),
+    "tags/firing.md": page("01SSSSSSSSSSSSSSSSSSSSSSSS", "firing", "see [[Kiln]]"),
+    "CONVENTION.md": page("01CCCCCCCCCCCCCCCCCCCCCCCC", "CONVENTION", "e.g. [[Kiln]]"),
+    "raw/clipping.md": page("01RRRRRRRRRRRRRRRRRRRRRRRR", "Clipping", "about [[Kiln]]"),
+    "projects/Kiln/Kiln.md": page("01PPPPPPPPPPPPPPPPPPPPPPPP", "Kiln", "the folder note"),
+    "projects/Kiln/Firing Log.md": page("01LLLLLLLLLLLLLLLLLLLLLLLL", "Firing Log", "cone 6"),
+    // A project citing another project: kept, deliberately. isSystemEntry would
+    // drop this row and still leave index.md in — wrong twice.
+    "projects/Bindery/Bindery.md": page("01BBBBBBBBBBBBBBBBBBBBBBBB", "Bindery", "fires at [[Kiln]]"),
+    "notes/Real Note.md": page("01NNNNNNNNNNNNNNNNNNNNNNNN", "Real Note", "booked [[Kiln]]"),
+  });
+  const { items } = await d.projects();
+  const kiln = items.find((p) => p.name === "Kiln");
+  assert.deepEqual(kiln.inside.map((p) => p.title).sort(),
+    ["Bindery", "Firing Log", "Real Note"],
+    "folder members, a real note, and the project that cites this one");
+  assert.equal(kiln.memberCount, 3);
+  for (const noise of ["index", "log", "firing", "CONVENTION", "Clipping"]) {
+    assert.ok(!kiln.inside.some((p) => p.title === noise),
+      `${noise} mentions every project, so it is evidence about none of them`);
+  }
+  // The catalog names Bindery too, and is inside that one no more than this.
+  const bindery = items.find((p) => p.name === "Bindery");
+  assert.deepEqual(bindery.inside.map((p) => p.title), [],
+    "nothing but the catalog links to Bindery, so nothing is inside it");
+});
+
 test("two quick untitled creates do not overwrite each other", async () => {
   const d = await data();
   const a = await d.createPage({ kind: "note", project: "Rebrand" });

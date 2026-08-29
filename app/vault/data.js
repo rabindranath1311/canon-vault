@@ -901,8 +901,23 @@ export class Data {
          showing two of them. Both were true; only one of them was the answer
          to the question the label asks. */
       const seen = new Set(rest.map((e) => e.id));
+      /* …but a mention is membership only when it is EVIDENCE. `index` links to
+         every page in the vault by definition, so it mentions every project and
+         was listed inside all of them — a row equally true of every project,
+         and therefore saying nothing about this one. Same for the log, and for
+         plumbing.
+
+         This is isPlumbing + ROOT_STRUCTURAL, the pair `orbit` uses, and NOT
+         isSystemEntry, which looks like the obvious call and is the wrong one
+         twice over: it does not cover index.md at all (it is isPlumbing plus
+         isProjectNote, and the catalog is neither), so it would leave this bug
+         exactly where it was — and it drops project notes, when one project
+         citing another is the most interesting row here, for the same reason
+         it is in an orbit. */
       const mentioners = note
-        ? all.filter((e) => e.id !== note.id && !seen.has(e.id) && linksTo(e, note.id, resolve))
+        ? all.filter((e) => e.id !== note.id && !seen.has(e.id)
+            && !isPlumbing(e) && !ROOT_STRUCTURAL.has(e.path)
+            && linksTo(e, note.id, resolve))
         : [];
       // One definition of "inside", used by the count, the card's preview and
       // its composition alike: folder members plus the pages that mention the
