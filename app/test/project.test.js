@@ -63,6 +63,42 @@ test("projectMembers is the folder minus its own note", async () => {
   assert.deepEqual(items.map((p) => p.kind).sort(), ["canvas", "note"]);
 });
 
+test("what is inside a project counts links, resolved as links resolve", async () => {
+  // The folder note's filename is not its title — a project called Kiln beside
+  // an existing `notes/Kiln.md` is filed as `Kiln 2` — so `[[Kiln]]` is a name
+  // nothing answers to, and `[[Firing]]` (the alias) and `[[Kiln 2]]` are the
+  // two that do. Matching on `title:` had it exactly backwards.
+  const d = await data({
+    "notes/Kiln.md": serialize({
+      id: "01KKKKKKKKKKKKKKKKKKKKKKKK", kind: "note", title: "Kiln kit",
+      created: TS, updated: TS }, "the kiln itself, not the project"),
+    "projects/Kiln 2/Kiln 2.md": serialize({
+      id: "01PPPPPPPPPPPPPPPPPPPPPPPP", kind: "note", title: "Kiln",
+      aliases: ["Firing"], created: TS, updated: TS }, "the folder note"),
+    "projects/Kiln 2/Firing Log.md": serialize({
+      id: "01LLLLLLLLLLLLLLLLLLLLLLLL", kind: "note", title: "Firing Log",
+      created: TS, updated: TS }, "cone 6"),
+    "notes/Cites Alias.md": serialize({
+      id: "01AAAAAAAAAAAAAAAAAAAAAAAA", kind: "note", title: "Cites Alias",
+      created: TS, updated: TS }, "for [[Firing]]"),
+    "notes/Cites Filename.md": serialize({
+      id: "01FFFFFFFFFFFFFFFFFFFFFFFF", kind: "note", title: "Cites Filename",
+      created: TS, updated: TS }, "for [[Kiln 2]]"),
+    "notes/Cites Title.md": serialize({
+      id: "01TTTTTTTTTTTTTTTTTTTTTTTT", kind: "note", title: "Cites Title",
+      created: TS, updated: TS }, "for [[Kiln]]"),
+  });
+  const { items } = await d.projects();
+  const kiln = items.find((p) => p.name === "Kiln 2");
+  assert.deepEqual(kiln.inside.map((p) => p.title).sort(),
+    ["Cites Alias", "Cites Filename", "Firing Log"],
+    "folder membership plus the pages that link to the note");
+  assert.equal(kiln.memberCount, 3, "the count says what the list shows");
+  assert.ok(!kiln.inside.some((p) => p.title === "Cites Title"),
+    "[[Kiln]] resolves to notes/Kiln.md, not to this project — a title match "
+    + "would have pulled a page about something else inside");
+});
+
 test("two quick untitled creates do not overwrite each other", async () => {
   const d = await data();
   const a = await d.createPage({ kind: "note", project: "Rebrand" });
