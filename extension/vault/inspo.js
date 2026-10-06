@@ -104,6 +104,61 @@ export function serializeInspoBody(model) {
   return out.join("\n\n") + (out.length ? "\n" : "");
 }
 
+/**
+ * Put one item on a wall: its block goes first in its group, where
+ * `serializeInspoBody` would put it, and every other byte of the page stays
+ * as it was. Re-serializing the whole model instead dropped what the model
+ * does not hold — an intro paragraph, an embed's `|300` size, a caption
+ * wrapped over two lines. On a page already in the canonical form the two
+ * give the same text.
+ *
+ * `group` "" is the ungrouped items before the first heading; a named group
+ * that is not on the page is added at the end. Returns `{ body, group }`.
+ */
+export function insertItem(body, item, group = "") {
+  const text = String(body ?? "");
+  const block = serializeInspoBody({ groups: [{ name: "", items: [item] }] }).replace(/\n$/, "");
+  const lines = text.split("\n");
+  const wanted = String(group || "").trim();
+  const name = wanted.toLowerCase();
+  let firstHeading = -1, firstLoose = -1;
+  for (let i = 0; i < lines.length; i++) {
+    // A block starts at a non-empty line after an empty one — the split
+    // `parseInspoBody` makes on two or more newlines.
+    if (lines[i] === "" || (i > 0 && lines[i - 1] !== "")) continue;
+    let j = i;
+    while (j < lines.length && lines[j] !== "") j++;
+    const own = lines.slice(i, j);
+    const first = own.findIndex((l) => l.trim());
+    if (first < 0) continue;
+    const head = own[first].trim().match(HEADING);
+    if (head) {
+      if (firstHeading < 0) firstHeading = i;
+      if (name && head[1].toLowerCase() === name) {
+        const at = i + first;
+        const before = lines.slice(0, at + 1).join("\n");
+        const rest = lines.slice(at + 1);
+        while (rest.length && rest[0] === "") rest.shift();
+        const after = rest.join("\n");
+        return { body: after ? `${before}\n\n${block}\n\n${after}` : `${before}\n\n${block}\n`, group: head[1] };
+      }
+    } else if (!name && firstHeading < 0 && firstLoose < 0
+               && parseInspoBody(own.join("\n")).groups[0].items.length) {
+      firstLoose = i;
+    }
+  }
+  if (!name) {
+    const at = firstLoose >= 0 ? firstLoose : firstHeading;
+    if (at >= 0) {
+      const before = lines.slice(0, at).join("\n");
+      return { body: `${before}${at > 0 ? "\n" : ""}${block}\n\n${lines.slice(at).join("\n")}`, group: "" };
+    }
+  }
+  const kept = text.replace(/\s+$/, "");
+  const head = name ? `## ${wanted}\n\n` : "";
+  return { body: `${kept ? `${kept}\n\n` : ""}${head}${block}\n`, group: name ? wanted : "" };
+}
+
 /** Every tag on the page, for the filter strip. */
 export function inspoTags(model) {
   const all = new Set();

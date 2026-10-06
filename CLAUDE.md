@@ -188,6 +188,9 @@ scripts/
                        would be packed into the next bundle, and the next.
   serve.mjs            dependency-free dev server; see "Running it"
 bin/                 macOS capture scripts that write straight into the vault
+conformance/         the format as tests: invented cases, and what app/vault does
+                     with them, byte for byte — what any other implementation is
+                     held to
 ```
 
 **No build step, and no npm install.** Dependencies are vendored as files.
@@ -226,7 +229,16 @@ node scripts/sync-demo.mjs --check
 node scripts/sync-extension.mjs --check
 node scripts/sync-clipper.mjs --check
 node scripts/bump-version.mjs --check
+node scripts/export-conformance.mjs        # after ANY change under app/vault/
+node scripts/export-conformance.mjs --check
+node scripts/export-board-conformance.mjs  # after changing excalidraw.js or lz-string
+node scripts/export-board-conformance.mjs --check
 ```
+
+**The corpus is the format's test suite.** A change to `app/vault/`
+regenerates `conformance/expected/`, and a changed answer there is a change to
+what every other implementation must write — read the diff as a possible format
+change, and if it is one, `brain/CONVENTION.md` changes with it.
 
 The clipper is loaded unpacked from `extension/` (`chrome://extensions` →
 Developer mode → Load unpacked). It is **not** deployed — `vercel.json` serves

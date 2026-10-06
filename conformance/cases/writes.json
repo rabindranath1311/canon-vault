@@ -1,0 +1,84 @@
+{
+  "about": "Write scenarios, replayed by app/vault (scripts/export-conformance.mjs) and by any port. Each op runs against an in-memory vault; ops name pages by path, `as` labels a result for later ops, `frontmatterFrom`/`baseFrom` reuse a labelled `get`. Invented content only.",
+  "scenarios": [
+    {
+      "name": "saves",
+      "now": "2026-10-06T09:00:00+00:00",
+      "historyKeep": 3,
+      "files": [
+        ["notes/Kept.md", "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"],
+        ["notes/Plain.md", "Just text, no frontmatter yet.\n"]
+      ],
+      "ops": [
+        { "op": "get", "path": "notes/Kept.md", "as": "k1" },
+        { "op": "put", "page": { "id": "01JKEPT0000000000000000000", "path": "notes/Kept.md", "body": "Some prose, edited once." }, "frontmatterFrom": "k1", "baseFrom": "k1" },
+        { "op": "put", "page": { "id": "01JKEPT0000000000000000000", "path": "notes/Kept.md", "body": "Some prose, edited twice." }, "frontmatterFrom": "k1" },
+        { "op": "put", "page": { "id": "01JKEPT0000000000000000000", "path": "notes/Kept.md", "body": "Some prose, edited three times." }, "frontmatterFrom": "k1" },
+        { "op": "put", "page": { "id": "01JKEPT0000000000000000000", "path": "notes/Kept.md", "body": "Some prose, edited four times." }, "frontmatterFrom": "k1" },
+        { "op": "history", "path": "notes/Kept.md" },
+        { "op": "readHistory", "snapshot": ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md" },
+        { "op": "readHistory", "snapshot": "notes/Kept.md" },
+        { "op": "put", "now": "2026-10-06T09:01:00+00:00", "page": { "id": "01JKEPT0000000000000000000", "path": "notes/Kept.md", "body": "Prose\n## Attachments\nnot a tray, just a line I typed", "sections": "" }, "frontmatterFrom": "k1", "set": [["tags", ["alpha"]], ["status", "draft"]] },
+        { "op": "put", "now": "2026-10-06T09:05:00+00:00", "page": { "id": "path:notes/Plain.md", "path": "notes/Plain.md", "body": "Just text, saved from the app." } },
+        { "op": "rescan" },
+        { "op": "get", "path": "notes/Plain.md", "as": "p1" },
+        { "op": "get", "path": "notes/Kept.md", "as": "k2" }
+      ]
+    },
+    {
+      "name": "conflicts",
+      "now": "2026-10-06T10:00:00+00:00",
+      "historyKeep": 10,
+      "files": [
+        ["notes/Broken.md", "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"],
+        ["notes/Shared.md", "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThe text as the app first read it.\n"]
+      ],
+      "ops": [
+        { "op": "get", "path": "notes/Shared.md", "as": "s1" },
+        { "op": "external", "path": "notes/Shared.md", "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n" },
+        { "op": "rescan" },
+        { "op": "put", "page": { "id": "01JSHARED00000000000000000", "path": "notes/Shared.md", "body": "The app's text." }, "frontmatterFrom": "s1", "baseFrom": "s1" },
+        { "op": "put", "page": { "id": "01JSHARED00000000000000000", "path": "notes/Shared.md", "body": "The app's text.", "force": true }, "frontmatterFrom": "s1", "baseFrom": "s1" },
+        { "op": "external", "path": "notes/Shared.md", "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n" },
+        { "op": "put", "page": { "id": "01JSHARED00000000000000000", "path": "notes/Shared.md", "body": "The app's text, again.", "force": true }, "frontmatterFrom": "s1", "baseFrom": "s1" },
+        { "op": "put", "page": { "id": "01JSHARED00000000000000000", "path": "notes/Shared.md", "body": "No base: judged against the index, which this session kept honest." }, "frontmatterFrom": "s1" },
+        { "op": "put", "page": { "id": "path:notes/Broken.md", "path": "notes/Broken.md", "body": "never written" } },
+        { "op": "rescan" },
+        { "op": "history", "path": "notes/Shared.md" }
+      ]
+    },
+    {
+      "name": "names and trash",
+      "now": "2026-10-06T11:00:00+00:00",
+      "historyKeep": 10,
+      "files": [
+        ["canvas/Sketches.canvas", "{\"nodes\":[],\"edges\":[]}\n"],
+        ["notes/Taken.md", "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"],
+        ["topics/Board.canvas", "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"],
+        ["topics/Board.md", "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"]
+      ],
+      "ops": [
+        { "op": "put", "page": { "path": "projects/Taken.md", "title": "Taken", "body": "A second page called Taken." } },
+        { "op": "put", "page": { "path": "notes/Sketches.md", "title": "Sketches", "body": "Would shadow the canvas." } },
+        { "op": "put", "page": { "path": "canvas/Sketches.canvas", "title": "Sketches", "body": "The board's own note, beside its JSON." } },
+        { "op": "put", "page": { "path": "notes/Fresh.md", "title": "Fresh", "body": "A new page." } },
+        { "op": "rescan" },
+        { "op": "rename", "path": "notes/Fresh.md", "to": "notes/Fresh Renamed.md" },
+        { "op": "rename", "path": "topics/Board.md", "to": "topics/Board Two.md" },
+        { "op": "rename", "path": "topics/Board Two.md", "to": "topics/Board Two.excalidraw" },
+        { "op": "rename", "path": "notes/Taken.md", "to": "notes/Fresh Renamed.md" },
+        { "op": "rename", "path": "notes/Taken.md", "to": "notes/Taken.md" },
+        { "op": "rename", "path": "notes/Nowhere.md", "to": "notes/Somewhere.md" },
+        { "op": "del", "path": "topics/Board Two.md", "as": "d1" },
+        { "op": "put", "page": { "path": "topics/Board Two.md", "title": "Board Two", "kind": "topic", "body": "The name, taken again." } },
+        { "op": "rescan" },
+        { "op": "del", "path": "topics/Board Two.md", "as": "d2" },
+        { "op": "untrash", "from": "d1", "path": "topics/Board Two.md", "canvasPath": "topics/Board Two.canvas" },
+        { "op": "untrash", "from": "d2", "path": "topics/Board Two.md" },
+        { "op": "untrash", "from": "d1", "path": "topics/Board Three.md" },
+        { "op": "del", "path": "notes/Nowhere.md" },
+        { "op": "writeBlob", "path": "attachments/pixel.txt", "text": "not really an image" }
+      ]
+    }
+  ]
+}

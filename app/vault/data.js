@@ -24,7 +24,7 @@ import { clipFrontmatter, urlsFromText, findByUrl, titleFromUrl } from "./clip.j
 import { parse, unescapeUser } from "./mdfile.js";
 import { basenameOf, resolveWikilink, linkResolver } from "./links.js";
 import { readAttachments, writeAttachments } from "./attachments.js";
-import { setSection } from "./sections.js";
+import { setSection, splitSections } from "./sections.js";
 
 const DEFAULT_LIMIT = 200;
 
@@ -418,6 +418,11 @@ function pageOut(entry, body) {
     aliases: entry.aliases || [],
     meta: entry.meta || {},
     path: entry.path,
+    // Which version of the file this is. An editor hands it back as
+    // `base.mtime` on save, so the conflict gate judges the disk against what
+    // the editor read rather than against an index that may have re-scanned
+    // since.
+    mtime: entry.mtime ?? null,
     excerpt: entry.excerpt || "",
     // Surfaced so a search result can say WHY it matched. A drawing hit is
     // otherwise the one result with nothing to show: the words are in the
@@ -450,8 +455,12 @@ function pageOut(entry, body) {
    that twice: the project form sent `meta.status` and `start_date`, and the
    About Me screen sent eight structured keys, for as long as either existed.
    Both reported success on every save. A refusal is visible in the UI; a
-   quiet drop is visible nowhere. */
-const PATCH_WRITTEN = ["title", "tags", "aliases", "url", "status", "body", "meta", "force"];
+   quiet drop is visible nowhere.
+
+   `force` and `base` ride in the written list although neither is a field:
+   they steer the write. `base` is `{mtime, updated}` of the version the caller
+   read, for the conflict gate in `put()`. */
+const PATCH_WRITTEN = ["title", "tags", "aliases", "url", "status", "body", "meta", "force", "base"];
 const PATCH_DERIVED = ["mentions", "kind", "slug"];
 
 export class Data {
@@ -737,9 +746,9 @@ export class Data {
      must not accept the gesture. */
   async aboutMe() {
     const e = [...this.v.index.values()].find((x) => x.path === "context/about-me.md");
-    if (!e) return { body: "", updated: null, path: null };
+    if (!e) return { body: "", updated: null, path: null, mtime: null };
     const p = await this.v.get(e.id);
-    return { body: p.body, updated: p.updated, path: e.path };
+    return { body: p.body, updated: p.updated, path: e.path, mtime: e.mtime ?? null };
   }
 
   /** Task 6.11: an upload becomes a file in attachments/, not a POST.
@@ -1105,6 +1114,7 @@ export class Data {
       body: nextBody,
       sections,
       force: patch.force,
+      base: patch.base,
     });
     if (!r.ok) return r;
     // Move only after the write is safely on disk — the conflict gate has to
@@ -1277,7 +1287,10 @@ export class Data {
     let fm, body;
     try {
       const [f, b] = parse(await this.v.be.readText(path));
-      fm = f; body = unescapeUser(b);
+      // The prose only: `put` keeps the structural sections that are on disk,
+      // so handing them over in the body as well wrote them twice — the
+      // second time escaped, as if the user had typed them.
+      fm = f; body = unescapeUser(isExcalidrawPath(path) ? b : splitSections(b).prose);
     } catch (err) {
       return { ok: false, reason: "unreadable", message: String((err && err.message) || err) };
     }

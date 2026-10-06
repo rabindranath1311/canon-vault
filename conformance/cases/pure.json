@@ -1,0 +1,244 @@
+{
+  "about": "Inputs for the pure functions of app/vault — naming (data.js), attachments.js, inspo.js, the capture rules of clip.js, dashboard.js and scaffold.js. scripts/export-conformance.mjs runs each function over each input and records what it returned (or threw) in conformance/expected/pure.json; a port must answer the same. Invented content only.",
+
+  "naming": {
+    "stemFor": [
+      "Plain title", "", "  padded  ", "Slash/Colon: \"Quote\" <x> | y?", "back\\slash*star",
+      ".env notes", "...dots first", " .space then dot", "tabs\tand\nnewlines", "  ",
+      "Café — naïve", "Ünïcødé ✓", "a:b", "A rather long title that goes on and on past any limit a filename might want to have, still going",
+      " nbsp ", "trailing dot.", "Note 2026-10-06"
+    ],
+    "pageStem": [
+      "notes/A.md", "canvas/Board.excalidraw.md", "canvas/Board.EXCALIDRAW.MD", "canvas/Sketches.canvas",
+      "A.md", "notes/no-extension", "notes/x.md.md", "projects/P/P.md", "notes/archive.tar.gz",
+      "notes/.md", "topics/Dots.in.Name.md"
+    ],
+    "tagSlug": [
+      "Economy", "#Economy  Now", "  ##hash#tags  ", "a/b\\c:d*e?f\"g<h>i|j", "--dashes--",
+      "multi   space", "Ünïcødé Tag", "", "#", "already-a-slug", "Mixed_Case_Under", "tab\tsep"
+    ],
+    "renamePlans": [
+      { "path": "notes/Title One.md", "title": "Same Title" },
+      { "path": "notes/Title One.md", "title": "Title One Renamed" },
+      { "path": "notes/Title One.md", "title": "  " },
+      { "path": "notes/Atlas Notes.md", "title": "Atlas Overview" },
+      { "path": "notes/Atlas Notes.md", "title": "Atlas Field Notes" },
+      { "path": "notes/Bare.md", "title": "Bare Renamed" },
+      { "path": "notes/Unstamped.md", "title": "Design" },
+      { "path": "notes/Unstamped.md", "title": "Sketches" },
+      { "path": "notes/Unstamped.md", "title": "unstamped" },
+      { "path": "notes/Unstamped.md", "title": "Freshly: Named?" },
+      { "path": "topics/Atlas.md", "title": "Atlas Topic" },
+      { "path": "notes/design.md", "title": "Design Two" }
+    ],
+    "defaultStems": [
+      { "path": "notes/Untitled.md", "title": "Real Title" },
+      { "path": "notes/untitled 3.md", "title": "Real Title" },
+      { "path": "notes/Note 2026-08-15.md", "title": "Something" },
+      { "path": "notes/Note 2026-08-15 2.md", "title": "Something" },
+      { "path": "canvas/Drawing 2026-08-15.excalidraw.md", "title": "A Board" },
+      { "path": "canvas/Board 2026-08-15.excalidraw.md", "title": "A Board" },
+      { "path": "inspo/Wall 2026-08-15.md", "title": "A Wall" },
+      { "path": "notes/Bookmark 2026-08-15.md", "title": "A Link" },
+      { "path": "projects/Project 2026-08-15/Project 2026-08-15.md", "title": "A Project" },
+      { "path": "notes/Note 2026-8-15.md", "title": "Not a default" },
+      { "path": "notes/Memo 2026-08-15.md", "title": "Not a default" }
+    ]
+  },
+
+  "attachments": {
+    "typeFor": [
+      [null, null], ["markdown", null], ["MARKDOWN", null], ["chatgpt", null], ["Claude", null],
+      ["gemini", null], ["notebooklm", null], ["chat", null], ["web", null], ["", "https://example.com/"],
+      ["chat", "https://example.com/"], ["", null]
+    ],
+    "serialize": [
+      [],
+      [{ "title": "A link", "url": "https://example.com/a", "body": "why it matters", "source": "link" }],
+      [{ "title": "Pasted", "type": "markdown", "body": "# Heading\n\n### Not a boundary\n## Attachments\n**user** hi\n" }],
+      [{ "title": "Line one\nline two", "source": "Chat GPT!!", "body": "text" }],
+      [{ "title": "", "body": "untitled body" }],
+      [{ "title": "Nothing" }, { "title": "Only a link", "url": "https://example.com/only" }],
+      [{ "title": "Bad url", "url": "javascript:alert(1)", "body": "kept body" }],
+      [{ "title": "Bad url, no body", "url": "javascript:alert(1)" }],
+      [{ "title": "Meta url", "meta": { "url": "https://example.com/meta" }, "body": "b" }],
+      [{ "title": "Paren (title) inside", "source": "notebooklm", "body": "x" }],
+      [{ "title": "Trailing space", "body": "body   \n\n\n" }],
+      [{ "title": "Source looking body", "body": "Source: https://example.com/not-a-url-line" }],
+      [{ "title": "Type only", "type": "chat", "body": "a chat" }, { "title": "Second", "source": "web", "body": "two" }]
+    ],
+    "parse": [
+      "",
+      "### A link (link)\nSource: https://example.com/a\n\nwhy it matters",
+      "preamble line\n\n### First (markdown)\n\nbody one\n\n### Second (chatgpt)\n\nbody two\n",
+      "### No parens\n\nbody",
+      "### Paren (title) inside (notebooklm)\n\nx",
+      "### Empty title ()\n\nx",
+      "###    (web)\n\nx",
+      "### Blank then source (text)\n\nSource: https://example.com/body-line",
+      "### Bad source (link)\nSource: javascript:alert(1)\n\nbody",
+      "### Escaped (markdown)\n\n\\### Not a boundary\n\\## Attachments\nplain",
+      "### Url only (link)\nSource: HTTPS://Example.COM/Path?q=1",
+      "### Tabs\t(Web)\t\n\nbody\n\n\n",
+      "### First line right away (text)\nno blank line here\nsecond"
+    ],
+    "write": [
+      ["", [{ "title": "New", "body": "fresh" }]],
+      ["## Thread\n\n**user** hello\n\n## Attachments\n\n### Old (text)\n\nold body\n\n## Links\n\n- [[Somewhere]]", [{ "title": "Replaced", "body": "new body" }]],
+      ["## Attachments\n\n### Old (text)\n\nold body", []],
+      ["## Links\n\n- [[Somewhere]]", [{ "title": "Inserted before links", "url": "https://example.com/i" }]]
+    ]
+  },
+
+  "inspo": [
+    "",
+    "![[attachments/a.png]]\nNeon gradient hero\n> Works because the\n> type carries it.\n#ui #gradient\nhttps://example.com/x\n\n![[attachments/b.png]]",
+    "Intro prose that is not an item.\n\n## Moodboard\n![[attachments/c.png|300]]\nCaption one\n\n## Empty group\n\n## Links\nhttps://example.com/only-link\nA bare link is fine",
+    "  ![[attachments/d.png]]  \n  spaced caption  \n#dup #dup #other\n\n\n\n![[attachments/e.png]]\n![[attachments/f.png]]\nsecond image becomes caption text",
+    "![[attachments/g.png]]\n> https://example.com/quoted-link\n> #quoted #tags\nhttps://example.com/first\nhttps://example.com/second\n#tag and words",
+    "## Group A\n![[x.png]]\n>\n> after a bare quote line\n\n## group a\n![[y.png]]",
+    "![[attachments/h.png]]\r\nCRLF caption\r\n\r\n![[attachments/i.png]]",
+    "##NoSpace\n![[j.png]]\n\n## Spaced   \n![[k.png]]\n#\n##"
+  ],
+
+  "capture": {
+    "safeUrl": [
+      "https://example.com/a", "http://example.com", "HTTPS://WWW.Example.COM:443/a/../b c?x=1 2#f g",
+      "  https://example.com/padded  ", "javascript:alert(1)", "data:text/html,x", "file:///etc/passwd",
+      "chrome://settings", "", null, "example.com", "https://", "https://exa mple.com/", "http://x.com:80/",
+      "http://x.com:8080/p", "https://x.com:65536/", "https://user:pa ss@x.com/", "https://Bücher.example/ü?é#é",
+      "https://example.com/a^b{c}`d|e", "https://example.com\\a\\b?c\\d#e", "https://example.com/./a/../../b/%2e%2E/c",
+      "https://example.com/q?a='b c\"<>`{}", "https://example.com/frag#a b\"<>`", "http://1.2.3/",
+      "http://0x7f.0.0.1/", "http://[::1]:8080/a", "http://[1:0:0:0:0:0:0:1]/", "http://[::ffff:1.2.3.4]/",
+      "https://ex%41mple.com/", "https://example.com/100%", "https://example.com/a%2fb%zz", "https://x.com?only",
+      "https://x.com#", "https://x.com/?", "https://@x.com/", "https://a:@x.com/", "https://:b@x.com/",
+      "https:///triple.example/", "https://ＥＸＡＭＰＬＥ.com/full", "https://example。com/ideographic",
+      "https://straße.example/", "https://example.com/tab\there", "https://x_y.example/", "https://x..example/",
+      "https://example.com./", "https://xn--bcher-kva.example/", "HTTP://EXAMPLE.COM/UPPER"
+    ],
+    "canonicalUrl": [
+      "https://www.example.com/a/?utm_source=x&b=c/d&e=f g#h", "https://www.example.com/a/?b=c/d",
+      "https://example.com/", "https://WWW.EXAMPLE.COM/Path/", "https://example.com/a?fbclid=1&gclid=2&mc_cid=3&mc_eid=4",
+      "https://example.com/a?igshid=1&ref_src=2&ref_url=3&si=4&s=5&t=6&keep=7", "https://example.com/a?S=1&T=2&UTM_X=3",
+      "https://example.com/a?sx=1&ts=2", "https://example.com/a?utm_source=only", "https://example.com/a?a=%zz&utm_x=1&b=é",
+      "https://example.com/a?x=1+2&utm_y=z&&e==f", "https://www.x/", "https://www./", "https://example.com/a//",
+      "javascript:alert(1)", "https://example.com/a?a=1&a=2&utm_a=3", "https://example.com:8443/p?utm_campaign=c#frag"
+    ],
+    "oneLine": [
+      ["plain", null], ["  many\n\nlines\tand  spaces  ", null], ["", null], [null, null],
+      ["abcdefghij", 5], ["abcd     efgh", 6], ["exactly five", 12], ["0123456789", 10], ["0123456789x", 10]
+    ],
+    "safeCaption": [
+      "A caption", "https://example.com/bare-link", "#hashtag start", "!embed start", "## Attachments",
+      "  \n  ", "multi\nline\ncaption", "http://example.com/x y", "![[forged.png]]", "Caption with #tag inside"
+    ],
+    "normalizeMentions": [
+      ["Atlas"], ["Atlas", "atlas", "ATLAS"], ["[[Bracketed]]", "Pipe|Alias", "  "],
+      ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], "single string", null, ["x\ny"]
+    ],
+    "normalizeTags": [
+      ["UI Design"], "#UI Design, #ui-design, ##Neon", ["a/b", "/lead", "trail/", "--x--", "Ünï", "x_y"],
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"], null, ["dup", "DUP", "dup"],
+      ["emoji😀tag"], ["a,b c\td"]
+    ],
+    "safeStem": [
+      ["Plain", null], ["a/b\\c:d*e?f\"g<h>i|j", null], ["...leading dots", null], ["  . spaced dot", null],
+      ["ctrl\u0001chars\u007f", null], ["abcdefghij", 4], ["abcd efgh", 5], ["", null], [null, null]
+    ],
+    "attachmentName": [
+      { "mime": "image/png", "src": "https://example.com/images/hero.php", "capturedAt": "2026-10-06T09:00:00+00:00" },
+      { "mime": "image/jpeg; charset=binary", "src": "https://example.com/a/photo.final.JPG?x=1" },
+      { "src": "https://example.com/pic.WEBP" },
+      { "src": "https://example.com/no-ext", "title": "Page Title" },
+      { "src": "https://example.com/", "title": "Fallback: Title / Here", "capturedAt": "2026-10-06" },
+      { "src": "data:image/png;base64,AAAA", "caption": "From caption" },
+      { },
+      { "mime": "image/svg+xml", "src": "https://example.com/%E2%9C%93%20check.svg" },
+      { "mime": "IMAGE/GIF", "src": "https://example.com/trailing___.gif" },
+      { "src": "https://example.com/bad%zzname.png" }
+    ],
+    "titleFromUrl": [
+      "https://example.com/", "https://www.example.com/articles/My-Great_Post.html", "https://example.com/a/b/c/",
+      "https://example.com/%E2%9C%93-done", "javascript:alert(1)", "https://example.com/100%", "https://sub.example.org/x+y+z",
+      "https://example.com/file.tar.gz" ],
+    "urlsFromText": [
+      "https://example.com/a", "see https://example.com/x. and (https://example.com/y) or https://en.wikipedia.org/wiki/Foo_(bar)).",
+      "- https://example.com/1\n- https://example.com/2\n- https://www.example.com/1?utm_source=n",
+      "no links here", "<https://example.com/angled> \"https://example.com/quoted\" `https://example.com/tick`",
+      "https://example.com/a?b=c,d;e:f!g?", "https://[::1]/v6 http://bad host/", "HTTPS://UPPER.EXAMPLE/X", null
+    ],
+    "captures": [
+      { "url": "https://www.example.com/article?utm_source=feed", "title": "An Article", "tags": ["Reading List", "#later"], "capturedAt": "2026-10-06T09:00:00+00:00",
+        "og": { "title": "OG Title", "description": "A description\nover lines", "image": "https://cdn.example.com/og.png", "siteName": "Example", "author": "A. Writer" } },
+      { "pageUrl": "https://example.com/page", "text": "a quoted line\nand another  ", "note": "my thought", "mentions": ["Atlas", "[[Design]]"] },
+      { "url": "javascript:alert(1)", "text": "a selection with no safe link", "title": "" },
+      { "type": "selection", "text": "bare selection" },
+      { "url": "https://example.com/og-poisoned", "og": { "image": "javascript:x", "title": "" }, "description": "", "siteName": "Typed Site" },
+      { "src": "https://example.com/img/shot.png", "mime": "image/png", "caption": "## Attachments", "alt": "alt text", "url": "https://example.com/source", "tags": "ui, neon" },
+      { "assetPath": "attachments/existing.png", "note": "#not a tag line", "title": "T" },
+      { "title": "Only a title" },
+      { },
+      { "url": "https://example.com/titled]", "title": "Title [with] brackets", "note": "note", "tags": ["x"], "mentions": ["M"] },
+      { "target": "note", "url": "https://example.com/n" },
+      { "type": "link", "url": "https://example.com/l" }
+    ],
+    "assetPaths": [null, "attachments/shot 2026-10-06.png"],
+    "settings": [{}, { "linkTarget": "note" }],
+    "clipFrontmatter": [
+      { "url": "https://example.com/", "og_title": "T", "id": "nope", "kind": "nope", "title": "nope", "tags": ["nope"], "aliases": ["nope"], "excalidraw-plugin": "parsed", "bogus": "x", "source": "", "author": null, "links": [] },
+      { }
+    ],
+    "wallPath": ["Moodboard", "", "a/b: c", "...", "  Neon  Walls  "],
+    "walls": [
+      { "body": "", "item": { "image": "attachments/a.png", "caption": "first", "tags": [], "url": null }, "group": "" },
+      { "body": "![[attachments/a.png]]\nfirst", "item": { "image": "attachments/A.PNG", "caption": "dup by image", "tags": [], "url": null }, "group": "" },
+      { "body": "https://example.com/x?utm_source=a\nlinked", "item": { "image": null, "caption": "dup by url", "tags": [], "url": "https://www.example.com/x" }, "group": "" },
+      { "body": "![[attachments/a.png]]\nfirst\n\n## Neon\n![[attachments/n.png]]", "item": { "image": "attachments/b.png", "caption": "into neon", "tags": ["t"], "url": "https://example.com/b" }, "group": "neon" },
+      { "body": "![[attachments/a.png]]", "item": { "image": "attachments/c.png", "caption": "new group", "tags": [], "url": null }, "group": "  Fresh Group " },
+      { "body": "![[attachments/a.png]]", "item": { "image": "attachments/a.png", "caption": "no dedupe", "tags": [], "url": null }, "group": "", "dedupe": false },
+      { "body": "x", "item": null, "group": "" },
+      { "body": "caption only block", "item": { "image": null, "caption": "Caption Only", "tags": [], "url": null }, "group": "" },
+      { "body": "A wall of endpapers.\n\n## Marbled\n\n![[a.png|300]]\nwrapped\ncaption\n\nClosing words.\n", "item": { "image": "b.png", "caption": "keeps prose", "note": "why\nwhen", "tags": ["x"], "url": null }, "group": "marbled" },
+      { "body": "Intro prose.\n\n![[a.png|120]]\n\n## Later\n", "item": { "image": "c.png", "caption": "ungrouped, before the first item", "tags": [], "url": null }, "group": "" },
+      { "body": "Only prose.\n\n## Later\nheading with prose under it\n", "item": { "image": null, "caption": "", "tags": [], "url": "https://example.com/d" }, "group": "" },
+      { "body": "\n\n## Late\n", "item": { "image": "e.png", "caption": "", "tags": [], "url": null }, "group": "LATE" },
+      { "body": "Trailing spaces.   \n\n\n", "item": { "image": "f.png", "caption": "", "tags": [], "url": null }, "group": "New" }
+    ]
+  },
+
+  "dashboard": {
+    "fixture": "scripts/fixtures/demo-pages.json",
+    "lists": [
+      { "now": "2026-10-06T12:00:00+00:00", "pages": [] },
+      { "now": "2026-10-06T12:00:00+00:00", "pages": [
+        { "id": "01KZDASH000000000000000001", "kind": "note", "title": "Fresh", "updated": "2026-10-06T08:00:00+00:00", "tags": ["a", "b"], "mentions": ["X"] },
+        { "id": "01KZDASH000000000000000002", "kind": "topic", "title": "", "slug": "from-slug", "updated": "2026-10-03T08:00:00+00:00", "tags": ["a"], "mentions": [] },
+        { "id": "01KZDASH000000000000000003", "kind": "note", "title": "Working", "updated": "2026-09-20T08:00:00+0000", "tags": ["b", "a"], "mentions": ["Y", "Z"] },
+        { "id": "01KZDASH000000000000000004", "kind": "note", "title": "Unstamped", "updated": null, "tags": [], "mentions": [] },
+        { "id": "01KZDASH000000000000000005", "kind": "note", "title": "Old", "updated": "2025-01-01T00:00:00+00:00", "tags": ["c", "c2"], "mentions": [] },
+        { "id": "01KZDASH000000000000000006", "kind": "note", "title": "Garbage date", "updated": "not a date", "tags": ["c"], "mentions": [] },
+        { "id": "01KZDASH000000000000000007", "kind": "inspo", "title": "Date only", "updated": "2026-10-05", "tags": ["c", "c2"], "mentions": [], "meta": { "imported_from": "clipper" } },
+        { "id": "01KZDASH000000000000000008", "kind": "note", "title": "Offset", "updated": "2026-10-06T01:00:00-05:00", "tags": ["b"], "mentions": [] },
+        { "id": "01KZDASH000000000000000009", "kind": "note", "title": "Millis Z", "updated": "2026-09-01T10:00:00.250Z", "tags": [], "mentions": [] }
+      ] }
+    ]
+  },
+
+  "scaffold": {
+    "assess": [
+      [],
+      ["README.txt", "image.png"],
+      ["notes/One.md"],
+      ["inbox.md", "deep/folder/two.md"],
+      ["notes/keep.txt"],
+      ["topics/a.txt", "attachments/x.png", "projects/p.bin"],
+      [".obsidian/workspace.md", ".git/HEAD", ".trash/old.md"],
+      ["context/about-me.md", "raw/source.md"]
+    ],
+    "runs": [
+      { "name": "empty folder", "files": [], "confirmed": false },
+      { "name": "a folder with notes, not confirmed", "files": [["notes/Mine.md", "my own note\n"]], "confirmed": false },
+      { "name": "a folder with notes, confirmed", "files": [["notes/Mine.md", "my own note\n"], ["index.md", "my own index, never clobbered\n"]], "confirmed": true }
+    ]
+  }
+}

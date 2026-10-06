@@ -1,0 +1,4654 @@
+{
+  "naming": {
+    "stemFor": [
+      {
+        "input": "Plain title",
+        "out": "Plain title"
+      },
+      {
+        "input": "",
+        "out": ""
+      },
+      {
+        "input": "  padded  ",
+        "out": "padded"
+      },
+      {
+        "input": "Slash/Colon: \"Quote\" <x> | y?",
+        "out": "Slash Colon Quote x y"
+      },
+      {
+        "input": "back\\slash*star",
+        "out": "back slash star"
+      },
+      {
+        "input": ".env notes",
+        "out": "env notes"
+      },
+      {
+        "input": "...dots first",
+        "out": "dots first"
+      },
+      {
+        "input": " .space then dot",
+        "out": ".space then dot"
+      },
+      {
+        "input": "tabs\tand\nnewlines",
+        "out": "tabs and newlines"
+      },
+      {
+        "input": "  ",
+        "out": ""
+      },
+      {
+        "input": "Café — naïve",
+        "out": "Café — naïve"
+      },
+      {
+        "input": "Ünïcødé ✓",
+        "out": "Ünïcødé ✓"
+      },
+      {
+        "input": "a:b",
+        "out": "a b"
+      },
+      {
+        "input": "A rather long title that goes on and on past any limit a filename might want to have, still going",
+        "out": "A rather long title that goes on and on past any limit a filename might want to have, still going"
+      },
+      {
+        "input": " nbsp ",
+        "out": "nbsp"
+      },
+      {
+        "input": "trailing dot.",
+        "out": "trailing dot."
+      },
+      {
+        "input": "Note 2026-10-06",
+        "out": "Note 2026-10-06"
+      }
+    ],
+    "pageStem": [
+      {
+        "input": "notes/A.md",
+        "out": "A"
+      },
+      {
+        "input": "canvas/Board.excalidraw.md",
+        "out": "Board"
+      },
+      {
+        "input": "canvas/Board.EXCALIDRAW.MD",
+        "out": "Board"
+      },
+      {
+        "input": "canvas/Sketches.canvas",
+        "out": "Sketches"
+      },
+      {
+        "input": "A.md",
+        "out": "A"
+      },
+      {
+        "input": "notes/no-extension",
+        "out": "no-extension"
+      },
+      {
+        "input": "notes/x.md.md",
+        "out": "x.md"
+      },
+      {
+        "input": "projects/P/P.md",
+        "out": "P"
+      },
+      {
+        "input": "notes/archive.tar.gz",
+        "out": "archive.tar.gz"
+      },
+      {
+        "input": "notes/.md",
+        "out": ""
+      },
+      {
+        "input": "topics/Dots.in.Name.md",
+        "out": "Dots.in.Name"
+      }
+    ],
+    "tagSlug": [
+      {
+        "input": "Economy",
+        "out": "economy"
+      },
+      {
+        "input": "#Economy  Now",
+        "out": "economy-now"
+      },
+      {
+        "input": "  ##hash#tags  ",
+        "out": "hashtags"
+      },
+      {
+        "input": "a/b\\c:d*e?f\"g<h>i|j",
+        "out": "abcdefghij"
+      },
+      {
+        "input": "--dashes--",
+        "out": "dashes"
+      },
+      {
+        "input": "multi   space",
+        "out": "multi-space"
+      },
+      {
+        "input": "Ünïcødé Tag",
+        "out": "ünïcødé-tag"
+      },
+      {
+        "input": "",
+        "out": ""
+      },
+      {
+        "input": "#",
+        "out": ""
+      },
+      {
+        "input": "already-a-slug",
+        "out": "already-a-slug"
+      },
+      {
+        "input": "Mixed_Case_Under",
+        "out": "mixed_case_under"
+      },
+      {
+        "input": "tab\tsep",
+        "out": "tab-sep"
+      }
+    ],
+    "suggestStem": [
+      {
+        "input": "notes/Atlas Notes.md",
+        "out": "Atlas Notes (notes)"
+      },
+      {
+        "input": "notes/Bare.md",
+        "out": "Bare (notes)"
+      },
+      {
+        "input": "notes/design.md",
+        "out": "design (notes)"
+      },
+      {
+        "input": "notes/Dup A.md",
+        "out": "Dup A (notes)"
+      },
+      {
+        "input": "notes/Dup B.md",
+        "out": "Dup B (notes)"
+      },
+      {
+        "input": "notes/Title One.md",
+        "out": "Same Title"
+      },
+      {
+        "input": "notes/Title Two.md",
+        "out": "Same Title"
+      },
+      {
+        "input": "notes/Unstamped.md",
+        "out": "Unstamped (notes)"
+      },
+      {
+        "input": "projects/Atlas/Atlas.md",
+        "out": "Atlas (Atlas)"
+      },
+      {
+        "input": "topics/Atlas.md",
+        "out": "Atlas (topics)"
+      },
+      {
+        "input": "topics/Design.md",
+        "out": "Design (topics)"
+      },
+      {
+        "input": "canvas/Sketches.canvas",
+        "out": "Sketches (canvas)"
+      }
+    ],
+    "renamePlan": [
+      {
+        "input": {
+          "path": "notes/Title One.md",
+          "title": "Same Title"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Title One.md",
+          "title": "Title One Renamed"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Title One.md",
+          "title": "  "
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Atlas Notes.md",
+          "title": "Atlas Overview"
+        },
+        "out": {
+          "to": "notes/Atlas Overview.md",
+          "alias": "Atlas Notes"
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Atlas Notes.md",
+          "title": "Atlas Field Notes"
+        },
+        "out": {
+          "to": "notes/Atlas Field Notes.md",
+          "alias": "Atlas Notes"
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Bare.md",
+          "title": "Bare Renamed"
+        },
+        "out": {
+          "to": "notes/Bare Renamed.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Unstamped.md",
+          "title": "Design"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Unstamped.md",
+          "title": "Sketches"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Unstamped.md",
+          "title": "unstamped"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Unstamped.md",
+          "title": "Freshly: Named?"
+        },
+        "out": {
+          "to": "notes/Freshly Named.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "topics/Atlas.md",
+          "title": "Atlas Topic"
+        },
+        "out": {
+          "to": "topics/Atlas Topic.md",
+          "alias": "Atlas"
+        }
+      },
+      {
+        "input": {
+          "path": "notes/design.md",
+          "title": "Design Two"
+        },
+        "out": {
+          "to": "notes/Design Two.md",
+          "alias": null
+        }
+      }
+    ],
+    "defaultStem": [
+      {
+        "input": {
+          "path": "notes/Untitled.md",
+          "title": "Real Title"
+        },
+        "out": {
+          "to": "notes/Real Title.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/untitled 3.md",
+          "title": "Real Title"
+        },
+        "out": {
+          "to": "notes/Real Title.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Note 2026-08-15.md",
+          "title": "Something"
+        },
+        "out": {
+          "to": "notes/Something.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Note 2026-08-15 2.md",
+          "title": "Something"
+        },
+        "out": {
+          "to": "notes/Something.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "canvas/Drawing 2026-08-15.excalidraw.md",
+          "title": "A Board"
+        },
+        "out": {
+          "to": "canvas/A Board.excalidraw.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "canvas/Board 2026-08-15.excalidraw.md",
+          "title": "A Board"
+        },
+        "out": {
+          "to": "canvas/A Board.excalidraw.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "inspo/Wall 2026-08-15.md",
+          "title": "A Wall"
+        },
+        "out": {
+          "to": "inspo/A Wall.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Bookmark 2026-08-15.md",
+          "title": "A Link"
+        },
+        "out": {
+          "to": "notes/A Link.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "projects/Project 2026-08-15/Project 2026-08-15.md",
+          "title": "A Project"
+        },
+        "out": {
+          "to": "projects/Project 2026-08-15/A Project.md",
+          "alias": null
+        }
+      },
+      {
+        "input": {
+          "path": "notes/Note 2026-8-15.md",
+          "title": "Not a default"
+        },
+        "out": null
+      },
+      {
+        "input": {
+          "path": "notes/Memo 2026-08-15.md",
+          "title": "Not a default"
+        },
+        "out": null
+      }
+    ],
+    "problems": [
+      {
+        "type": "duplicate-id",
+        "id": "01KY0000000000000000000006",
+        "paths": [
+          "notes/Dup A.md",
+          "notes/Dup B.md"
+        ],
+        "resolves": "notes/Dup A.md",
+        "text": "duplicate id 01KY0000000000000000000006: notes/Dup A.md and notes/Dup B.md — get() resolves notes/Dup A.md",
+        "files": [
+          {
+            "path": "notes/Dup A.md",
+            "id": "01KY0000000000000000000006",
+            "title": "Dup A",
+            "kind": "note",
+            "stem": "Dup A",
+            "suggest": "Dup A (notes)",
+            "fixable": true
+          },
+          {
+            "path": "notes/Dup B.md",
+            "id": "01KY0000000000000000000006",
+            "title": "Dup B",
+            "kind": "note",
+            "stem": "Dup B",
+            "suggest": "Dup B (notes)",
+            "fixable": true
+          }
+        ]
+      },
+      {
+        "type": "duplicate-filename",
+        "name": "Atlas",
+        "paths": [
+          "projects/Atlas/Atlas.md",
+          "topics/Atlas.md"
+        ],
+        "text": "duplicate filename \"Atlas\": projects/Atlas/Atlas.md and topics/Atlas.md — [[Atlas]] is ambiguous",
+        "files": [
+          {
+            "path": "projects/Atlas/Atlas.md",
+            "id": "01KY0000000000000000000003",
+            "title": "Atlas",
+            "kind": "note",
+            "stem": "Atlas",
+            "suggest": "Atlas (Atlas)",
+            "fixable": true
+          },
+          {
+            "path": "topics/Atlas.md",
+            "id": "01KY0000000000000000000002",
+            "title": "Atlas",
+            "kind": "topic",
+            "stem": "Atlas",
+            "suggest": "Atlas (topics)",
+            "fixable": true
+          }
+        ]
+      },
+      {
+        "type": "duplicate-filename",
+        "name": "Design",
+        "paths": [
+          "notes/design.md",
+          "topics/Design.md"
+        ],
+        "text": "duplicate filename \"Design\": notes/design.md and topics/Design.md — [[Design]] is ambiguous",
+        "files": [
+          {
+            "path": "notes/design.md",
+            "id": "01KY0000000000000000000004",
+            "title": "Design",
+            "kind": "note",
+            "stem": "design",
+            "suggest": "design (notes)",
+            "fixable": true
+          },
+          {
+            "path": "topics/Design.md",
+            "id": "01KY0000000000000000000005",
+            "title": "Design",
+            "kind": "topic",
+            "stem": "Design",
+            "suggest": "Design (topics)",
+            "fixable": true
+          }
+        ]
+      },
+      {
+        "type": "duplicate-title",
+        "title": "Same Title",
+        "paths": [
+          "notes/Title One.md",
+          "notes/Title Two.md"
+        ],
+        "text": "duplicate title \"Same Title\": notes/Title One.md and notes/Title Two.md",
+        "files": [
+          {
+            "path": "notes/Title One.md",
+            "id": "01KY0000000000000000000007",
+            "title": "Same Title",
+            "kind": "note",
+            "stem": "Title One",
+            "suggest": "Same Title",
+            "fixable": true
+          },
+          {
+            "path": "notes/Title Two.md",
+            "id": "01KY0000000000000000000008",
+            "title": "Same Title",
+            "kind": "note",
+            "stem": "Title Two",
+            "suggest": "Same Title",
+            "fixable": true
+          }
+        ]
+      }
+    ]
+  },
+  "attachments": {
+    "typeFor": [
+      {
+        "input": [
+          null,
+          null
+        ],
+        "out": "text"
+      },
+      {
+        "input": [
+          "markdown",
+          null
+        ],
+        "out": "markdown"
+      },
+      {
+        "input": [
+          "MARKDOWN",
+          null
+        ],
+        "out": "markdown"
+      },
+      {
+        "input": [
+          "chatgpt",
+          null
+        ],
+        "out": "chat"
+      },
+      {
+        "input": [
+          "Claude",
+          null
+        ],
+        "out": "chat"
+      },
+      {
+        "input": [
+          "gemini",
+          null
+        ],
+        "out": "chat"
+      },
+      {
+        "input": [
+          "notebooklm",
+          null
+        ],
+        "out": "chat"
+      },
+      {
+        "input": [
+          "chat",
+          null
+        ],
+        "out": "chat"
+      },
+      {
+        "input": [
+          "web",
+          null
+        ],
+        "out": "text"
+      },
+      {
+        "input": [
+          "",
+          "https://example.com/"
+        ],
+        "out": "link"
+      },
+      {
+        "input": [
+          "chat",
+          "https://example.com/"
+        ],
+        "out": "link"
+      },
+      {
+        "input": [
+          "",
+          null
+        ],
+        "out": "text"
+      }
+    ],
+    "serialize": [
+      {
+        "input": [],
+        "out": ""
+      },
+      {
+        "input": [
+          {
+            "title": "A link",
+            "url": "https://example.com/a",
+            "body": "why it matters",
+            "source": "link"
+          }
+        ],
+        "out": "### A link (link)\nSource: https://example.com/a\n\nwhy it matters"
+      },
+      {
+        "input": [
+          {
+            "title": "Pasted",
+            "type": "markdown",
+            "body": "# Heading\n\n### Not a boundary\n## Attachments\n**user** hi\n"
+          }
+        ],
+        "out": "### Pasted (markdown)\n\n# Heading\n\n\\### Not a boundary\n\\## Attachments\n\\**user** hi"
+      },
+      {
+        "input": [
+          {
+            "title": "Line one\nline two",
+            "source": "Chat GPT!!",
+            "body": "text"
+          }
+        ],
+        "out": "### Line one line two (chat-gpt)\n\ntext"
+      },
+      {
+        "input": [
+          {
+            "title": "",
+            "body": "untitled body"
+          }
+        ],
+        "out": "### Untitled (text)\n\nuntitled body"
+      },
+      {
+        "input": [
+          {
+            "title": "Nothing"
+          },
+          {
+            "title": "Only a link",
+            "url": "https://example.com/only"
+          }
+        ],
+        "out": "### Only a link (text)\nSource: https://example.com/only"
+      },
+      {
+        "input": [
+          {
+            "title": "Bad url",
+            "url": "javascript:alert(1)",
+            "body": "kept body"
+          }
+        ],
+        "out": "### Bad url (text)\n\nkept body"
+      },
+      {
+        "input": [
+          {
+            "title": "Bad url, no body",
+            "url": "javascript:alert(1)"
+          }
+        ],
+        "out": ""
+      },
+      {
+        "input": [
+          {
+            "title": "Meta url",
+            "meta": {
+              "url": "https://example.com/meta"
+            },
+            "body": "b"
+          }
+        ],
+        "out": "### Meta url (text)\nSource: https://example.com/meta\n\nb"
+      },
+      {
+        "input": [
+          {
+            "title": "Paren (title) inside",
+            "source": "notebooklm",
+            "body": "x"
+          }
+        ],
+        "out": "### Paren (title) inside (notebooklm)\n\nx"
+      },
+      {
+        "input": [
+          {
+            "title": "Trailing space",
+            "body": "body   \n\n\n"
+          }
+        ],
+        "out": "### Trailing space (text)\n\nbody"
+      },
+      {
+        "input": [
+          {
+            "title": "Source looking body",
+            "body": "Source: https://example.com/not-a-url-line"
+          }
+        ],
+        "out": "### Source looking body (text)\n\nSource: https://example.com/not-a-url-line"
+      },
+      {
+        "input": [
+          {
+            "title": "Type only",
+            "type": "chat",
+            "body": "a chat"
+          },
+          {
+            "title": "Second",
+            "source": "web",
+            "body": "two"
+          }
+        ],
+        "out": "### Type only (chat)\n\na chat\n\n### Second (web)\n\ntwo"
+      }
+    ],
+    "parse": [
+      {
+        "input": "",
+        "out": []
+      },
+      {
+        "input": "### A link (link)\nSource: https://example.com/a\n\nwhy it matters",
+        "out": [
+          {
+            "type": "link",
+            "title": "A link",
+            "source": "link",
+            "body": "why it matters",
+            "url": "https://example.com/a"
+          }
+        ]
+      },
+      {
+        "input": "preamble line\n\n### First (markdown)\n\nbody one\n\n### Second (chatgpt)\n\nbody two\n",
+        "out": [
+          {
+            "type": "markdown",
+            "title": "First",
+            "source": "markdown",
+            "body": "body one",
+            "url": null
+          },
+          {
+            "type": "chat",
+            "title": "Second",
+            "source": "chatgpt",
+            "body": "body two",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### No parens\n\nbody",
+        "out": [
+          {
+            "type": "text",
+            "title": "No parens",
+            "source": "text",
+            "body": "body",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Paren (title) inside (notebooklm)\n\nx",
+        "out": [
+          {
+            "type": "chat",
+            "title": "Paren (title) inside",
+            "source": "notebooklm",
+            "body": "x",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Empty title ()\n\nx",
+        "out": [
+          {
+            "type": "text",
+            "title": "Empty title",
+            "source": "text",
+            "body": "x",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "###    (web)\n\nx",
+        "out": [
+          {
+            "type": "text",
+            "title": "(web)",
+            "source": "text",
+            "body": "x",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Blank then source (text)\n\nSource: https://example.com/body-line",
+        "out": [
+          {
+            "type": "text",
+            "title": "Blank then source",
+            "source": "text",
+            "body": "Source: https://example.com/body-line",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Bad source (link)\nSource: javascript:alert(1)\n\nbody",
+        "out": [
+          {
+            "type": "text",
+            "title": "Bad source",
+            "source": "link",
+            "body": "body",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Escaped (markdown)\n\n\\### Not a boundary\n\\## Attachments\nplain",
+        "out": [
+          {
+            "type": "markdown",
+            "title": "Escaped",
+            "source": "markdown",
+            "body": "### Not a boundary\n## Attachments\nplain",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### Url only (link)\nSource: HTTPS://Example.COM/Path?q=1",
+        "out": [
+          {
+            "type": "link",
+            "title": "Url only",
+            "source": "link",
+            "body": "",
+            "url": "https://example.com/Path?q=1"
+          }
+        ]
+      },
+      {
+        "input": "### Tabs\t(Web)\t\n\nbody\n\n\n",
+        "out": [
+          {
+            "type": "text",
+            "title": "Tabs",
+            "source": "web",
+            "body": "body",
+            "url": null
+          }
+        ]
+      },
+      {
+        "input": "### First line right away (text)\nno blank line here\nsecond",
+        "out": [
+          {
+            "type": "text",
+            "title": "First line right away",
+            "source": "text",
+            "body": "no blank line here\nsecond",
+            "url": null
+          }
+        ]
+      }
+    ],
+    "write": [
+      {
+        "input": [
+          "",
+          [
+            {
+              "title": "New",
+              "body": "fresh"
+            }
+          ]
+        ],
+        "out": "## Attachments\n\n### New (text)\n\nfresh"
+      },
+      {
+        "input": [
+          "## Thread\n\n**user** hello\n\n## Attachments\n\n### Old (text)\n\nold body\n\n## Links\n\n- [[Somewhere]]",
+          [
+            {
+              "title": "Replaced",
+              "body": "new body"
+            }
+          ]
+        ],
+        "out": "## Thread\n\n**user** hello\n\n## Attachments\n\n### Replaced (text)\n\nnew body\n\n## Links\n\n- [[Somewhere]]"
+      },
+      {
+        "input": [
+          "## Attachments\n\n### Old (text)\n\nold body",
+          []
+        ],
+        "out": ""
+      },
+      {
+        "input": [
+          "## Links\n\n- [[Somewhere]]",
+          [
+            {
+              "title": "Inserted before links",
+              "url": "https://example.com/i"
+            }
+          ]
+        ],
+        "out": "## Attachments\n\n### Inserted before links (text)\nSource: https://example.com/i\n\n## Links\n\n- [[Somewhere]]"
+      }
+    ]
+  },
+  "inspo": [
+    {
+      "input": "",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": []
+            }
+          ]
+        },
+        "serialized": "",
+        "tags": []
+      }
+    },
+    {
+      "input": "![[attachments/a.png]]\nNeon gradient hero\n> Works because the\n> type carries it.\n#ui #gradient\nhttps://example.com/x\n\n![[attachments/b.png]]",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": [
+                {
+                  "image": "attachments/a.png",
+                  "caption": "Neon gradient hero",
+                  "note": "Works because the\ntype carries it.",
+                  "tags": [
+                    "ui",
+                    "gradient"
+                  ],
+                  "url": "https://example.com/x"
+                },
+                {
+                  "image": "attachments/b.png",
+                  "caption": "",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "![[attachments/a.png]]\nNeon gradient hero\n> Works because the\n> type carries it.\n#ui #gradient\nhttps://example.com/x\n\n![[attachments/b.png]]\n",
+        "tags": [
+          "gradient",
+          "ui"
+        ]
+      }
+    },
+    {
+      "input": "Intro prose that is not an item.\n\n## Moodboard\n![[attachments/c.png|300]]\nCaption one\n\n## Empty group\n\n## Links\nhttps://example.com/only-link\nA bare link is fine",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": []
+            },
+            {
+              "name": "Moodboard",
+              "items": [
+                {
+                  "image": "attachments/c.png",
+                  "caption": "Caption one",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            },
+            {
+              "name": "Empty group",
+              "items": []
+            },
+            {
+              "name": "Links",
+              "items": [
+                {
+                  "image": null,
+                  "caption": "A bare link is fine",
+                  "note": "",
+                  "tags": [],
+                  "url": "https://example.com/only-link"
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "## Moodboard\n\n![[attachments/c.png]]\nCaption one\n\n## Empty group\n\n## Links\n\nA bare link is fine\nhttps://example.com/only-link\n",
+        "tags": []
+      }
+    },
+    {
+      "input": "  ![[attachments/d.png]]  \n  spaced caption  \n#dup #dup #other\n\n\n\n![[attachments/e.png]]\n![[attachments/f.png]]\nsecond image becomes caption text",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": [
+                {
+                  "image": "attachments/d.png",
+                  "caption": "spaced caption",
+                  "note": "",
+                  "tags": [
+                    "dup",
+                    "other"
+                  ],
+                  "url": null
+                },
+                {
+                  "image": "attachments/e.png",
+                  "caption": "![[attachments/f.png]] second image becomes caption text",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "![[attachments/d.png]]\nspaced caption\n#dup #other\n\n![[attachments/e.png]]\n![[attachments/f.png]] second image becomes caption text\n",
+        "tags": [
+          "dup",
+          "other"
+        ]
+      }
+    },
+    {
+      "input": "![[attachments/g.png]]\n> https://example.com/quoted-link\n> #quoted #tags\nhttps://example.com/first\nhttps://example.com/second\n#tag and words",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": [
+                {
+                  "image": "attachments/g.png",
+                  "caption": "https://example.com/second #tag and words",
+                  "note": "https://example.com/quoted-link\n#quoted #tags",
+                  "tags": [],
+                  "url": "https://example.com/first"
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "![[attachments/g.png]]\nhttps://example.com/second #tag and words\n> https://example.com/quoted-link\n> #quoted #tags\nhttps://example.com/first\n",
+        "tags": []
+      }
+    },
+    {
+      "input": "## Group A\n![[x.png]]\n>\n> after a bare quote line\n\n## group a\n![[y.png]]",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": []
+            },
+            {
+              "name": "Group A",
+              "items": [
+                {
+                  "image": "x.png",
+                  "caption": "",
+                  "note": "after a bare quote line",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            },
+            {
+              "name": "group a",
+              "items": [
+                {
+                  "image": "y.png",
+                  "caption": "",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "## Group A\n\n![[x.png]]\n> after a bare quote line\n\n## group a\n\n![[y.png]]\n",
+        "tags": []
+      }
+    },
+    {
+      "input": "![[attachments/h.png]]\r\nCRLF caption\r\n\r\n![[attachments/i.png]]",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": [
+                {
+                  "image": "attachments/h.png",
+                  "caption": "CRLF caption ![[attachments/i.png]]",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "![[attachments/h.png]]\nCRLF caption ![[attachments/i.png]]\n",
+        "tags": []
+      }
+    },
+    {
+      "input": "##NoSpace\n![[j.png]]\n\n## Spaced   \n![[k.png]]\n#\n##",
+      "out": {
+        "model": {
+          "groups": [
+            {
+              "name": "",
+              "items": [
+                {
+                  "image": "j.png",
+                  "caption": "##NoSpace",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            },
+            {
+              "name": "Spaced",
+              "items": [
+                {
+                  "image": "k.png",
+                  "caption": "# ##",
+                  "note": "",
+                  "tags": [],
+                  "url": null
+                }
+              ]
+            }
+          ]
+        },
+        "serialized": "![[j.png]]\n##NoSpace\n\n## Spaced\n\n![[k.png]]\n# ##\n",
+        "tags": []
+      }
+    }
+  ],
+  "capture": {
+    "safeUrl": [
+      {
+        "input": "https://example.com/a",
+        "out": "https://example.com/a"
+      },
+      {
+        "input": "http://example.com",
+        "out": "http://example.com/"
+      },
+      {
+        "input": "HTTPS://WWW.Example.COM:443/a/../b c?x=1 2#f g",
+        "out": "https://www.example.com/b%20c?x=1%202#f%20g"
+      },
+      {
+        "input": "  https://example.com/padded  ",
+        "out": "https://example.com/padded"
+      },
+      {
+        "input": "javascript:alert(1)",
+        "out": null
+      },
+      {
+        "input": "data:text/html,x",
+        "out": null
+      },
+      {
+        "input": "file:///etc/passwd",
+        "out": null
+      },
+      {
+        "input": "chrome://settings",
+        "out": null
+      },
+      {
+        "input": "",
+        "out": null
+      },
+      {
+        "input": null,
+        "out": null
+      },
+      {
+        "input": "example.com",
+        "out": null
+      },
+      {
+        "input": "https://",
+        "out": null
+      },
+      {
+        "input": "https://exa mple.com/",
+        "out": null
+      },
+      {
+        "input": "http://x.com:80/",
+        "out": "http://x.com/"
+      },
+      {
+        "input": "http://x.com:8080/p",
+        "out": "http://x.com:8080/p"
+      },
+      {
+        "input": "https://x.com:65536/",
+        "out": null
+      },
+      {
+        "input": "https://user:pa ss@x.com/",
+        "out": "https://user:pa%20ss@x.com/"
+      },
+      {
+        "input": "https://Bücher.example/ü?é#é",
+        "out": "https://xn--bcher-kva.example/%C3%BC?%C3%A9#%C3%A9"
+      },
+      {
+        "input": "https://example.com/a^b{c}`d|e",
+        "out": "https://example.com/a^b%7Bc%7D%60d|e"
+      },
+      {
+        "input": "https://example.com\\a\\b?c\\d#e",
+        "out": "https://example.com/a/b?c\\d#e"
+      },
+      {
+        "input": "https://example.com/./a/../../b/%2e%2E/c",
+        "out": "https://example.com/c"
+      },
+      {
+        "input": "https://example.com/q?a='b c\"<>`{}",
+        "out": "https://example.com/q?a=%27b%20c%22%3C%3E`{}"
+      },
+      {
+        "input": "https://example.com/frag#a b\"<>`",
+        "out": "https://example.com/frag#a%20b%22%3C%3E%60"
+      },
+      {
+        "input": "http://1.2.3/",
+        "out": "http://1.2.0.3/"
+      },
+      {
+        "input": "http://0x7f.0.0.1/",
+        "out": "http://127.0.0.1/"
+      },
+      {
+        "input": "http://[::1]:8080/a",
+        "out": "http://[::1]:8080/a"
+      },
+      {
+        "input": "http://[1:0:0:0:0:0:0:1]/",
+        "out": "http://[1::1]/"
+      },
+      {
+        "input": "http://[::ffff:1.2.3.4]/",
+        "out": "http://[::ffff:102:304]/"
+      },
+      {
+        "input": "https://ex%41mple.com/",
+        "out": "https://example.com/"
+      },
+      {
+        "input": "https://example.com/100%",
+        "out": "https://example.com/100%"
+      },
+      {
+        "input": "https://example.com/a%2fb%zz",
+        "out": "https://example.com/a%2fb%zz"
+      },
+      {
+        "input": "https://x.com?only",
+        "out": "https://x.com/?only"
+      },
+      {
+        "input": "https://x.com#",
+        "out": "https://x.com/#"
+      },
+      {
+        "input": "https://x.com/?",
+        "out": "https://x.com/?"
+      },
+      {
+        "input": "https://@x.com/",
+        "out": "https://x.com/"
+      },
+      {
+        "input": "https://a:@x.com/",
+        "out": "https://a@x.com/"
+      },
+      {
+        "input": "https://:b@x.com/",
+        "out": "https://:b@x.com/"
+      },
+      {
+        "input": "https:///triple.example/",
+        "out": "https://triple.example/"
+      },
+      {
+        "input": "https://ＥＸＡＭＰＬＥ.com/full",
+        "out": "https://example.com/full"
+      },
+      {
+        "input": "https://example。com/ideographic",
+        "out": "https://example.com/ideographic"
+      },
+      {
+        "input": "https://straße.example/",
+        "out": "https://xn--strae-oqa.example/"
+      },
+      {
+        "input": "https://example.com/tab\there",
+        "out": "https://example.com/tabhere"
+      },
+      {
+        "input": "https://x_y.example/",
+        "out": "https://x_y.example/"
+      },
+      {
+        "input": "https://x..example/",
+        "out": "https://x..example/"
+      },
+      {
+        "input": "https://example.com./",
+        "out": "https://example.com./"
+      },
+      {
+        "input": "https://xn--bcher-kva.example/",
+        "out": "https://xn--bcher-kva.example/"
+      },
+      {
+        "input": "HTTP://EXAMPLE.COM/UPPER",
+        "out": "http://example.com/UPPER"
+      }
+    ],
+    "canonicalUrl": [
+      {
+        "input": "https://www.example.com/a/?utm_source=x&b=c/d&e=f g#h",
+        "out": "example.com/a?b=c%2Fd&e=f+g"
+      },
+      {
+        "input": "https://www.example.com/a/?b=c/d",
+        "out": "example.com/a?b=c/d"
+      },
+      {
+        "input": "https://example.com/",
+        "out": "example.com"
+      },
+      {
+        "input": "https://WWW.EXAMPLE.COM/Path/",
+        "out": "example.com/Path"
+      },
+      {
+        "input": "https://example.com/a?fbclid=1&gclid=2&mc_cid=3&mc_eid=4",
+        "out": "example.com/a"
+      },
+      {
+        "input": "https://example.com/a?igshid=1&ref_src=2&ref_url=3&si=4&s=5&t=6&keep=7",
+        "out": "example.com/a?keep=7"
+      },
+      {
+        "input": "https://example.com/a?S=1&T=2&UTM_X=3",
+        "out": "example.com/a"
+      },
+      {
+        "input": "https://example.com/a?sx=1&ts=2",
+        "out": "example.com/a?sx=1&ts=2"
+      },
+      {
+        "input": "https://example.com/a?utm_source=only",
+        "out": "example.com/a"
+      },
+      {
+        "input": "https://example.com/a?a=%zz&utm_x=1&b=é",
+        "out": "example.com/a?a=%25zz&b=%C3%A9"
+      },
+      {
+        "input": "https://example.com/a?x=1+2&utm_y=z&&e==f",
+        "out": "example.com/a?x=1+2&e=%3Df"
+      },
+      {
+        "input": "https://www.x/",
+        "out": "x"
+      },
+      {
+        "input": "https://www./",
+        "out": "www."
+      },
+      {
+        "input": "https://example.com/a//",
+        "out": "example.com/a"
+      },
+      {
+        "input": "javascript:alert(1)",
+        "out": null
+      },
+      {
+        "input": "https://example.com/a?a=1&a=2&utm_a=3",
+        "out": "example.com/a?a=1&a=2"
+      },
+      {
+        "input": "https://example.com:8443/p?utm_campaign=c#frag",
+        "out": "example.com/p"
+      }
+    ],
+    "oneLine": [
+      {
+        "input": [
+          "plain",
+          null
+        ],
+        "out": "plain"
+      },
+      {
+        "input": [
+          "  many\n\nlines\tand  spaces  ",
+          null
+        ],
+        "out": "many lines and spaces"
+      },
+      {
+        "input": [
+          "",
+          null
+        ],
+        "out": ""
+      },
+      {
+        "input": [
+          null,
+          null
+        ],
+        "out": ""
+      },
+      {
+        "input": [
+          "abcdefghij",
+          5
+        ],
+        "out": "abcd…"
+      },
+      {
+        "input": [
+          "abcd     efgh",
+          6
+        ],
+        "out": "abcd…"
+      },
+      {
+        "input": [
+          "exactly five",
+          12
+        ],
+        "out": "exactly five"
+      },
+      {
+        "input": [
+          "0123456789",
+          10
+        ],
+        "out": "0123456789"
+      },
+      {
+        "input": [
+          "0123456789x",
+          10
+        ],
+        "out": "012345678…"
+      }
+    ],
+    "safeCaption": [
+      {
+        "input": "A caption",
+        "out": "A caption"
+      },
+      {
+        "input": "https://example.com/bare-link",
+        "out": "<https://example.com/bare-link>"
+      },
+      {
+        "input": "#hashtag start",
+        "out": "\\#hashtag start"
+      },
+      {
+        "input": "!embed start",
+        "out": "\\!embed start"
+      },
+      {
+        "input": "## Attachments",
+        "out": "\\## Attachments"
+      },
+      {
+        "input": "  \n  ",
+        "out": ""
+      },
+      {
+        "input": "multi\nline\ncaption",
+        "out": "multi line caption"
+      },
+      {
+        "input": "http://example.com/x y",
+        "out": "http://example.com/x y"
+      },
+      {
+        "input": "![[forged.png]]",
+        "out": "\\![[forged.png]]"
+      },
+      {
+        "input": "Caption with #tag inside",
+        "out": "Caption with #tag inside"
+      }
+    ],
+    "normalizeMentions": [
+      {
+        "input": [
+          "Atlas"
+        ],
+        "out": [
+          "Atlas"
+        ]
+      },
+      {
+        "input": [
+          "Atlas",
+          "atlas",
+          "ATLAS"
+        ],
+        "out": [
+          "Atlas"
+        ]
+      },
+      {
+        "input": [
+          "[[Bracketed]]",
+          "Pipe|Alias",
+          "  "
+        ],
+        "out": [
+          "Bracketed",
+          "PipeAlias"
+        ]
+      },
+      {
+        "input": [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h",
+          "i",
+          "j"
+        ],
+        "out": [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h"
+        ]
+      },
+      {
+        "input": "single string",
+        "out": [
+          "single string"
+        ]
+      },
+      {
+        "input": null,
+        "out": []
+      },
+      {
+        "input": [
+          "x\ny"
+        ],
+        "out": [
+          "x y"
+        ]
+      }
+    ],
+    "mentionLine": [
+      {
+        "input": [
+          "Atlas"
+        ],
+        "out": "[[Atlas]]"
+      },
+      {
+        "input": [
+          "Atlas",
+          "atlas",
+          "ATLAS"
+        ],
+        "out": "[[Atlas]]"
+      },
+      {
+        "input": [
+          "[[Bracketed]]",
+          "Pipe|Alias",
+          "  "
+        ],
+        "out": "[[Bracketed]] [[PipeAlias]]"
+      },
+      {
+        "input": [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h",
+          "i",
+          "j"
+        ],
+        "out": "[[a]] [[b]] [[c]] [[d]] [[e]] [[f]] [[g]] [[h]]"
+      },
+      {
+        "input": "single string",
+        "out": "[[single string]]"
+      },
+      {
+        "input": null,
+        "out": ""
+      },
+      {
+        "input": [
+          "x\ny"
+        ],
+        "out": "[[x y]]"
+      }
+    ],
+    "normalizeTags": [
+      {
+        "input": [
+          "UI Design"
+        ],
+        "out": [
+          "ui",
+          "design"
+        ]
+      },
+      {
+        "input": "#UI Design, #ui-design, ##Neon",
+        "out": [
+          "ui",
+          "design",
+          "ui-design",
+          "neon"
+        ]
+      },
+      {
+        "input": [
+          "a/b",
+          "/lead",
+          "trail/",
+          "--x--",
+          "Ünï",
+          "x_y"
+        ],
+        "out": [
+          "a/b",
+          "lead",
+          "trail",
+          "x",
+          "n",
+          "x_y"
+        ]
+      },
+      {
+        "input": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13"
+        ],
+        "out": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12"
+        ]
+      },
+      {
+        "input": null,
+        "out": []
+      },
+      {
+        "input": [
+          "dup",
+          "DUP",
+          "dup"
+        ],
+        "out": [
+          "dup"
+        ]
+      },
+      {
+        "input": [
+          "emoji😀tag"
+        ],
+        "out": [
+          "emoji-tag"
+        ]
+      },
+      {
+        "input": [
+          "a,b c\td"
+        ],
+        "out": [
+          "a",
+          "b",
+          "c",
+          "d"
+        ]
+      }
+    ],
+    "safeStem": [
+      {
+        "input": [
+          "Plain",
+          null
+        ],
+        "out": "Plain"
+      },
+      {
+        "input": [
+          "a/b\\c:d*e?f\"g<h>i|j",
+          null
+        ],
+        "out": "a b c d e f g h i j"
+      },
+      {
+        "input": [
+          "...leading dots",
+          null
+        ],
+        "out": "leading dots"
+      },
+      {
+        "input": [
+          "  . spaced dot",
+          null
+        ],
+        "out": "spaced dot"
+      },
+      {
+        "input": [
+          "ctrl\u0001chars",
+          null
+        ],
+        "out": "ctrl chars"
+      },
+      {
+        "input": [
+          "abcdefghij",
+          4
+        ],
+        "out": "abcd"
+      },
+      {
+        "input": [
+          "abcd efgh",
+          5
+        ],
+        "out": "abcd"
+      },
+      {
+        "input": [
+          "",
+          null
+        ],
+        "out": ""
+      },
+      {
+        "input": [
+          null,
+          null
+        ],
+        "out": ""
+      }
+    ],
+    "attachmentName": [
+      {
+        "input": {
+          "mime": "image/png",
+          "src": "https://example.com/images/hero.php",
+          "capturedAt": "2026-10-06T09:00:00+00:00"
+        },
+        "out": "hero 2026-10-06.png"
+      },
+      {
+        "input": {
+          "mime": "image/jpeg; charset=binary",
+          "src": "https://example.com/a/photo.final.JPG?x=1"
+        },
+        "out": "photo.final.jpg"
+      },
+      {
+        "input": {
+          "src": "https://example.com/pic.WEBP"
+        },
+        "out": "pic.webp"
+      },
+      {
+        "input": {
+          "src": "https://example.com/no-ext",
+          "title": "Page Title"
+        },
+        "out": "no-ext.png"
+      },
+      {
+        "input": {
+          "src": "https://example.com/",
+          "title": "Fallback: Title / Here",
+          "capturedAt": "2026-10-06"
+        },
+        "out": "Fallback Title Here 2026-10-06.png"
+      },
+      {
+        "input": {
+          "src": "data:image/png;base64,AAAA",
+          "caption": "From caption"
+        },
+        "out": "From caption.png"
+      },
+      {
+        "input": {},
+        "out": "clip.png"
+      },
+      {
+        "input": {
+          "mime": "image/svg+xml",
+          "src": "https://example.com/%E2%9C%93%20check.svg"
+        },
+        "out": "✓ check.svg"
+      },
+      {
+        "input": {
+          "mime": "IMAGE/GIF",
+          "src": "https://example.com/trailing___.gif"
+        },
+        "out": "trailing.gif"
+      },
+      {
+        "input": {
+          "src": "https://example.com/bad%zzname.png"
+        },
+        "error": "URI malformed"
+      }
+    ],
+    "titleFromUrl": [
+      {
+        "input": "https://example.com/",
+        "out": "example.com"
+      },
+      {
+        "input": "https://www.example.com/articles/My-Great_Post.html",
+        "out": "My Great Post — example.com"
+      },
+      {
+        "input": "https://example.com/a/b/c/",
+        "out": "c — example.com"
+      },
+      {
+        "input": "https://example.com/%E2%9C%93-done",
+        "out": "✓ done — example.com"
+      },
+      {
+        "input": "javascript:alert(1)",
+        "out": ""
+      },
+      {
+        "input": "https://example.com/100%",
+        "error": "URI malformed"
+      },
+      {
+        "input": "https://sub.example.org/x+y+z",
+        "out": "x y z — sub.example.org"
+      },
+      {
+        "input": "https://example.com/file.tar.gz",
+        "out": "file.tar — example.com"
+      }
+    ],
+    "urlsFromText": [
+      {
+        "input": "https://example.com/a",
+        "out": [
+          "https://example.com/a"
+        ]
+      },
+      {
+        "input": "see https://example.com/x. and (https://example.com/y) or https://en.wikipedia.org/wiki/Foo_(bar)).",
+        "out": [
+          "https://example.com/x",
+          "https://example.com/y",
+          "https://en.wikipedia.org/wiki/Foo_(bar)"
+        ]
+      },
+      {
+        "input": "- https://example.com/1\n- https://example.com/2\n- https://www.example.com/1?utm_source=n",
+        "out": [
+          "https://example.com/1",
+          "https://example.com/2"
+        ]
+      },
+      {
+        "input": "no links here",
+        "out": []
+      },
+      {
+        "input": "<https://example.com/angled> \"https://example.com/quoted\" `https://example.com/tick`",
+        "out": [
+          "https://example.com/angled",
+          "https://example.com/quoted",
+          "https://example.com/tick"
+        ]
+      },
+      {
+        "input": "https://example.com/a?b=c,d;e:f!g?",
+        "out": [
+          "https://example.com/a?b=c,d;e:f!g"
+        ]
+      },
+      {
+        "input": "https://[::1]/v6 http://bad host/",
+        "out": [
+          "http://bad/"
+        ]
+      },
+      {
+        "input": "HTTPS://UPPER.EXAMPLE/X",
+        "out": [
+          "https://upper.example/X"
+        ]
+      },
+      {
+        "input": null,
+        "out": []
+      }
+    ],
+    "clipFrontmatter": [
+      {
+        "input": {
+          "url": "https://example.com/",
+          "og_title": "T",
+          "id": "nope",
+          "kind": "nope",
+          "title": "nope",
+          "tags": [
+            "nope"
+          ],
+          "aliases": [
+            "nope"
+          ],
+          "excalidraw-plugin": "parsed",
+          "bogus": "x",
+          "source": "",
+          "author": null,
+          "links": []
+        },
+        "out": [
+          [
+            "url",
+            "https://example.com/"
+          ],
+          [
+            "links",
+            []
+          ],
+          [
+            "og_title",
+            "T"
+          ]
+        ]
+      },
+      {
+        "input": {},
+        "out": []
+      }
+    ],
+    "wallPath": [
+      {
+        "input": "Moodboard",
+        "out": "inspo/Moodboard.md"
+      },
+      {
+        "input": "",
+        "out": null
+      },
+      {
+        "input": "a/b: c",
+        "out": "inspo/a b c.md"
+      },
+      {
+        "input": "...",
+        "out": null
+      },
+      {
+        "input": "  Neon  Walls  ",
+        "out": "inspo/Neon Walls.md"
+      }
+    ],
+    "walls": [
+      {
+        "input": {
+          "body": "",
+          "item": {
+            "image": "attachments/a.png",
+            "caption": "first",
+            "tags": [],
+            "url": null
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "![[attachments/a.png]]\nfirst\n",
+          "added": true,
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "![[attachments/a.png]]\nfirst",
+          "item": {
+            "image": "attachments/A.PNG",
+            "caption": "dup by image",
+            "tags": [],
+            "url": null
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "![[attachments/a.png]]\nfirst",
+          "added": false,
+          "reason": "duplicate",
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "https://example.com/x?utm_source=a\nlinked",
+          "item": {
+            "image": null,
+            "caption": "dup by url",
+            "tags": [],
+            "url": "https://www.example.com/x"
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "https://example.com/x?utm_source=a\nlinked",
+          "added": false,
+          "reason": "duplicate",
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "![[attachments/a.png]]\nfirst\n\n## Neon\n![[attachments/n.png]]",
+          "item": {
+            "image": "attachments/b.png",
+            "caption": "into neon",
+            "tags": [
+              "t"
+            ],
+            "url": "https://example.com/b"
+          },
+          "group": "neon"
+        },
+        "out": {
+          "body": "![[attachments/a.png]]\nfirst\n\n## Neon\n\n![[attachments/b.png]]\ninto neon\n#t\nhttps://example.com/b\n\n![[attachments/n.png]]",
+          "added": true,
+          "group": "Neon"
+        }
+      },
+      {
+        "input": {
+          "body": "![[attachments/a.png]]",
+          "item": {
+            "image": "attachments/c.png",
+            "caption": "new group",
+            "tags": [],
+            "url": null
+          },
+          "group": "  Fresh Group "
+        },
+        "out": {
+          "body": "![[attachments/a.png]]\n\n## Fresh Group\n\n![[attachments/c.png]]\nnew group\n",
+          "added": true,
+          "group": "Fresh Group"
+        }
+      },
+      {
+        "input": {
+          "body": "![[attachments/a.png]]",
+          "item": {
+            "image": "attachments/a.png",
+            "caption": "no dedupe",
+            "tags": [],
+            "url": null
+          },
+          "group": "",
+          "dedupe": false
+        },
+        "out": {
+          "body": "![[attachments/a.png]]\nno dedupe\n\n![[attachments/a.png]]",
+          "added": true,
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "x",
+          "item": null,
+          "group": ""
+        },
+        "out": {
+          "body": "x",
+          "added": false,
+          "reason": "empty-item"
+        }
+      },
+      {
+        "input": {
+          "body": "caption only block",
+          "item": {
+            "image": null,
+            "caption": "Caption Only",
+            "tags": [],
+            "url": null
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "caption only block\n\nCaption Only\n",
+          "added": true,
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "A wall of endpapers.\n\n## Marbled\n\n![[a.png|300]]\nwrapped\ncaption\n\nClosing words.\n",
+          "item": {
+            "image": "b.png",
+            "caption": "keeps prose",
+            "note": "why\nwhen",
+            "tags": [
+              "x"
+            ],
+            "url": null
+          },
+          "group": "marbled"
+        },
+        "out": {
+          "body": "A wall of endpapers.\n\n## Marbled\n\n![[b.png]]\nkeeps prose\n> why\n> when\n#x\n\n![[a.png|300]]\nwrapped\ncaption\n\nClosing words.\n",
+          "added": true,
+          "group": "Marbled"
+        }
+      },
+      {
+        "input": {
+          "body": "Intro prose.\n\n![[a.png|120]]\n\n## Later\n",
+          "item": {
+            "image": "c.png",
+            "caption": "ungrouped, before the first item",
+            "tags": [],
+            "url": null
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "Intro prose.\n\n![[c.png]]\nungrouped, before the first item\n\n![[a.png|120]]\n\n## Later\n",
+          "added": true,
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "Only prose.\n\n## Later\nheading with prose under it\n",
+          "item": {
+            "image": null,
+            "caption": "",
+            "tags": [],
+            "url": "https://example.com/d"
+          },
+          "group": ""
+        },
+        "out": {
+          "body": "Only prose.\n\nhttps://example.com/d\n\n## Later\nheading with prose under it\n",
+          "added": true,
+          "group": ""
+        }
+      },
+      {
+        "input": {
+          "body": "\n\n## Late\n",
+          "item": {
+            "image": "e.png",
+            "caption": "",
+            "tags": [],
+            "url": null
+          },
+          "group": "LATE"
+        },
+        "out": {
+          "body": "\n\n## Late\n\n![[e.png]]\n",
+          "added": true,
+          "group": "Late"
+        }
+      },
+      {
+        "input": {
+          "body": "Trailing spaces.   \n\n\n",
+          "item": {
+            "image": "f.png",
+            "caption": "",
+            "tags": [],
+            "url": null
+          },
+          "group": "New"
+        },
+        "out": {
+          "body": "Trailing spaces.\n\n## New\n\n![[f.png]]\n",
+          "added": true,
+          "group": "New"
+        }
+      }
+    ],
+    "captures": [
+      {
+        "input": {
+          "url": "https://www.example.com/article?utm_source=feed",
+          "title": "An Article",
+          "tags": [
+            "Reading List",
+            "#later"
+          ],
+          "capturedAt": "2026-10-06T09:00:00+00:00",
+          "og": {
+            "title": "OG Title",
+            "description": "A description\nover lines",
+            "image": "https://cdn.example.com/og.png",
+            "siteName": "Example",
+            "author": "A. Writer"
+          }
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "An Article",
+            "tags": [
+              "reading",
+              "list",
+              "later"
+            ],
+            "frontmatter": [
+              [
+                "url",
+                "https://www.example.com/article?utm_source=feed"
+              ],
+              [
+                "og_image",
+                "https://cdn.example.com/og.png"
+              ],
+              [
+                "og_title",
+                "OG Title"
+              ],
+              [
+                "og_description",
+                "A description over lines"
+              ],
+              [
+                "og_site_name",
+                "Example"
+              ],
+              [
+                "author",
+                "A. Writer"
+              ],
+              [
+                "captured",
+                "2026-10-06T09:00:00+00:00"
+              ]
+            ],
+            "body": ""
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "An Article",
+                "tags": [
+                  "reading",
+                  "list",
+                  "later"
+                ],
+                "url": "https://www.example.com/article?utm_source=feed"
+              }
+            },
+            "itemKey": "url:example.com/article",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "An Article",
+                "tags": [
+                  "reading",
+                  "list",
+                  "later"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://www.example.com/article?utm_source=feed"
+                  ],
+                  [
+                    "author",
+                    "A. Writer"
+                  ],
+                  [
+                    "og_description",
+                    "A description over lines"
+                  ],
+                  [
+                    "og_site_name",
+                    "Example"
+                  ],
+                  [
+                    "captured",
+                    "2026-10-06T09:00:00+00:00"
+                  ]
+                ],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": "Source: [An Article](https://www.example.com/article?utm_source=feed)"
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": "#reading #list #later\nSource: [An Article](https://www.example.com/article?utm_source=feed)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "An Article",
+                "tags": [
+                  "reading",
+                  "list",
+                  "later"
+                ],
+                "url": "https://www.example.com/article?utm_source=feed"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "An Article",
+                "tags": [
+                  "reading",
+                  "list",
+                  "later"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://www.example.com/article?utm_source=feed"
+                  ],
+                  [
+                    "author",
+                    "A. Writer"
+                  ],
+                  [
+                    "og_description",
+                    "A description over lines"
+                  ],
+                  [
+                    "og_site_name",
+                    "Example"
+                  ],
+                  [
+                    "captured",
+                    "2026-10-06T09:00:00+00:00"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nSource: [An Article](https://www.example.com/article?utm_source=feed)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n#reading #list #later\nSource: [An Article](https://www.example.com/article?utm_source=feed)"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "pageUrl": "https://example.com/page",
+          "text": "a quoted line\nand another  ",
+          "note": "my thought",
+          "mentions": [
+            "Atlas",
+            "[[Design]]"
+          ]
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "page — example.com",
+            "tags": [],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/page"
+              ]
+            ],
+            "body": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+          }
+        },
+        "quote": {
+          "out": {
+            "kind": "bookmark",
+            "title": "a quoted line and another",
+            "tags": [],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/page"
+              ]
+            ],
+            "body": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+          }
+        },
+        "bookmarkBody": {
+          "out": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "my thought [[Atlas]] [[Design]]",
+                "tags": [],
+                "url": "https://example.com/page"
+              }
+            },
+            "itemKey": "url:example.com/page",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "page — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/page"
+                  ]
+                ],
+                "body": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+              }
+            },
+            "noteBody": {
+              "out": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]\n\nSource: [example.com](https://example.com/page)"
+            },
+            "noteBodyBare": {
+              "out": "> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+            },
+            "block": {
+              "out": "> a quoted line\n> and another\nmy thought\n[[Atlas]] [[Design]]\nSource: [example.com](https://example.com/page)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "my thought [[Atlas]] [[Design]]",
+                "tags": [],
+                "url": "https://example.com/page"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "page — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/page"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]\n\n> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]\n\nSource: [example.com](https://example.com/page)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> a quoted line\n> and another\n\nmy thought\n\n[[Atlas]] [[Design]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n> a quoted line\n> and another\nmy thought\n[[Atlas]] [[Design]]\nSource: [example.com](https://example.com/page)"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "url": "javascript:alert(1)",
+          "text": "a selection with no safe link",
+          "title": ""
+        },
+        "bookmark": {
+          "out": null
+        },
+        "quote": {
+          "out": {
+            "kind": "note",
+            "title": "a selection with no safe link",
+            "tags": [],
+            "frontmatter": [],
+            "body": "> a selection with no safe link"
+          }
+        },
+        "bookmarkBody": {
+          "out": "> a selection with no safe link"
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": null
+            },
+            "itemKey": null,
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "",
+                "tags": [],
+                "frontmatter": [],
+                "body": "> a selection with no safe link"
+              }
+            },
+            "noteBody": {
+              "out": "> a selection with no safe link"
+            },
+            "noteBodyBare": {
+              "out": "> a selection with no safe link"
+            },
+            "block": {
+              "out": "> a selection with no safe link"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": null
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "",
+                "tags": [],
+                "frontmatter": [],
+                "body": "![[attachments/shot 2026-10-06.png]]\n\n> a selection with no safe link"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> a selection with no safe link"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> a selection with no safe link"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n> a selection with no safe link"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "type": "selection",
+          "text": "bare selection"
+        },
+        "bookmark": {
+          "out": null
+        },
+        "quote": {
+          "out": {
+            "kind": "note",
+            "title": "bare selection",
+            "tags": [],
+            "frontmatter": [],
+            "body": "> bare selection"
+          }
+        },
+        "bookmarkBody": {
+          "out": "> bare selection"
+        },
+        "targets": [
+          "quote",
+          "quote"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": null
+            },
+            "itemKey": null,
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "",
+                "tags": [],
+                "frontmatter": [],
+                "body": "> bare selection"
+              }
+            },
+            "noteBody": {
+              "out": "> bare selection"
+            },
+            "noteBodyBare": {
+              "out": "> bare selection"
+            },
+            "block": {
+              "out": "> bare selection"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": null
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "",
+                "tags": [],
+                "frontmatter": [],
+                "body": "![[attachments/shot 2026-10-06.png]]\n\n> bare selection"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> bare selection"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n> bare selection"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n> bare selection"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "url": "https://example.com/og-poisoned",
+          "og": {
+            "image": "javascript:x",
+            "title": ""
+          },
+          "description": "",
+          "siteName": "Typed Site"
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "og poisoned — example.com",
+            "tags": [],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/og-poisoned"
+              ],
+              [
+                "og_site_name",
+                "Typed Site"
+              ]
+            ],
+            "body": ""
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/og-poisoned"
+              }
+            },
+            "itemKey": "url:example.com/og-poisoned",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "og poisoned — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/og-poisoned"
+                  ],
+                  [
+                    "og_site_name",
+                    "Typed Site"
+                  ]
+                ],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": "Source: [example.com](https://example.com/og-poisoned)"
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": "Source: [example.com](https://example.com/og-poisoned)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/og-poisoned"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "og poisoned — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/og-poisoned"
+                  ],
+                  [
+                    "og_site_name",
+                    "Typed Site"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nSource: [example.com](https://example.com/og-poisoned)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\nSource: [example.com](https://example.com/og-poisoned)"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "src": "https://example.com/img/shot.png",
+          "mime": "image/png",
+          "caption": "## Attachments",
+          "alt": "alt text",
+          "url": "https://example.com/source",
+          "tags": "ui, neon"
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "source — example.com",
+            "tags": [
+              "ui",
+              "neon"
+            ],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/source"
+              ]
+            ],
+            "body": ""
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "\\## Attachments",
+                "tags": [
+                  "ui",
+                  "neon"
+                ],
+                "url": "https://example.com/source"
+              }
+            },
+            "itemKey": "url:example.com/source",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "source — example.com",
+                "tags": [
+                  "ui",
+                  "neon"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/source"
+                  ]
+                ],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": "Source: [example.com](https://example.com/source)"
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": "#ui #neon\nSource: [example.com](https://example.com/source)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "\\## Attachments",
+                "tags": [
+                  "ui",
+                  "neon"
+                ],
+                "url": "https://example.com/source"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "source — example.com",
+                "tags": [
+                  "ui",
+                  "neon"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/source"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nSource: [example.com](https://example.com/source)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n#ui #neon\nSource: [example.com](https://example.com/source)"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "assetPath": "attachments/existing.png",
+          "note": "#not a tag line",
+          "title": "T"
+        },
+        "bookmark": {
+          "out": null
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": "#not a tag line"
+        },
+        "targets": [
+          "wall",
+          "wall"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": null
+            },
+            "itemKey": null,
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "T",
+                "tags": [],
+                "frontmatter": [],
+                "body": "#not a tag line"
+              }
+            },
+            "noteBody": {
+              "out": "#not a tag line"
+            },
+            "noteBodyBare": {
+              "out": "#not a tag line"
+            },
+            "block": {
+              "out": "\\#not a tag line"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "\\#not a tag line",
+                "tags": [],
+                "url": null
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "T",
+                "tags": [],
+                "frontmatter": [],
+                "body": "![[attachments/shot 2026-10-06.png]]\n\n#not a tag line"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n#not a tag line"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\n#not a tag line"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\\#not a tag line"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "title": "Only a title"
+        },
+        "bookmark": {
+          "out": null
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": null
+            },
+            "itemKey": null,
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "Only a title",
+                "tags": [],
+                "frontmatter": [],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": ""
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": ""
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "Only a title",
+                "tags": [],
+                "url": null
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "Only a title",
+                "tags": [],
+                "frontmatter": [],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            }
+          }
+        ]
+      },
+      {
+        "input": {},
+        "bookmark": {
+          "out": null
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": null
+            },
+            "itemKey": null,
+            "note": {
+              "out": null
+            },
+            "noteBody": {
+              "out": ""
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": ""
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": null
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "",
+                "tags": [],
+                "frontmatter": [],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "url": "https://example.com/titled]",
+          "title": "Title [with] brackets",
+          "note": "note",
+          "tags": [
+            "x"
+          ],
+          "mentions": [
+            "M"
+          ]
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "Title [with] brackets",
+            "tags": [
+              "x"
+            ],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/titled]"
+              ]
+            ],
+            "body": "note\n\n[[M]]"
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": "note\n\n[[M]]"
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "note [[M]]",
+                "tags": [
+                  "x"
+                ],
+                "url": "https://example.com/titled]"
+              }
+            },
+            "itemKey": "url:example.com/titled]",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "Title [with] brackets",
+                "tags": [
+                  "x"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/titled]"
+                  ]
+                ],
+                "body": "note\n\n[[M]]"
+              }
+            },
+            "noteBody": {
+              "out": "note\n\n[[M]]\n\nSource: [Title with brackets](https://example.com/titled])"
+            },
+            "noteBodyBare": {
+              "out": "note\n\n[[M]]"
+            },
+            "block": {
+              "out": "note\n[[M]]\n#x\nSource: [Title with brackets](https://example.com/titled])"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "note [[M]]",
+                "tags": [
+                  "x"
+                ],
+                "url": "https://example.com/titled]"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "Title [with] brackets",
+                "tags": [
+                  "x"
+                ],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/titled]"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]\n\nnote\n\n[[M]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nnote\n\n[[M]]\n\nSource: [Title with brackets](https://example.com/titled])"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nnote\n\n[[M]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\nnote\n[[M]]\n#x\nSource: [Title with brackets](https://example.com/titled])"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "target": "note",
+          "url": "https://example.com/n"
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "n — example.com",
+            "tags": [],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/n"
+              ]
+            ],
+            "body": ""
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "note",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/n"
+              }
+            },
+            "itemKey": "url:example.com/n",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "n — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/n"
+                  ]
+                ],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": "Source: [example.com](https://example.com/n)"
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": "Source: [example.com](https://example.com/n)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/n"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "n — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/n"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nSource: [example.com](https://example.com/n)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\nSource: [example.com](https://example.com/n)"
+            }
+          }
+        ]
+      },
+      {
+        "input": {
+          "type": "link",
+          "url": "https://example.com/l"
+        },
+        "bookmark": {
+          "out": {
+            "kind": "bookmark",
+            "title": "l — example.com",
+            "tags": [],
+            "frontmatter": [
+              [
+                "url",
+                "https://example.com/l"
+              ]
+            ],
+            "body": ""
+          }
+        },
+        "quote": {
+          "out": null
+        },
+        "bookmarkBody": {
+          "out": ""
+        },
+        "targets": [
+          "bookmark",
+          "note"
+        ],
+        "byAsset": [
+          {
+            "asset": null,
+            "item": {
+              "out": {
+                "image": null,
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/l"
+              }
+            },
+            "itemKey": "url:example.com/l",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "l — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/l"
+                  ]
+                ],
+                "body": ""
+              }
+            },
+            "noteBody": {
+              "out": "Source: [example.com](https://example.com/l)"
+            },
+            "noteBodyBare": {
+              "out": ""
+            },
+            "block": {
+              "out": "Source: [example.com](https://example.com/l)"
+            }
+          },
+          {
+            "asset": "attachments/shot 2026-10-06.png",
+            "item": {
+              "out": {
+                "image": "attachments/shot 2026-10-06.png",
+                "caption": "",
+                "tags": [],
+                "url": "https://example.com/l"
+              }
+            },
+            "itemKey": "image:attachments/shot 2026-10-06.png",
+            "note": {
+              "out": {
+                "kind": "note",
+                "title": "l — example.com",
+                "tags": [],
+                "frontmatter": [
+                  [
+                    "source",
+                    "https://example.com/l"
+                  ]
+                ],
+                "body": "![[attachments/shot 2026-10-06.png]]"
+              }
+            },
+            "noteBody": {
+              "out": "![[attachments/shot 2026-10-06.png]]\n\nSource: [example.com](https://example.com/l)"
+            },
+            "noteBodyBare": {
+              "out": "![[attachments/shot 2026-10-06.png]]"
+            },
+            "block": {
+              "out": "![[attachments/shot 2026-10-06.png]]\nSource: [example.com](https://example.com/l)"
+            }
+          }
+        ]
+      }
+    ],
+    "findByUrl": [
+      {
+        "input": "https://example.com/a",
+        "out": null
+      },
+      {
+        "input": "https://www.example.com/a?utm_source=x",
+        "out": null
+      },
+      {
+        "input": "https://nowhere.example/",
+        "out": null
+      }
+    ]
+  },
+  "dashboard": [
+    {
+      "now": "2026-07-30T12:00:00+00:00",
+      "out": {
+        "name": "vault",
+        "stats": {
+          "fresh_this_week": 9,
+          "mentions_total": 1,
+          "pages_total": 16,
+          "last_synced": "2026-07-30T07:12:00+00:00"
+        },
+        "obsessions": [
+          {
+            "id": "obs-0",
+            "title": "cartography",
+            "weight": 1,
+            "captures": 6,
+            "days": 364,
+            "confidence": 100,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              1
+            ],
+            "related_tags": [
+              "bookbinding",
+              "lanterns",
+              "orreries"
+            ],
+            "members": [
+              {
+                "id": "01FIX0000000000000000000A1",
+                "title": "Lantern Cartography Notes",
+                "kind": "note"
+              },
+              {
+                "id": "01FIX0000000000000000000A2",
+                "title": "Folio Gathering Notes",
+                "kind": "note"
+              },
+              {
+                "id": "01FIX0000000000000000000A3",
+                "title": "Quire Structures",
+                "kind": "topic"
+              },
+              {
+                "id": "01FIX0000000000000000000A4",
+                "title": "Marbling Discipline",
+                "kind": "note"
+              },
+              {
+                "id": "01FIX0000000000000000000A5",
+                "title": "Orrery Restraint",
+                "kind": "note"
+              }
+            ]
+          },
+          {
+            "id": "obs-1",
+            "title": "bookbinding",
+            "weight": 0.5,
+            "captures": 3,
+            "days": 5,
+            "confidence": 50,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              1,
+              1,
+              0
+            ],
+            "related_tags": [
+              "cartography"
+            ],
+            "members": [
+              {
+                "id": "01FIX0000000000000000000B1",
+                "title": "Headbands",
+                "kind": "note"
+              },
+              {
+                "id": "01FIX0000000000000000000A2",
+                "title": "Folio Gathering Notes",
+                "kind": "note"
+              },
+              {
+                "id": "01FIX0000000000000000000A3",
+                "title": "Quire Structures",
+                "kind": "topic"
+              }
+            ]
+          },
+          {
+            "id": "obs-2",
+            "title": "tessellation",
+            "weight": 0.33,
+            "captures": 2,
+            "days": 6,
+            "confidence": 33,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            "related_tags": [],
+            "members": [
+              {
+                "id": "01FIX0000000000000000000C1",
+                "title": "Tessellation Economy",
+                "kind": "topic"
+              },
+              {
+                "id": "01FIX0000000000000000000C2",
+                "title": "Deep Tiling",
+                "kind": "note"
+              }
+            ]
+          },
+          {
+            "id": "obs-3",
+            "title": "philately",
+            "weight": 0.33,
+            "captures": 2,
+            "days": 6,
+            "confidence": 33,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "related_tags": [],
+            "members": [
+              {
+                "id": "01FIX0000000000000000000F1",
+                "title": "Philately Thinking",
+                "kind": "topic"
+              },
+              {
+                "id": "01FIX0000000000000000000F2",
+                "title": "Perforation Loops",
+                "kind": "note"
+              }
+            ]
+          }
+        ],
+        "recent": [
+          {
+            "id": "01FIX0000000000000000000A1",
+            "short_id": "01FIX0",
+            "kind": "note",
+            "title": "Lantern Cartography Notes",
+            "via": "self",
+            "tags": [
+              "cartography",
+              "lanterns"
+            ],
+            "updated": "2026-07-30T07:12:00+00:00"
+          },
+          {
+            "id": "01FIX0000000000000000000E1",
+            "short_id": "01FIX0",
+            "kind": "canvas",
+            "title": "Pressed Leaf Board",
+            "via": "self",
+            "tags": [],
+            "updated": "2026-07-30T00:00:00+00:00"
+          },
+          {
+            "id": "01FIX0000000000000000000B1",
+            "short_id": "01FIX0",
+            "kind": "note",
+            "title": "Headbands",
+            "via": "self",
+            "tags": [
+              "bookbinding"
+            ],
+            "updated": "2026-07-29T12:00:00+00:00"
+          },
+          {
+            "id": "01FIX0000000000000000000A2",
+            "short_id": "01FIX0",
+            "kind": "note",
+            "title": "Folio Gathering Notes",
+            "via": "self",
+            "tags": [
+              "cartography",
+              "bookbinding"
+            ],
+            "updated": "2026-07-28T12:00:00+00:00"
+          },
+          {
+            "id": "01FIX0000000000000000000C1",
+            "short_id": "01FIX0",
+            "kind": "topic",
+            "title": "Tessellation Economy",
+            "via": "self",
+            "tags": [
+              "tessellation"
+            ],
+            "updated": "2026-07-27T12:00:00+00:00"
+          }
+        ],
+        "buckets": [
+          {
+            "id": "fresh",
+            "label": "Fresh",
+            "caption": "updated in the last 7 days",
+            "count": 9,
+            "cap": 60,
+            "footer_l": "15% of soft cap",
+            "footer_r": "active thinking",
+            "letter": "F"
+          },
+          {
+            "id": "working",
+            "label": "Working",
+            "caption": "updated 8-30 days ago",
+            "count": 4,
+            "cap": 200,
+            "footer_l": "2% of soft cap",
+            "footer_r": "consolidating",
+            "letter": "W"
+          },
+          {
+            "id": "reference",
+            "label": "Reference",
+            "caption": "older than 30 days",
+            "count": 3,
+            "cap": 0,
+            "footer_l": "",
+            "footer_r": "long-term recall",
+            "letter": "R"
+          }
+        ]
+      }
+    },
+    {
+      "now": "2026-10-06T12:00:00+00:00",
+      "out": {
+        "name": "vault",
+        "stats": {
+          "fresh_this_week": 0,
+          "mentions_total": 0,
+          "pages_total": 0,
+          "last_synced": "2026-10-06T12:00:00.000Z"
+        },
+        "obsessions": [],
+        "recent": [],
+        "buckets": [
+          {
+            "id": "fresh",
+            "label": "Fresh",
+            "caption": "updated in the last 7 days",
+            "count": 0,
+            "cap": 60,
+            "footer_l": "0% of soft cap",
+            "footer_r": "active thinking",
+            "letter": "F"
+          },
+          {
+            "id": "working",
+            "label": "Working",
+            "caption": "updated 8-30 days ago",
+            "count": 0,
+            "cap": 200,
+            "footer_l": "0% of soft cap",
+            "footer_r": "consolidating",
+            "letter": "W"
+          },
+          {
+            "id": "reference",
+            "label": "Reference",
+            "caption": "older than 30 days",
+            "count": 0,
+            "cap": 0,
+            "footer_l": "",
+            "footer_r": "long-term recall",
+            "letter": "R"
+          }
+        ]
+      }
+    },
+    {
+      "now": "2026-10-06T12:00:00+00:00",
+      "out": {
+        "name": "vault",
+        "stats": {
+          "fresh_this_week": 6,
+          "mentions_total": 3,
+          "pages_total": 9,
+          "last_synced": null
+        },
+        "obsessions": [
+          {
+            "id": "obs-0",
+            "title": "c",
+            "weight": 1,
+            "captures": 3,
+            "days": 643,
+            "confidence": 100,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            "related_tags": [
+              "c2"
+            ],
+            "members": [
+              {
+                "id": "01KZDASH000000000000000006",
+                "title": "Garbage date",
+                "kind": "note"
+              },
+              {
+                "id": "01KZDASH000000000000000007",
+                "title": "Date only",
+                "kind": "inspo"
+              },
+              {
+                "id": "01KZDASH000000000000000005",
+                "title": "Old",
+                "kind": "note"
+              }
+            ]
+          },
+          {
+            "id": "obs-1",
+            "title": "a",
+            "weight": 1,
+            "captures": 3,
+            "days": 16,
+            "confidence": 100,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1
+            ],
+            "related_tags": [
+              "b"
+            ],
+            "members": [
+              {
+                "id": "01KZDASH000000000000000001",
+                "title": "Fresh",
+                "kind": "note"
+              },
+              {
+                "id": "01KZDASH000000000000000002",
+                "title": "from-slug",
+                "kind": "topic"
+              },
+              {
+                "id": "01KZDASH000000000000000003",
+                "title": "Working",
+                "kind": "note"
+              }
+            ]
+          },
+          {
+            "id": "obs-2",
+            "title": "b",
+            "weight": 1,
+            "captures": 3,
+            "days": 16,
+            "confidence": 100,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            "related_tags": [
+              "a"
+            ],
+            "members": [
+              {
+                "id": "01KZDASH000000000000000001",
+                "title": "Fresh",
+                "kind": "note"
+              },
+              {
+                "id": "01KZDASH000000000000000008",
+                "title": "Offset",
+                "kind": "note"
+              },
+              {
+                "id": "01KZDASH000000000000000003",
+                "title": "Working",
+                "kind": "note"
+              }
+            ]
+          },
+          {
+            "id": "obs-3",
+            "title": "c2",
+            "weight": 0.67,
+            "captures": 2,
+            "days": 642,
+            "confidence": 67,
+            "sparkline": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "related_tags": [
+              "c"
+            ],
+            "members": [
+              {
+                "id": "01KZDASH000000000000000007",
+                "title": "Date only",
+                "kind": "inspo"
+              },
+              {
+                "id": "01KZDASH000000000000000005",
+                "title": "Old",
+                "kind": "note"
+              }
+            ]
+          }
+        ],
+        "recent": [
+          {
+            "id": "01KZDASH000000000000000004",
+            "short_id": "01KZDA",
+            "kind": "note",
+            "title": "Unstamped",
+            "via": "self",
+            "tags": [],
+            "updated": null
+          },
+          {
+            "id": "01KZDASH000000000000000006",
+            "short_id": "01KZDA",
+            "kind": "note",
+            "title": "Garbage date",
+            "via": "self",
+            "tags": [
+              "c"
+            ],
+            "updated": "not a date"
+          },
+          {
+            "id": "01KZDASH000000000000000001",
+            "short_id": "01KZDA",
+            "kind": "note",
+            "title": "Fresh",
+            "via": "self",
+            "tags": [
+              "a",
+              "b"
+            ],
+            "updated": "2026-10-06T08:00:00+00:00"
+          },
+          {
+            "id": "01KZDASH000000000000000008",
+            "short_id": "01KZDA",
+            "kind": "note",
+            "title": "Offset",
+            "via": "self",
+            "tags": [
+              "b"
+            ],
+            "updated": "2026-10-06T01:00:00-05:00"
+          },
+          {
+            "id": "01KZDASH000000000000000007",
+            "short_id": "01KZDA",
+            "kind": "inspo",
+            "title": "Date only",
+            "via": "clipper",
+            "tags": [
+              "c",
+              "c2"
+            ],
+            "updated": "2026-10-05"
+          }
+        ],
+        "buckets": [
+          {
+            "id": "fresh",
+            "label": "Fresh",
+            "caption": "updated in the last 7 days",
+            "count": 6,
+            "cap": 60,
+            "footer_l": "10% of soft cap",
+            "footer_r": "active thinking",
+            "letter": "F"
+          },
+          {
+            "id": "working",
+            "label": "Working",
+            "caption": "updated 8-30 days ago",
+            "count": 1,
+            "cap": 200,
+            "footer_l": "0% of soft cap",
+            "footer_r": "consolidating",
+            "letter": "W"
+          },
+          {
+            "id": "reference",
+            "label": "Reference",
+            "caption": "older than 30 days",
+            "count": 2,
+            "cap": 0,
+            "footer_l": "",
+            "footer_r": "long-term recall",
+            "letter": "R"
+          }
+        ]
+      }
+    }
+  ],
+  "scaffold": {
+    "version": 1,
+    "dirs": [
+      "context",
+      "notes",
+      "topics",
+      "tags",
+      "canvas",
+      "inspo",
+      "projects",
+      "raw",
+      "attachments",
+      ".trash",
+      ".history"
+    ],
+    "expectedEntries": [
+      "context",
+      "notes",
+      "topics",
+      "tags",
+      "canvas",
+      "inspo",
+      "projects",
+      "raw",
+      "attachments",
+      ".trash",
+      ".history",
+      ".canon-vault",
+      "CONVENTION.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "index.md",
+      "log.md",
+      "context/about-me.md",
+      "context/anti-ai-writing-style.md",
+      "context/my-company.md"
+    ],
+    "assess": [
+      {
+        "input": [],
+        "out": {
+          "action": "scaffold",
+          "markdownFiles": 0,
+          "existingDirs": [],
+          "reason": "folder is empty of notes and has none of the vault directories"
+        }
+      },
+      {
+        "input": [
+          "README.txt",
+          "image.png"
+        ],
+        "out": {
+          "action": "scaffold",
+          "markdownFiles": 0,
+          "existingDirs": [],
+          "reason": "folder is empty of notes and has none of the vault directories"
+        }
+      },
+      {
+        "input": [
+          "notes/One.md"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 1,
+          "existingDirs": [
+            "notes"
+          ],
+          "reason": "1 markdown file(s) already here — adopting read-only"
+        }
+      },
+      {
+        "input": [
+          "inbox.md",
+          "deep/folder/two.md"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 2,
+          "existingDirs": [],
+          "reason": "2 markdown file(s) already here — adopting read-only"
+        }
+      },
+      {
+        "input": [
+          "notes/keep.txt"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 0,
+          "existingDirs": [
+            "notes"
+          ],
+          "reason": "already has notes — adopting read-only"
+        }
+      },
+      {
+        "input": [
+          "topics/a.txt",
+          "attachments/x.png",
+          "projects/p.bin"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 0,
+          "existingDirs": [
+            "attachments",
+            "projects",
+            "topics"
+          ],
+          "reason": "already has attachments, projects, topics — adopting read-only"
+        }
+      },
+      {
+        "input": [
+          ".obsidian/workspace.md",
+          ".git/HEAD",
+          ".trash/old.md"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 0,
+          "existingDirs": [
+            ".trash"
+          ],
+          "reason": "already has .trash — adopting read-only"
+        }
+      },
+      {
+        "input": [
+          "context/about-me.md",
+          "raw/source.md"
+        ],
+        "out": {
+          "action": "adopt",
+          "markdownFiles": 2,
+          "existingDirs": [
+            "context",
+            "raw"
+          ],
+          "reason": "2 markdown file(s) already here — adopting read-only"
+        }
+      }
+    ],
+    "runs": [
+      {
+        "name": "empty folder",
+        "result": {
+          "ok": true,
+          "assessment": {
+            "action": "scaffold",
+            "markdownFiles": 0,
+            "existingDirs": [],
+            "reason": "folder is empty of notes and has none of the vault directories"
+          },
+          "written": [
+            ".canon-vault",
+            "CONVENTION.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "index.md",
+            "log.md",
+            "context/about-me.md",
+            "context/anti-ai-writing-style.md",
+            "context/my-company.md"
+          ],
+          "dirs": [
+            "context",
+            "notes",
+            "topics",
+            "tags",
+            "canvas",
+            "inspo",
+            "projects",
+            "raw",
+            "attachments",
+            ".trash",
+            ".history"
+          ]
+        },
+        "files": {
+          ".canon-vault": {
+            "mtime": 1,
+            "text": "{\n  \"convention\": 1\n}\n"
+          },
+          "AGENTS.md": {
+            "mtime": 3,
+            "text": "---\nid: agent-contract\nkind: note\ntitle: Agent contract\ncreated: 2026-10-06T09:00:02+00:00\nupdated: 2026-10-06T09:00:03+00:00\naliases: [Agent contract, AGENTS]\n---\n\n# Agent contract\n\nYou are working inside a **Canon Vault** — a folder of markdown files. There is\nno API, no database and no tool schema. The filesystem is the interface.\n\nRead `CONVENTION.md` before writing anything. Read `context/` before writing\nanything in the user's voice.\n\n## Getting around\n\n| You want to | Do this |\n| --- | --- |\n| Find a page | Read `index.md` first — it is the catalog |\n| Read a page | Open `<folder>/<Title>.md` — the filename is the title |\n| Search | `rg` over the vault; it searches whole bodies |\n| See recent work | `ls -t`, or `git log` if the vault is a repo |\n| Create a page | Write a file that satisfies `CONVENTION.md` |\n| Update a page | Edit it; bump `updated`; leave `id` and `created` alone |\n| Delete a page | Move it to `.trash/` — never `rm` |\n\n## The loop\n\nThree jobs, run continuously rather than on request:\n\n**Ingest.** Material lands in `raw/` — clipped articles, transcripts, exports.\nDistill it into pages that cite it. Never absorb a raw file wholesale, and never\nedit one.\n\n**File answers back.** When you work something out in conversation that the user\nwill want again, it belongs in the vault as a page, not in a chat log they will\nnever reopen. This is the job people forget, and it is the one that compounds.\n\n**Lint.** Periodically sweep for contradictions between pages, orphans nothing\nlinks to, stale claims with dates that have passed, and pages missing from\n`index.md`.\n\nAfter any of the three: **update `index.md`, append to `log.md`.**\n\n## Rules that matter more than they look\n\n1. **Update before you create.** Search first. Duplication is the failure mode\n   of every vault, and it is silent — two half-pages on one subject look fine\n   until you need them.\n2. **Link, don't restate.** A `[[wikilink]]` beats a copied paragraph. A\n   restated paragraph is a second copy that will drift.\n3. **Never invent a link target.** Check the file exists before you write\n   `[[Something]]`. An unresolved link is worse than no link.\n4. **Never write a ULID as a link.** `[[01J2X…]]` resolves to nothing. Link the\n   title.\n5. **Never invent frontmatter keys.** The set in `CONVENTION.md` is the set. A\n   novel key is invisible to every client.\n6. **Dates are absolute.** Convert \"last week\" to `YYYY-MM-DD` before writing\n   it. A relative date in a permanent file is a lie with a timer on it.\n7. **Cite or say you are synthesising.** Both are fine. Blurring them is not.\n8. **Subjects are links, not tags.** File a page under a subject by writing\n   `[[subject]]` in the body. Frontmatter `tags:` is for workflow state only.\n\n## Before you say you are finished\n\nRun the validator. Not \"if it is available\" — fetch it:\n\n```sh\ncurl -sO https://raw.githubusercontent.com/rabindranath1311/canon-vault/main/scripts/verify-vault.mjs\nnode verify-vault.mjs --vault .\n```\n\nIt needs Node and nothing else. It exits non-zero and prints one line per\nproblem. **If the count is not zero, fix them and re-run before reporting.**\nDo not report success without having run it.\n\n## What you must not do\n\n- Do not rewrite `log.md` entries. It is append-only.\n- Do not bulk-rewrite the vault. A migration that touches every file at once is\n  a migration whose mistakes are invisible. Convert on next touch instead.\n- Do not `rm` anything. `.trash/` exists for this.\n- Do not reformat frontmatter timestamps. `+00:00`, unquoted, or Obsidian stops\n  rendering them as dates.\n- Do not write inside `raw/`.\n"
+          },
+          "CLAUDE.md": {
+            "mtime": 4,
+            "text": "---\nid: agent-contract-pointer\nkind: note\ntitle: CLAUDE\ncreated: 2026-10-06T09:00:04+00:00\nupdated: 2026-10-06T09:00:05+00:00\naliases: [CLAUDE]\n---\n\n# Agent contract\n\nThe contract for this vault lives in **[AGENTS.md](AGENTS.md)** — read it before\nyou write anything, along with `CONVENTION.md` for the file format and\n`context/` for the user's voice.\n\nKept as a separate file because Claude Code looks for `CLAUDE.md` while most\nother agents look for `AGENTS.md`. The vault is not tied to either.\n"
+          },
+          "CONVENTION.md": {
+            "mtime": 2,
+            "text": "---\nid: convention\nkind: note\ntitle: CONVENTION\ncreated: 2026-10-06T09:00:00+00:00\nupdated: 2026-10-06T09:00:01+00:00\naliases: [CONVENTION, Convention]\n---\n\n# The vault convention\n\nPlain markdown files on disk. Three equal clients read and write them — the app,\nObsidian, and your coding agent — and **none of them may store anything the\nothers cannot read.** If Obsidian renders it as garbage, it is wrong. That\nrejects designs; it is not a preference.\n\n## Layout\n\n```\nCONVENTION.md    this file — the rules, visible while you work\nAGENTS.md        what an agent may do here\nCLAUDE.md        a pointer to AGENTS.md\nindex.md         the catalog — every page, one line each\nlog.md           append-only history of what happened when\ncontext/         who you are — read before writing in your voice\nnotes/           anything read as prose\ntopics/          living hubs\ntags/            subjects — near-empty pages you link instead of #tagging\ncanvas/          spatial boards (.excalidraw.md)\ninspo/           visual reference — embeds and captions, ordinary markdown\nprojects/        a folder per project\nraw/             immutable sources the vault cites but never edits\nattachments/     images and binaries\n.trash/          deleted pages, recoverable\n.history/        pre-overwrite snapshots\n```\n\n## Frontmatter\n\n```yaml\n---\nid: 01J2XKQ8V3N4P5R6S7T8W9Y0ZA\nkind: note\ntitle: Quiet Industrial Dashboards\ncreated: 2026-05-24T18:34:25+00:00\nupdated: 2026-07-29T16:40:00+00:00\ntags: [design, dashboards]\naliases: [Quiet Dashboards]\n---\n```\n\n`id`, `kind`, `title`, `created`, `updated` are **required**. `id` is a ULID and\nnever changes — it is the page's identity, which is why filenames are free to.\n\nOptional, by content rather than by kind: `url`, `links`, `og_title`,\n`og_description`, `og_image`, `og_site_name`, `author`, `captured`, `source`,\n`status`, `start_date`, `parent`, `children`.\n\n**Timestamps keep the `+00:00` form, unquoted.** Obsidian renders them as dates\nthat way. Do not let a YAML library rewrite them to `Z` or to a date object.\n\n**Wikilinks in frontmatter must be quoted.** `parent: [[X]]` is a nested flow\nsequence in YAML, not a link. Write `parent: \"[[X]]\"`.\n\n## The four kinds\n\n| `kind` | Folder | Files |\n| --- | --- | --- |\n| `note` | `notes/` | one `.md` — anything read as prose |\n| `topic` | `topics/` | one `.md` — a hub with attachments, thread, children |\n| `canvas` | `canvas/` | a board (`.excalidraw.md`) or a canvas file (`.md` + `.canvas` sidecar) |\n| `inspo` | `inspo/` | one `.md` — a reference wall, items in the body |\n\n`kind` is authoritative; the folder is not. **A project is not a kind** — it is a\nfolder under `projects/` holding a folder note (`<project>/<project>.md`) plus\nits member pages.\n\nHow a `note` renders is decided by its frontmatter, not by a subtype: `url` +\n`og_image` → bookmark card; `url` alone → link with a source line; a body that is\na single blockquote → pull-quote; otherwise an article.\n\n### `url`, `links` and the og_* group\n\nA note that saves an address carries `url`. A note that saves several also\ncarries `links`, a list — and **`links[0]` is `url`**, written twice so a\nreader that knows only `url` still gets the primary one. One link is `url`\nalone; `links` with a single entry is redundant and is not written.\n\n**`url: \"\"` — present and empty — is a bookmark with no link in it yet.** It is\nhow a new one is born and what is left when every link is removed, and it is\nthe one empty value the format keeps rather than dropping. It means *zero*\nlinks, never one blank one, and it is still a bookmark: it is filed and counted\nas one, and it opens with a link field rather than a prose editor.\n\n**The og_\\* keys describe `url` and nothing else.** They are one OpenGraph read\nof one address — the clipper writes them flat because that is the shape\nObsidian and every other reader can already see. Flat means unkeyed, so they\nare bound to `url` by *value*: a client attaching them to whatever sits first\nin `links` will hand one page's image and title to another. **When `url`\nchanges to a different address, the og_\\* keys go with it** — they describe\nsomething the file no longer points at. `author`, `captured` and `source` are\nnot part of that group and stay.\n\n## Filenames\n\n**`<folder>/<Title>.md` — the filename IS the title**, sanitised only for the\ncharacters the filesystem rejects (`/ \\ : * ? \" < > |`).\n\nThis matters more than it looks. Obsidian resolves `[[Wikilinks]]` against the\n**filename basename and `aliases`** — it never reads a `title:` field. A\nkebab-slug filename with `[[Title]]` links would leave every link in the vault\nunresolved.\n\nResolution order: **filename basename → `aliases` → relative path**,\ncase-insensitive.\n\n> **Any page whose filename cannot equal its title** — because it was sanitised,\n> or suffixed after a collision — **must carry the true title in `aliases`.**\n> Otherwise inbound links stop resolving.\n\nmacOS is case-insensitive, so `Design.md` and `design.md` are one file. On\ncollision, append a 4-char id suffix: `design-k3f9.md`.\n\n## Links\n\nExactly one form:\n\n```markdown\n[[Quiet Industrial Dashboards]]\n[[Quiet Industrial Dashboards|the dashboard piece]]\n![[reference-01.png]]\n![[mood-board.canvas]]\n```\n\n**Never `[[<ULID>]]`.** Obsidian looks for a file named `<ULID>.md`, finds\nnothing, and the link is an orphan. This is the single most common way a\ngenerated vault ends up Obsidian-dead: the exporter knows the id, so it writes\nthe id. Write the title.\n\nStructural references (`parent`, `children`, project membership) are wikilinks\ntoo, so they show up in Obsidian's Properties panel and its graph.\n\n## Tags\n\nTwo mechanisms, two jobs. Do not mix them.\n\n**Subjects are tag pages.** A subject lives as a page in `tags/` — lowercase\nbasename, standard frontmatter, empty body: `tags/economy.md`. Filing a page\nunder a subject means *linking* it: write `[[economy]]` where the subject comes\nup. The backlinks of the tag page are the collection — Obsidian's graph and\nbacklink pane and the app's BACKLINKS card all show it with no extra machinery.\nAn empty tag page is not a stub to fill; **emptiness is the design.** If a\nsubject accumulates prose of its own it has outgrown its tag page — that is\nwhat `topics/` is for. A tag is not a kind: tag pages are `kind: note`, and the\n`tags/` folder marks the role, exactly as `projects/` does for projects.\n\n**Native tags are workflow, never subject matter.** Frontmatter\n(`tags: [draft, current]`) or inline (`#stub`) mark state — status, lifecycle,\nreview marks. They filter and colour; they are not structure. If a native tag\nnames what a page is *about*, it should have been a tag-page link.\n\nAdopting an existing vault that tagged subjects in frontmatter? Convert each to\na tag-page link when the page is next touched — not in a bulk pass. A migration\nthat rewrites every file at once is a migration whose mistakes you cannot see.\n\n## The index and the log\n\nTwo root pages keep the vault navigable as it grows.\n\n**[[index]] is the catalog** — every page, one line each, grouped by folder.\nIt is how a fresh agent session finds anything without grepping blind.\n**Update it whenever a page is added, retitled or trashed.** A page missing\nfrom the index is invisible to the wiki loop.\n\n**[[log]] is append-only history** — one entry per ingest, filed answer, lint\npass or structural change, with a fixed prefix so unix tools can parse it:\n\n```\n## [2026-08-01] ingest | Article title\n```\n\n`grep \"^## \\[\" log.md | tail -5` is the last five events. Never rewrite an old\nentry.\n\n## Raw sources\n\n`raw/` is the source layer: clipped articles, transcripts, exports — material\nthe vault cites but did not write. **Read-only by convention:** once a file\nlands there, nothing edits it. Raw files carry no frontmatter; every client\ntreats them as displayable but not writable, and pages distill them — never\nabsorb them wholesale. The page cites `raw/`; `raw/` never links back.\n\n## Body sections\n\nStructured content is ordinary markdown so Obsidian renders it:\n\n```markdown\n## Attachments\n### Some article (web)\nSource: https://example.com\n\n## Thread\n**user** 2026-07-28T11:02:00+00:00\nPull the type references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\n…\n```\n\nThe five structural headings are `## Thread`, `## Attachments`, `## Links`,\n`## Mentions`, `## Board contents`.\n\n**Escaping.** When *user content* would begin with one of those five headings —\nor with `**user** ` / `**assistant** ` — prefix the line with a backslash so it\ncannot forge a section boundary. Only those lines. Your own `## Design notes`\nis ordinary prose and is left alone.\n\nThat backslash is the whole difference between structure and prose, so it\ndecides where a client may compose one: **a section is written below the\nescape, never through it.** Escape the prose, then append the sections — a\nclient that builds `## Attachments` into the body and escapes the result has\njust written `\\## Attachments` and unmade the section it meant to create.\nSections sort in the order listed above, and they come after the prose: once\none starts, the rest of the body is structure.\n\n**An attachment**, inside `## Attachments`, is one `###` block:\n\n```markdown\n### Some article (link)\nSource: https://example.com\n\nwhy it matters\n```\n\nThe parenthesis is the source label — `text`, `markdown`, `link`, or which\nassistant a conversation was exported from. `Source:` is the URL, and only on\nthe line directly beneath the heading; one blank line down it is the\nattachment's own first sentence. A URL is http(s) or it is dropped, as\neverywhere else. Everything after the blank line is the material, escaped\n**strictly** — `###` included, because a pasted conversation is full of them\nand one of them would otherwise start the next attachment.\n\n## Canvas\n\n`kind: canvas` means a **board**: a single `canvas/sketch.excalidraw.md`, no\nsidecar, in the format the Obsidian Excalidraw plugin writes. Its frontmatter\ncarries `excalidraw-plugin: parsed`, which is the marker that makes the plugin\nopen it as a drawing rather than as a note; the scene itself lives in a\n`## Drawing` block inside a `%%` comment, so Obsidian renders the file as an\nordinary note when the plugin is not installed. A vault of boards therefore\nstill opens with no plugin — you see the notes, not the pictures.\n\n> **On `.canvas`.** JSON Canvas files are Obsidian's, and they remain perfectly\n> legal in a vault — Obsidian creates and edits them, and nothing here touches\n> them. They are simply **not pages of this convention**: not a kind, not\n> listed, not opened. There was a second form (`board.md` + a `board.canvas`\n> sidecar, embedded with `![[board.canvas]]`) and a client that rendered it\n> read-only; both are gone. One kind, one format, one editor.\n>\n> A conforming client must still **know a `.canvas` exists**, because Obsidian\n> resolves `[[Sketches]]` against every file in the vault: `Sketches.canvas`\n> owns that name, so no page may be created with it. Ignore that and you make\n> every `[[Sketches]]` in the vault ambiguous, silently, in files you did not\n> write. A client must also never serialize frontmatter over one — a `.canvas`\n> holds JSON, and a YAML header written into it destroys the geometry.\n>\n> A legacy `.md` still carrying `kind: canvas` with no scene is markdown. Render\n> it as markdown; leave its `![[…canvas]]` line alone.\n\nA board has no `kind:` field of its own to read when the plugin authored it, so\nthe extension is authoritative there.\n\n### A board describes itself in markdown\n\nThe scene is base64 inside the `## Drawing` block, which no other client can\nread. So a board carries three **derived index sections**, regenerated from\nthe scene on every write and never parsed back into it:\n\n| section | one entry per | written as |\n| --- | --- | --- |\n| `## Text Elements` | text element | `the words ^elementId` |\n| `## Element Links` | shape carrying a link | `elementId: [[Some Note]]` |\n| `## Embedded Files` | image in the scene | `fileId: [[attachments/pic.png]]` |\n\nThis is what makes a board legible to everything that is not a drawing\neditor. The words are searchable; a link drawn on a shape is an ordinary\nwikilink, so it resolves in Obsidian and counts as a mention in the graph; and\nan image is a real file in `attachments/`, not a megabyte of base64 with no\nname. An agent reading the file learns what the picture says, what it points\nat, and what it shows, without decoding anything.\n\nThe scene is authoritative and these are its index — never the reverse. A\nclient regenerates all three from the scene it is about to write, and drops an\nentry whose element is gone. An image with no vault file is left out rather\nthan named speculatively: a broken wikilink is worse than none.\n\n### One owner per scene\n\n| form | written by | in this app |\n| --- | --- | --- |\n| board — `.excalidraw.md` | this app, and Obsidian | edited and saved here |\n| `.canvas` | Obsidian, alone | not a page — left exactly as found |\n\n**A board is edited here.** It is the one spatial thing this app owns, so\nfreehand work has exactly one home rather than a choice of two half-editors.\n\n**A `.canvas` is Obsidian's, alone.** A second editor for JSON Canvas would be\na worse one, and two editors writing the same geometry is how boards get\ncorrupted. This app once rendered them read-only and handed off; that is gone,\nbecause a read-only renderer is a second spatial engine to maintain and\n\"read-only\" was a promise it had already broken once — the editing half sat\nbehind a flag that hid the toolbar and left the handlers live, so a stylus\nstroke wrote a YAML header over somebody's board.\n\nA client must not offer editing it cannot save. Showing a disabled pen, or a\ncontrol that quietly discards what it captures, is worse than showing nothing —\nthe user has no way to tell which of their work survived. If a surface cannot\nwrite, it must not accept the gesture at all.\n\n## Inspo\n\nAn inspo page is a **reference wall, not a canvas** — a single `.md` with no\nsidecar. Items live in the body as ordinary markdown, so Obsidian renders the\nsame page as images with captions:\n\n```markdown\n## Group name          ← a section heading starts a group\n\n![[attachments/a.svg]] ← the image, as a vault embed\nNeon gradient hero     ← caption: any plain line\n#ui #gradient          ← tags: a line of #tokens\nhttps://example.com/x  ← source: a bare URL line\n\n![[attachments/b.svg]] ← a blank line separates items\n```\n\nAn item needs an image **or** a link; a bare link is a legitimate reference.\nItems before the first heading are ungrouped.\n\n**Only items survive an in-app edit.** Freeform prose on an inspo page is not\npart of the model and is dropped when the app rewrites the page — keep prose on\na `note` and link to it.\n\n## What is never indexed\n\n`.git/`, `.obsidian/`, `.trash/`, `.history/`, and any dot-prefixed directory.\n\n`.obsidian/` **is** worth committing — the vault's own config should travel with\nit, so a clone opens with the same settings. `.trash/` and `.history/` are\n**not**: they are recovery scratch space, they churn on every write, and\ncommitting them would bury real history under thousands of snapshots.\n`.DS_Store` is ignored because macOS writes it everywhere.\n\n`.canon-vault` at the root records which version of this convention the vault\nwas built against:\n\n```json\n{ \"convention\": 1 }\n```\n\nClients read it to know how to interpret the files. It is the one thing that\nmakes a future format change safe, so do not delete it.\n\n## Write safety\n\n- **Deletes** move to `.trash/<original-path>`. Never a hard delete — the File\n  System Access API has no OS trash and no undo.\n- **Overwrites** copy the current file to `.history/<id>/<ISO-timestamp>.md`\n  first, pruned to the last 10 per page.\n- **Conflicts**: re-read `updated` from disk before writing. If it changed,\n  refuse and offer reload-or-overwrite; on overwrite, save the disk version to\n  `<name> (conflict <YYYY-MM-DD>).md` first.\n\nNeither side's work is ever silently lost. None of this depends on git.\n\n## Validating\n\nRun this against the vault before trusting a bulk edit. It checks that every\nfile survives parse → serialize **byte for byte**, that required frontmatter is\npresent, and that no ULID wikilink or malformed canvas has crept in:\n\n```sh\ncurl -sO https://raw.githubusercontent.com/rabindranath1311/canon-vault/main/scripts/verify-vault.mjs\nnode verify-vault.mjs --vault .\n```\n\nIf you have the app's repo checked out, `node scripts/verify-vault.mjs --vault\n<path>` does the same thing. It needs Node and nothing else — no install step.\nIt exits non-zero on any failure and prints one line per problem.\n"
+          },
+          "context/about-me.md": {
+            "mtime": 7,
+            "text": "---\nid: context-about-me\nkind: note\ntitle: About me\ncreated: 2026-10-06T09:00:11+00:00\nupdated: 2026-10-06T09:00:12+00:00\naliases: [About me]\n---\n\nWho you are, what you work on, what you care about. Any agent reads this\nbefore it writes anything in your voice.\n\n_Replace this placeholder._\n"
+          },
+          "context/anti-ai-writing-style.md": {
+            "mtime": 8,
+            "text": "---\nid: context-anti-ai-writing-style\nkind: note\ntitle: Anti-AI writing style\ncreated: 2026-10-06T09:00:13+00:00\nupdated: 2026-10-06T09:00:14+00:00\naliases: [Anti-AI writing style]\n---\n\nHow you do **not** want to be written for. Be specific — banned words, banned\nstructures, the tells you notice.\n\n_Replace this placeholder._\n"
+          },
+          "context/my-company.md": {
+            "mtime": 9,
+            "text": "---\nid: context-my-company\nkind: note\ntitle: My company\ncreated: 2026-10-06T09:00:15+00:00\nupdated: 2026-10-06T09:00:16+00:00\naliases: [My company]\n---\n\nWhat you are building, for whom, and the language you use about it.\n\n_Replace this placeholder._\n"
+          },
+          "index.md": {
+            "mtime": 5,
+            "text": "---\nid: index\nkind: note\ntitle: index\ncreated: 2026-10-06T09:00:06+00:00\nupdated: 2026-10-06T09:00:07+00:00\naliases: [index, Index]\n---\n\nThe catalog — every page, one line each, grouped by folder.\nA page missing from here is invisible to a fresh agent session, so update it\nwhenever a page is added, retitled or trashed.\n\n## context\n\n- [[About me]] — who you are; read before anything is written in your voice\n- [[Anti-AI writing style]] — how you do *not* want to be written for\n- [[My company]] — what you are building, and the language you use about it\n\n## notes\n\n_Nothing yet._\n\n## topics\n\n_Nothing yet._\n"
+          },
+          "log.md": {
+            "mtime": 6,
+            "text": "---\nid: log\nkind: note\ntitle: log\ncreated: 2026-10-06T09:00:08+00:00\nupdated: 2026-10-06T09:00:09+00:00\naliases: [log, Log]\n---\n\nAppend-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n`grep \"^## \\[\" log.md | tail -5` is the last five events.\n\n## [2026-10-06] setup | vault scaffolded\n\nCreated by the app: the directory skeleton, this log, [[index]],\n[[CONVENTION]] and the agent contract.\n"
+          }
+        }
+      },
+      {
+        "name": "a folder with notes, not confirmed",
+        "result": {
+          "ok": false,
+          "reason": "would-adopt",
+          "assessment": {
+            "action": "adopt",
+            "markdownFiles": 1,
+            "existingDirs": [
+              "notes"
+            ],
+            "reason": "1 markdown file(s) already here — adopting read-only"
+          },
+          "written": []
+        },
+        "files": {
+          "notes/Mine.md": {
+            "mtime": 1,
+            "text": "my own note\n"
+          }
+        }
+      },
+      {
+        "name": "a folder with notes, confirmed",
+        "result": {
+          "ok": true,
+          "assessment": {
+            "action": "adopt",
+            "markdownFiles": 2,
+            "existingDirs": [
+              "notes"
+            ],
+            "reason": "2 markdown file(s) already here — adopting read-only"
+          },
+          "written": [
+            ".canon-vault",
+            "CONVENTION.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "log.md",
+            "context/about-me.md",
+            "context/anti-ai-writing-style.md",
+            "context/my-company.md"
+          ],
+          "dirs": [
+            "context",
+            "notes",
+            "topics",
+            "tags",
+            "canvas",
+            "inspo",
+            "projects",
+            "raw",
+            "attachments",
+            ".trash",
+            ".history"
+          ]
+        },
+        "files": {
+          ".canon-vault": {
+            "mtime": 3,
+            "text": "{\n  \"convention\": 1\n}\n"
+          },
+          "AGENTS.md": {
+            "mtime": 5,
+            "text": "---\nid: agent-contract\nkind: note\ntitle: Agent contract\ncreated: 2026-10-06T09:00:02+00:00\nupdated: 2026-10-06T09:00:03+00:00\naliases: [Agent contract, AGENTS]\n---\n\n# Agent contract\n\nYou are working inside a **Canon Vault** — a folder of markdown files. There is\nno API, no database and no tool schema. The filesystem is the interface.\n\nRead `CONVENTION.md` before writing anything. Read `context/` before writing\nanything in the user's voice.\n\n## Getting around\n\n| You want to | Do this |\n| --- | --- |\n| Find a page | Read `index.md` first — it is the catalog |\n| Read a page | Open `<folder>/<Title>.md` — the filename is the title |\n| Search | `rg` over the vault; it searches whole bodies |\n| See recent work | `ls -t`, or `git log` if the vault is a repo |\n| Create a page | Write a file that satisfies `CONVENTION.md` |\n| Update a page | Edit it; bump `updated`; leave `id` and `created` alone |\n| Delete a page | Move it to `.trash/` — never `rm` |\n\n## The loop\n\nThree jobs, run continuously rather than on request:\n\n**Ingest.** Material lands in `raw/` — clipped articles, transcripts, exports.\nDistill it into pages that cite it. Never absorb a raw file wholesale, and never\nedit one.\n\n**File answers back.** When you work something out in conversation that the user\nwill want again, it belongs in the vault as a page, not in a chat log they will\nnever reopen. This is the job people forget, and it is the one that compounds.\n\n**Lint.** Periodically sweep for contradictions between pages, orphans nothing\nlinks to, stale claims with dates that have passed, and pages missing from\n`index.md`.\n\nAfter any of the three: **update `index.md`, append to `log.md`.**\n\n## Rules that matter more than they look\n\n1. **Update before you create.** Search first. Duplication is the failure mode\n   of every vault, and it is silent — two half-pages on one subject look fine\n   until you need them.\n2. **Link, don't restate.** A `[[wikilink]]` beats a copied paragraph. A\n   restated paragraph is a second copy that will drift.\n3. **Never invent a link target.** Check the file exists before you write\n   `[[Something]]`. An unresolved link is worse than no link.\n4. **Never write a ULID as a link.** `[[01J2X…]]` resolves to nothing. Link the\n   title.\n5. **Never invent frontmatter keys.** The set in `CONVENTION.md` is the set. A\n   novel key is invisible to every client.\n6. **Dates are absolute.** Convert \"last week\" to `YYYY-MM-DD` before writing\n   it. A relative date in a permanent file is a lie with a timer on it.\n7. **Cite or say you are synthesising.** Both are fine. Blurring them is not.\n8. **Subjects are links, not tags.** File a page under a subject by writing\n   `[[subject]]` in the body. Frontmatter `tags:` is for workflow state only.\n\n## Before you say you are finished\n\nRun the validator. Not \"if it is available\" — fetch it:\n\n```sh\ncurl -sO https://raw.githubusercontent.com/rabindranath1311/canon-vault/main/scripts/verify-vault.mjs\nnode verify-vault.mjs --vault .\n```\n\nIt needs Node and nothing else. It exits non-zero and prints one line per\nproblem. **If the count is not zero, fix them and re-run before reporting.**\nDo not report success without having run it.\n\n## What you must not do\n\n- Do not rewrite `log.md` entries. It is append-only.\n- Do not bulk-rewrite the vault. A migration that touches every file at once is\n  a migration whose mistakes are invisible. Convert on next touch instead.\n- Do not `rm` anything. `.trash/` exists for this.\n- Do not reformat frontmatter timestamps. `+00:00`, unquoted, or Obsidian stops\n  rendering them as dates.\n- Do not write inside `raw/`.\n"
+          },
+          "CLAUDE.md": {
+            "mtime": 6,
+            "text": "---\nid: agent-contract-pointer\nkind: note\ntitle: CLAUDE\ncreated: 2026-10-06T09:00:04+00:00\nupdated: 2026-10-06T09:00:05+00:00\naliases: [CLAUDE]\n---\n\n# Agent contract\n\nThe contract for this vault lives in **[AGENTS.md](AGENTS.md)** — read it before\nyou write anything, along with `CONVENTION.md` for the file format and\n`context/` for the user's voice.\n\nKept as a separate file because Claude Code looks for `CLAUDE.md` while most\nother agents look for `AGENTS.md`. The vault is not tied to either.\n"
+          },
+          "CONVENTION.md": {
+            "mtime": 4,
+            "text": "---\nid: convention\nkind: note\ntitle: CONVENTION\ncreated: 2026-10-06T09:00:00+00:00\nupdated: 2026-10-06T09:00:01+00:00\naliases: [CONVENTION, Convention]\n---\n\n# The vault convention\n\nPlain markdown files on disk. Three equal clients read and write them — the app,\nObsidian, and your coding agent — and **none of them may store anything the\nothers cannot read.** If Obsidian renders it as garbage, it is wrong. That\nrejects designs; it is not a preference.\n\n## Layout\n\n```\nCONVENTION.md    this file — the rules, visible while you work\nAGENTS.md        what an agent may do here\nCLAUDE.md        a pointer to AGENTS.md\nindex.md         the catalog — every page, one line each\nlog.md           append-only history of what happened when\ncontext/         who you are — read before writing in your voice\nnotes/           anything read as prose\ntopics/          living hubs\ntags/            subjects — near-empty pages you link instead of #tagging\ncanvas/          spatial boards (.excalidraw.md)\ninspo/           visual reference — embeds and captions, ordinary markdown\nprojects/        a folder per project\nraw/             immutable sources the vault cites but never edits\nattachments/     images and binaries\n.trash/          deleted pages, recoverable\n.history/        pre-overwrite snapshots\n```\n\n## Frontmatter\n\n```yaml\n---\nid: 01J2XKQ8V3N4P5R6S7T8W9Y0ZA\nkind: note\ntitle: Quiet Industrial Dashboards\ncreated: 2026-05-24T18:34:25+00:00\nupdated: 2026-07-29T16:40:00+00:00\ntags: [design, dashboards]\naliases: [Quiet Dashboards]\n---\n```\n\n`id`, `kind`, `title`, `created`, `updated` are **required**. `id` is a ULID and\nnever changes — it is the page's identity, which is why filenames are free to.\n\nOptional, by content rather than by kind: `url`, `links`, `og_title`,\n`og_description`, `og_image`, `og_site_name`, `author`, `captured`, `source`,\n`status`, `start_date`, `parent`, `children`.\n\n**Timestamps keep the `+00:00` form, unquoted.** Obsidian renders them as dates\nthat way. Do not let a YAML library rewrite them to `Z` or to a date object.\n\n**Wikilinks in frontmatter must be quoted.** `parent: [[X]]` is a nested flow\nsequence in YAML, not a link. Write `parent: \"[[X]]\"`.\n\n## The four kinds\n\n| `kind` | Folder | Files |\n| --- | --- | --- |\n| `note` | `notes/` | one `.md` — anything read as prose |\n| `topic` | `topics/` | one `.md` — a hub with attachments, thread, children |\n| `canvas` | `canvas/` | a board (`.excalidraw.md`) or a canvas file (`.md` + `.canvas` sidecar) |\n| `inspo` | `inspo/` | one `.md` — a reference wall, items in the body |\n\n`kind` is authoritative; the folder is not. **A project is not a kind** — it is a\nfolder under `projects/` holding a folder note (`<project>/<project>.md`) plus\nits member pages.\n\nHow a `note` renders is decided by its frontmatter, not by a subtype: `url` +\n`og_image` → bookmark card; `url` alone → link with a source line; a body that is\na single blockquote → pull-quote; otherwise an article.\n\n### `url`, `links` and the og_* group\n\nA note that saves an address carries `url`. A note that saves several also\ncarries `links`, a list — and **`links[0]` is `url`**, written twice so a\nreader that knows only `url` still gets the primary one. One link is `url`\nalone; `links` with a single entry is redundant and is not written.\n\n**`url: \"\"` — present and empty — is a bookmark with no link in it yet.** It is\nhow a new one is born and what is left when every link is removed, and it is\nthe one empty value the format keeps rather than dropping. It means *zero*\nlinks, never one blank one, and it is still a bookmark: it is filed and counted\nas one, and it opens with a link field rather than a prose editor.\n\n**The og_\\* keys describe `url` and nothing else.** They are one OpenGraph read\nof one address — the clipper writes them flat because that is the shape\nObsidian and every other reader can already see. Flat means unkeyed, so they\nare bound to `url` by *value*: a client attaching them to whatever sits first\nin `links` will hand one page's image and title to another. **When `url`\nchanges to a different address, the og_\\* keys go with it** — they describe\nsomething the file no longer points at. `author`, `captured` and `source` are\nnot part of that group and stay.\n\n## Filenames\n\n**`<folder>/<Title>.md` — the filename IS the title**, sanitised only for the\ncharacters the filesystem rejects (`/ \\ : * ? \" < > |`).\n\nThis matters more than it looks. Obsidian resolves `[[Wikilinks]]` against the\n**filename basename and `aliases`** — it never reads a `title:` field. A\nkebab-slug filename with `[[Title]]` links would leave every link in the vault\nunresolved.\n\nResolution order: **filename basename → `aliases` → relative path**,\ncase-insensitive.\n\n> **Any page whose filename cannot equal its title** — because it was sanitised,\n> or suffixed after a collision — **must carry the true title in `aliases`.**\n> Otherwise inbound links stop resolving.\n\nmacOS is case-insensitive, so `Design.md` and `design.md` are one file. On\ncollision, append a 4-char id suffix: `design-k3f9.md`.\n\n## Links\n\nExactly one form:\n\n```markdown\n[[Quiet Industrial Dashboards]]\n[[Quiet Industrial Dashboards|the dashboard piece]]\n![[reference-01.png]]\n![[mood-board.canvas]]\n```\n\n**Never `[[<ULID>]]`.** Obsidian looks for a file named `<ULID>.md`, finds\nnothing, and the link is an orphan. This is the single most common way a\ngenerated vault ends up Obsidian-dead: the exporter knows the id, so it writes\nthe id. Write the title.\n\nStructural references (`parent`, `children`, project membership) are wikilinks\ntoo, so they show up in Obsidian's Properties panel and its graph.\n\n## Tags\n\nTwo mechanisms, two jobs. Do not mix them.\n\n**Subjects are tag pages.** A subject lives as a page in `tags/` — lowercase\nbasename, standard frontmatter, empty body: `tags/economy.md`. Filing a page\nunder a subject means *linking* it: write `[[economy]]` where the subject comes\nup. The backlinks of the tag page are the collection — Obsidian's graph and\nbacklink pane and the app's BACKLINKS card all show it with no extra machinery.\nAn empty tag page is not a stub to fill; **emptiness is the design.** If a\nsubject accumulates prose of its own it has outgrown its tag page — that is\nwhat `topics/` is for. A tag is not a kind: tag pages are `kind: note`, and the\n`tags/` folder marks the role, exactly as `projects/` does for projects.\n\n**Native tags are workflow, never subject matter.** Frontmatter\n(`tags: [draft, current]`) or inline (`#stub`) mark state — status, lifecycle,\nreview marks. They filter and colour; they are not structure. If a native tag\nnames what a page is *about*, it should have been a tag-page link.\n\nAdopting an existing vault that tagged subjects in frontmatter? Convert each to\na tag-page link when the page is next touched — not in a bulk pass. A migration\nthat rewrites every file at once is a migration whose mistakes you cannot see.\n\n## The index and the log\n\nTwo root pages keep the vault navigable as it grows.\n\n**[[index]] is the catalog** — every page, one line each, grouped by folder.\nIt is how a fresh agent session finds anything without grepping blind.\n**Update it whenever a page is added, retitled or trashed.** A page missing\nfrom the index is invisible to the wiki loop.\n\n**[[log]] is append-only history** — one entry per ingest, filed answer, lint\npass or structural change, with a fixed prefix so unix tools can parse it:\n\n```\n## [2026-08-01] ingest | Article title\n```\n\n`grep \"^## \\[\" log.md | tail -5` is the last five events. Never rewrite an old\nentry.\n\n## Raw sources\n\n`raw/` is the source layer: clipped articles, transcripts, exports — material\nthe vault cites but did not write. **Read-only by convention:** once a file\nlands there, nothing edits it. Raw files carry no frontmatter; every client\ntreats them as displayable but not writable, and pages distill them — never\nabsorb them wholesale. The page cites `raw/`; `raw/` never links back.\n\n## Body sections\n\nStructured content is ordinary markdown so Obsidian renders it:\n\n```markdown\n## Attachments\n### Some article (web)\nSource: https://example.com\n\n## Thread\n**user** 2026-07-28T11:02:00+00:00\nPull the type references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\n…\n```\n\nThe five structural headings are `## Thread`, `## Attachments`, `## Links`,\n`## Mentions`, `## Board contents`.\n\n**Escaping.** When *user content* would begin with one of those five headings —\nor with `**user** ` / `**assistant** ` — prefix the line with a backslash so it\ncannot forge a section boundary. Only those lines. Your own `## Design notes`\nis ordinary prose and is left alone.\n\nThat backslash is the whole difference between structure and prose, so it\ndecides where a client may compose one: **a section is written below the\nescape, never through it.** Escape the prose, then append the sections — a\nclient that builds `## Attachments` into the body and escapes the result has\njust written `\\## Attachments` and unmade the section it meant to create.\nSections sort in the order listed above, and they come after the prose: once\none starts, the rest of the body is structure.\n\n**An attachment**, inside `## Attachments`, is one `###` block:\n\n```markdown\n### Some article (link)\nSource: https://example.com\n\nwhy it matters\n```\n\nThe parenthesis is the source label — `text`, `markdown`, `link`, or which\nassistant a conversation was exported from. `Source:` is the URL, and only on\nthe line directly beneath the heading; one blank line down it is the\nattachment's own first sentence. A URL is http(s) or it is dropped, as\neverywhere else. Everything after the blank line is the material, escaped\n**strictly** — `###` included, because a pasted conversation is full of them\nand one of them would otherwise start the next attachment.\n\n## Canvas\n\n`kind: canvas` means a **board**: a single `canvas/sketch.excalidraw.md`, no\nsidecar, in the format the Obsidian Excalidraw plugin writes. Its frontmatter\ncarries `excalidraw-plugin: parsed`, which is the marker that makes the plugin\nopen it as a drawing rather than as a note; the scene itself lives in a\n`## Drawing` block inside a `%%` comment, so Obsidian renders the file as an\nordinary note when the plugin is not installed. A vault of boards therefore\nstill opens with no plugin — you see the notes, not the pictures.\n\n> **On `.canvas`.** JSON Canvas files are Obsidian's, and they remain perfectly\n> legal in a vault — Obsidian creates and edits them, and nothing here touches\n> them. They are simply **not pages of this convention**: not a kind, not\n> listed, not opened. There was a second form (`board.md` + a `board.canvas`\n> sidecar, embedded with `![[board.canvas]]`) and a client that rendered it\n> read-only; both are gone. One kind, one format, one editor.\n>\n> A conforming client must still **know a `.canvas` exists**, because Obsidian\n> resolves `[[Sketches]]` against every file in the vault: `Sketches.canvas`\n> owns that name, so no page may be created with it. Ignore that and you make\n> every `[[Sketches]]` in the vault ambiguous, silently, in files you did not\n> write. A client must also never serialize frontmatter over one — a `.canvas`\n> holds JSON, and a YAML header written into it destroys the geometry.\n>\n> A legacy `.md` still carrying `kind: canvas` with no scene is markdown. Render\n> it as markdown; leave its `![[…canvas]]` line alone.\n\nA board has no `kind:` field of its own to read when the plugin authored it, so\nthe extension is authoritative there.\n\n### A board describes itself in markdown\n\nThe scene is base64 inside the `## Drawing` block, which no other client can\nread. So a board carries three **derived index sections**, regenerated from\nthe scene on every write and never parsed back into it:\n\n| section | one entry per | written as |\n| --- | --- | --- |\n| `## Text Elements` | text element | `the words ^elementId` |\n| `## Element Links` | shape carrying a link | `elementId: [[Some Note]]` |\n| `## Embedded Files` | image in the scene | `fileId: [[attachments/pic.png]]` |\n\nThis is what makes a board legible to everything that is not a drawing\neditor. The words are searchable; a link drawn on a shape is an ordinary\nwikilink, so it resolves in Obsidian and counts as a mention in the graph; and\nan image is a real file in `attachments/`, not a megabyte of base64 with no\nname. An agent reading the file learns what the picture says, what it points\nat, and what it shows, without decoding anything.\n\nThe scene is authoritative and these are its index — never the reverse. A\nclient regenerates all three from the scene it is about to write, and drops an\nentry whose element is gone. An image with no vault file is left out rather\nthan named speculatively: a broken wikilink is worse than none.\n\n### One owner per scene\n\n| form | written by | in this app |\n| --- | --- | --- |\n| board — `.excalidraw.md` | this app, and Obsidian | edited and saved here |\n| `.canvas` | Obsidian, alone | not a page — left exactly as found |\n\n**A board is edited here.** It is the one spatial thing this app owns, so\nfreehand work has exactly one home rather than a choice of two half-editors.\n\n**A `.canvas` is Obsidian's, alone.** A second editor for JSON Canvas would be\na worse one, and two editors writing the same geometry is how boards get\ncorrupted. This app once rendered them read-only and handed off; that is gone,\nbecause a read-only renderer is a second spatial engine to maintain and\n\"read-only\" was a promise it had already broken once — the editing half sat\nbehind a flag that hid the toolbar and left the handlers live, so a stylus\nstroke wrote a YAML header over somebody's board.\n\nA client must not offer editing it cannot save. Showing a disabled pen, or a\ncontrol that quietly discards what it captures, is worse than showing nothing —\nthe user has no way to tell which of their work survived. If a surface cannot\nwrite, it must not accept the gesture at all.\n\n## Inspo\n\nAn inspo page is a **reference wall, not a canvas** — a single `.md` with no\nsidecar. Items live in the body as ordinary markdown, so Obsidian renders the\nsame page as images with captions:\n\n```markdown\n## Group name          ← a section heading starts a group\n\n![[attachments/a.svg]] ← the image, as a vault embed\nNeon gradient hero     ← caption: any plain line\n#ui #gradient          ← tags: a line of #tokens\nhttps://example.com/x  ← source: a bare URL line\n\n![[attachments/b.svg]] ← a blank line separates items\n```\n\nAn item needs an image **or** a link; a bare link is a legitimate reference.\nItems before the first heading are ungrouped.\n\n**Only items survive an in-app edit.** Freeform prose on an inspo page is not\npart of the model and is dropped when the app rewrites the page — keep prose on\na `note` and link to it.\n\n## What is never indexed\n\n`.git/`, `.obsidian/`, `.trash/`, `.history/`, and any dot-prefixed directory.\n\n`.obsidian/` **is** worth committing — the vault's own config should travel with\nit, so a clone opens with the same settings. `.trash/` and `.history/` are\n**not**: they are recovery scratch space, they churn on every write, and\ncommitting them would bury real history under thousands of snapshots.\n`.DS_Store` is ignored because macOS writes it everywhere.\n\n`.canon-vault` at the root records which version of this convention the vault\nwas built against:\n\n```json\n{ \"convention\": 1 }\n```\n\nClients read it to know how to interpret the files. It is the one thing that\nmakes a future format change safe, so do not delete it.\n\n## Write safety\n\n- **Deletes** move to `.trash/<original-path>`. Never a hard delete — the File\n  System Access API has no OS trash and no undo.\n- **Overwrites** copy the current file to `.history/<id>/<ISO-timestamp>.md`\n  first, pruned to the last 10 per page.\n- **Conflicts**: re-read `updated` from disk before writing. If it changed,\n  refuse and offer reload-or-overwrite; on overwrite, save the disk version to\n  `<name> (conflict <YYYY-MM-DD>).md` first.\n\nNeither side's work is ever silently lost. None of this depends on git.\n\n## Validating\n\nRun this against the vault before trusting a bulk edit. It checks that every\nfile survives parse → serialize **byte for byte**, that required frontmatter is\npresent, and that no ULID wikilink or malformed canvas has crept in:\n\n```sh\ncurl -sO https://raw.githubusercontent.com/rabindranath1311/canon-vault/main/scripts/verify-vault.mjs\nnode verify-vault.mjs --vault .\n```\n\nIf you have the app's repo checked out, `node scripts/verify-vault.mjs --vault\n<path>` does the same thing. It needs Node and nothing else — no install step.\nIt exits non-zero on any failure and prints one line per problem.\n"
+          },
+          "context/about-me.md": {
+            "mtime": 8,
+            "text": "---\nid: context-about-me\nkind: note\ntitle: About me\ncreated: 2026-10-06T09:00:11+00:00\nupdated: 2026-10-06T09:00:12+00:00\naliases: [About me]\n---\n\nWho you are, what you work on, what you care about. Any agent reads this\nbefore it writes anything in your voice.\n\n_Replace this placeholder._\n"
+          },
+          "context/anti-ai-writing-style.md": {
+            "mtime": 9,
+            "text": "---\nid: context-anti-ai-writing-style\nkind: note\ntitle: Anti-AI writing style\ncreated: 2026-10-06T09:00:13+00:00\nupdated: 2026-10-06T09:00:14+00:00\naliases: [Anti-AI writing style]\n---\n\nHow you do **not** want to be written for. Be specific — banned words, banned\nstructures, the tells you notice.\n\n_Replace this placeholder._\n"
+          },
+          "context/my-company.md": {
+            "mtime": 10,
+            "text": "---\nid: context-my-company\nkind: note\ntitle: My company\ncreated: 2026-10-06T09:00:15+00:00\nupdated: 2026-10-06T09:00:16+00:00\naliases: [My company]\n---\n\nWhat you are building, for whom, and the language you use about it.\n\n_Replace this placeholder._\n"
+          },
+          "index.md": {
+            "mtime": 2,
+            "text": "my own index, never clobbered\n"
+          },
+          "log.md": {
+            "mtime": 7,
+            "text": "---\nid: log\nkind: note\ntitle: log\ncreated: 2026-10-06T09:00:08+00:00\nupdated: 2026-10-06T09:00:09+00:00\naliases: [log, Log]\n---\n\nAppend-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n`grep \"^## \\[\" log.md | tail -5` is the last five events.\n\n## [2026-10-06] setup | vault scaffolded\n\nCreated by the app: the directory skeleton, this log, [[index]],\n[[CONVENTION]] and the agent contract.\n"
+          },
+          "notes/Mine.md": {
+            "mtime": 1,
+            "text": "my own note\n"
+          }
+        }
+      }
+    ]
+  }
+}

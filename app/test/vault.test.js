@@ -882,6 +882,49 @@ test("the app's own consecutive writes are not conflicts with itself", async () 
   assert.match(await be.readText("notes/Shared.md"), /two/);
 });
 
+// The app re-scans the folder on every window focus. The re-scan refreshed the
+// index's mtime to the Obsidian edit, so an editor still holding the text from
+// before compared the disk with itself, saw no change, and wrote over it.
+test("an edit picked up by a re-scan is still a conflict for the editor that read the old version", async () => {
+  const [v, be] = await sharedVault();
+  const read = await v.get("01SSSSSSSSSSSSSSSSSSSSSSSS");
+  await be.writeText("notes/Shared.md",
+    md(page({ id: "01SSSSSSSSSSSSSSSSSSSSSSSS", title: "Shared" }), "EDITED ELSEWHERE."));
+  await v.watchExternal();                       // what focusing the window does
+  const r = await v.put({ id: "01SSSSSSSSSSSSSSSSSSSSSSSS", path: "notes/Shared.md",
+                          body: "app text", base: { mtime: read.mtime, updated: read.updated } });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, "conflict");
+  assert.match(await be.readText("notes/Shared.md"), /EDITED ELSEWHERE/);
+});
+
+test("a base that matches the disk writes, and the next base is the write's own", async () => {
+  const [v, be] = await sharedVault();
+  const read = await v.get("01SSSSSSSSSSSSSSSSSSSSSSSS");
+  const a = await v.put({ id: "01SSSSSSSSSSSSSSSSSSSSSSSS", path: "notes/Shared.md",
+                          body: "one", base: { mtime: read.mtime, updated: read.updated } });
+  assert.equal(a.ok, true);
+  const after = await v.get("01SSSSSSSSSSSSSSSSSSSSSSSS");
+  const b = await v.put({ id: "01SSSSSSSSSSSSSSSSSSSSSSSS", path: "notes/Shared.md",
+                          body: "two", base: { mtime: after.mtime, updated: after.updated } });
+  assert.equal(b.ok, true, "a save based on the previous save must not self-conflict");
+  assert.match(await be.readText("notes/Shared.md"), /two/);
+});
+
+test("Data: a page re-read after its own save carries the version to send next", async () => {
+  const [v] = await sharedVault();
+  const d = new Data(v, { now: () => new Date(TS) });
+  const p = await d.page("01SSSSSSSSSSSSSSSSSSSSSSSS");
+  assert.ok(p.mtime != null, "page() must say which version it read");
+  const saved = await d.updatePage(p.id, { body: "one", base: { mtime: p.mtime, updated: p.updated } });
+  assert.notEqual(saved.ok, false);
+  await v.be.writeText("notes/Shared.md",
+    md(page({ id: "01SSSSSSSSSSSSSSSSSSSSSSSS", title: "Shared" }), "EDITED ELSEWHERE."));
+  await v.watchExternal();
+  const r = await d.updatePage(p.id, { body: "two", base: { mtime: saved.mtime, updated: saved.updated } });
+  assert.equal(r.reason, "conflict");
+});
+
 // ── Nothing the index knows may stay silent ──────────────────────────────
 test("a lone warning is shown verbatim", () => {
   assert.deepEqual(

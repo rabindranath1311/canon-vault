@@ -1,0 +1,102 @@
+{
+  "about": [
+    "Scripted edits, replayed by scripts/export-board-conformance.mjs (a JS model of a native editor's edits, serialized",
+    "by app/vault/excalidraw.js) and by any port's own editor; the two must write the same file.",
+    "Randomness is mulberry32(seed), the clock is `now`, text is measured at 0.6 em per UTF-16 unit.",
+    "\"$N\" is the Nth id an op created in this scenario, \"$last\" the latest; \"own\" is the element's own box."
+  ],
+  "scenarios": [
+    {
+      "name": "demo: move, link, retext, add, duplicate, undo",
+      "board": "demo/canvas/Sewing Order.excalidraw.md",
+      "seed": 1,
+      "now": 1760000000000,
+      "ops": [
+        { "op": "move", "ids": ["r1", "l1"], "dx": 12.5, "dy": -3 },
+        { "op": "link", "ids": ["r2"], "link": "[[Quire Structures]]" },
+        { "op": "setText", "id": "l0", "text": "Fold twice" },
+        { "op": "addShape", "kind": "ellipse", "rect": [820, 150, 120, 90], "style": { "backgroundColor": "#ffec99" } },
+        { "op": "addBoundText", "container": "$last", "text": "Press" },
+        { "op": "addLinear", "arrow": true, "points": [[786, 195], [820, 195]] },
+        { "op": "addText", "text": "a note in the margin\nsecond line", "at": [440, 300], "style": { "fontSize": 16, "strokeColor": "#1971c2" } },
+        { "op": "addFreedraw", "points": [[440, 360], [450, 365], [465, 362.5], [480, 370]], "pressures": [0.3, 0.5, 0.6, 0.4] },
+        { "op": "duplicate", "ids": ["$0"], "dx": 10, "dy": 10 },
+        { "op": "undo" },
+        { "op": "redo" },
+        { "op": "delete", "ids": ["r3"] },
+        { "op": "style", "ids": ["note"], "patch": { "backgroundColor": "#e6fcf5", "fillStyle": "hachure" } }
+      ]
+    },
+    {
+      "name": "plugin: bindings, frames, groups, rotation, elbows",
+      "board": "conformance/cases/boards/plugin-full.excalidraw.md",
+      "seed": 20261006,
+      "now": 1760000123456,
+      "ops": [
+        { "op": "move", "ids": ["kiln"], "dx": -20, "dy": 15 },
+        { "op": "move", "ids": ["cone"], "dx": 30, "dy": 0 },
+        { "op": "move", "ids": ["ar1"], "dx": 0, "dy": 10 },
+        { "op": "scale", "ids": ["kiln"], "from": "own", "by": [1.5, 1.5] },
+        { "op": "rotate", "ids": ["check"], "delta": 0.5, "center": "own" },
+        { "op": "rotate", "ids": ["check"], "delta": -7, "center": "own" },
+        { "op": "movePoint", "id": "elb", "index": 3, "to": [700, 300] },
+        { "op": "movePoint", "id": "curve", "index": 0, "to": [60, 310] },
+        { "op": "setText", "id": "kilnT", "text": "Bisque at 1000 °C\nthen glaze" },
+        { "op": "group", "ids": ["glaze", "tag"] },
+        { "op": "ungroup", "ids": ["temps"] },
+        { "op": "duplicate", "ids": ["temps", "tag"], "dx": 10, "dy": 10 },
+        { "op": "style", "ids": ["cone"], "patch": { "strokeColor": "#e03131", "strokeWidth": 4 } },
+        { "op": "link", "ids": ["sig"], "link": "[[Signatures]]" },
+        { "op": "link", "ids": ["glaze"], "link": null },
+        { "op": "delete", "ids": ["kiln"] },
+        { "op": "addImage", "fileId": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12", "path": "attachments/Glaze Test.png", "rect": [100, 600, 64, 64] },
+        { "op": "addLinear", "arrow": true, "points": [[100, 700], [300, 760]], "elbowed": true },
+        { "op": "addLinear", "arrow": false, "points": [[320, 700], [380, 690], [420, 740]] },
+        { "op": "addShape", "kind": "diamond", "rect": [300, 600, 80, 80] },
+        { "op": "addShape", "kind": "rectangle", "rect": [400, 600, 100, 60], "style": { "fillStyle": "hachure", "backgroundColor": "#a5d8ff" } },
+        { "op": "undo" },
+        { "op": "undo" },
+        { "op": "redo" }
+      ]
+    },
+    {
+      "name": "web app: an inline image, a link removed",
+      "board": "conformance/cases/boards/web-app.excalidraw.md",
+      "seed": 77,
+      "now": 1760000999000,
+      "ops": [
+        { "op": "move", "ids": ["w-img"], "dx": 5, "dy": 5 },
+        { "op": "link", "ids": ["w-box"], "link": null },
+        { "op": "addImage", "fileId": "0c1d2e3f405162738495a6b7c8d9eaf0b1c2d3e4", "path": "attachments/Throwing Practice 2.png", "rect": [400, 90, 64, 64] },
+        { "op": "delete", "ids": ["w-img"] },
+        { "op": "setText", "id": "w-title", "text": "Throwing practice, week 2" }
+      ]
+    },
+    {
+      "name": "blank: a board drawn from nothing",
+      "board": "conformance/cases/boards/null-scene.excalidraw.md",
+      "seed": 5,
+      "now": 1760001000000,
+      "ops": [
+        { "op": "addShape", "kind": "rectangle", "rect": [0, 0, 160, 80] },
+        { "op": "addBoundText", "container": "$0", "text": "Wedge" },
+        { "op": "addShape", "kind": "rectangle", "rect": [240, 0, 160, 80] },
+        { "op": "addLinear", "arrow": true, "points": [[164, 40], [236, 40]] },
+        { "op": "group", "ids": ["$0", "$2"] },
+        { "op": "duplicate", "ids": ["$0", "$2"], "dx": 0, "dy": 120 },
+        { "op": "scale", "ids": ["$0"], "from": "own", "by": [2, 0.5] },
+        { "op": "scale", "ids": ["$0", "$2", "$3"], "from": [0, 0, 400, 80], "to": [7, 3, 333, 77] },
+        { "op": "setText", "id": "$1", "text": "" }
+      ]
+    },
+    {
+      "name": "empty object: elements appear",
+      "board": "conformance/cases/boards/empty-object.excalidraw.md",
+      "seed": 9,
+      "now": 1760002000000,
+      "ops": [
+        { "op": "addText", "text": "first words", "at": [10, 10] }
+      ]
+    }
+  ]
+}

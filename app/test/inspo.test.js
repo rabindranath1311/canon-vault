@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout,
+  parseInspoBody, serializeInspoBody, inspoTags, itemsFromCanvasLayout, insertItem,
 } from "../vault/inspo.js";
 
 const BODY = [
@@ -148,4 +148,40 @@ test("a wikilink in a caption or note survives the round trip", () => {
 test("an item with no note serializes exactly as it did before", () => {
   const body = ["![[a.png]]", "Just a caption", "#one"].join("\n");
   assert.equal(serializeInspoBody(parseInspoBody(body)).trim(), body);
+});
+
+// ── insertItem: a capture onto a wall keeps the page's own text ─────────────
+
+test("insertItem gives the canonical text on a canonical wall", () => {
+  const walls = [
+    "",
+    "![[a.png]]\nOne\n",
+    "## Hero\n\n![[a.png]]\nOne\n\n## Type\n\n![[b.png]]\n",
+    "![[z.png]]\n\n## Hero\n\n![[a.png]]\n",
+  ];
+  const item = { image: "new.png", caption: "New", note: "Why\nWhen", tags: ["x"], url: null };
+  for (const body of walls) {
+    for (const group of ["", "Hero", "type", "Missing"]) {
+      const model = parseInspoBody(body);
+      const name = group.trim();
+      let target = name ? model.groups.find((g) => g.name.toLowerCase() === name.toLowerCase()) : model.groups[0];
+      if (!target) { target = { name, items: [] }; model.groups.push(target); }
+      target.items.unshift(item);
+      const got = insertItem(body, item, group);
+      assert.equal(got.body, serializeInspoBody(model), `${JSON.stringify(body)} into ${group || "(ungrouped)"}`);
+      assert.equal(got.group, target.name);
+    }
+  }
+});
+
+test("insertItem keeps the prose, sizes and wrapped captions the model drops", () => {
+  const body = "A wall of endpapers, collected for palette.\n\n## Marbled\n\n![[a.png|300]]\nA caption wrapped\nover two lines\n\nClosing words.\n";
+  const into = insertItem(body, { image: "b.png", caption: "B", note: "", tags: [], url: null }, "Marbled");
+  assert.equal(into.body,
+    "A wall of endpapers, collected for palette.\n\n## Marbled\n\n![[b.png]]\nB\n\n![[a.png|300]]\nA caption wrapped\nover two lines\n\nClosing words.\n");
+  const loose = insertItem(body, { image: "c.png", caption: "", note: "", tags: [], url: null }, "");
+  assert.equal(loose.body,
+    "A wall of endpapers, collected for palette.\n\n![[c.png]]\n\n## Marbled\n\n![[a.png|300]]\nA caption wrapped\nover two lines\n\nClosing words.\n");
+  const added = insertItem("Just prose.\n", { image: null, caption: "", note: "", tags: [], url: "https://example.org/x" }, "Links");
+  assert.equal(added.body, "Just prose.\n\n## Links\n\nhttps://example.org/x\n");
 });

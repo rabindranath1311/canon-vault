@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# Conformance fixtures are byte-exact on purpose (crlf.md tests CRLF input):
+# never normalise their line endings.
+conformance/cases/** -text

@@ -23,7 +23,7 @@
 // `mdfile.escapeUser` already guards the five structural headings on the body
 // side. This is the same idea applied to the shapes inspo.js reads.
 
-import { parseInspoBody, serializeInspoBody } from "./inspo.js";
+import { parseInspoBody, insertItem } from "./inspo.js";
 import { FIELD_ORDER, REQUIRED } from "./mdfile.js";
 
 /** Frontmatter a capture is allowed to set. The vault owns the rest. */
@@ -212,28 +212,19 @@ export function itemKey(item = {}) {
  */
 export function addItemToWall(body, item, { group = "", dedupe = true } = {}) {
   if (!item) return { body: String(body ?? ""), added: false, reason: "empty-item" };
-  const model = parseInspoBody(body || "");
   if (dedupe) {
     const key = itemKey(item);
-    for (const g of model.groups) {
+    for (const g of parseInspoBody(body || "").groups) {
       for (const it of g.items) {
         if (itemKey(it) === key) {
-          return { body: serializeInspoBody(model), added: false, reason: "duplicate",
-                   group: g.name };
+          return { body: String(body ?? ""), added: false, reason: "duplicate", group: g.name };
         }
       }
     }
   }
-  const name = String(group || "").trim();
-  let target = name
-    ? model.groups.find((g) => g.name.toLowerCase() === name.toLowerCase())
-    : model.groups[0];
-  if (!target) {
-    target = { name, items: [] };
-    model.groups.push(target);
-  }
-  target.items.unshift(item);
-  return { body: serializeInspoBody(model), added: true, group: target.name };
+  // Spliced in, not re-serialized: the page's own prose stays (see insertItem).
+  const next = insertItem(body, item, group);
+  return { body: next.body, added: true, group: next.group };
 }
 
 /**

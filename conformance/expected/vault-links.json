@@ -1,0 +1,340 @@
+{
+  "listOrder": [
+    "canvas/Sketches.canvas",
+    "notes/Atlas Notes.md",
+    "notes/Bare.md",
+    "notes/design.md",
+    "notes/Dup A.md",
+    "notes/Dup B.md",
+    "notes/Title One.md",
+    "notes/Title Two.md",
+    "notes/Unstamped.md",
+    "projects/Atlas/Atlas.md",
+    "topics/Atlas.md",
+    "topics/Design.md"
+  ],
+  "entries": [
+    {
+      "id": "01KY0000000000000000000001",
+      "kind": "note",
+      "path": "notes/Atlas Notes.md",
+      "title": "Atlas Notes",
+      "tags": [],
+      "aliases": [
+        "Atlas Overview"
+      ],
+      "mentions": [
+        "Atlas",
+        "atlas overview",
+        "projects/Atlas/Atlas",
+        "Sketches"
+      ],
+      "excerpt": "Points at [[Atlas]], [[atlas overview]], [[projects/Atlas/Atlas]] and [[Sketches]].",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-03T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "path:notes/Bare.md",
+      "kind": "note",
+      "path": "notes/Bare.md",
+      "title": "Bare",
+      "tags": [],
+      "aliases": [],
+      "mentions": [
+        "Atlas Notes"
+      ],
+      "excerpt": "Bare file, no frontmatter, links to [[Atlas Notes]].",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": null,
+      "stamped": false,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000006",
+      "kind": "note",
+      "path": "notes/Dup A.md",
+      "title": "Dup A",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "First claimant of a shared id.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-08T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000007",
+      "kind": "note",
+      "path": "notes/Title One.md",
+      "title": "Same Title",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "Title one.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-10T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000008",
+      "kind": "note",
+      "path": "notes/Title Two.md",
+      "title": "Same Title",
+      "tags": [
+        "inline-tag"
+      ],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "Title two. #inline-tag",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-11T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "path:notes/Unstamped.md",
+      "kind": "note",
+      "path": "notes/Unstamped.md",
+      "title": "Unstamped",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "Adopted, never written: no id, no created.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": null,
+      "stamped": false,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000004",
+      "kind": "note",
+      "path": "notes/design.md",
+      "title": "Design",
+      "tags": [],
+      "aliases": [],
+      "mentions": [
+        "DESIGN",
+        "design.md"
+      ],
+      "excerpt": "Lowercase file. [[DESIGN]] [[design.md]]",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-06T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000003",
+      "kind": "note",
+      "path": "projects/Atlas/Atlas.md",
+      "title": "Atlas",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "The project folder note.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-05T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000002",
+      "kind": "topic",
+      "path": "topics/Atlas.md",
+      "title": "Atlas",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "A topic that shares its basename with the project folder note.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-04T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KY0000000000000000000005",
+      "kind": "topic",
+      "path": "topics/Design.md",
+      "title": "Design",
+      "tags": [],
+      "aliases": [],
+      "mentions": [],
+      "excerpt": "Capitalised file in another folder.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-07T10:00:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    }
+  ],
+  "reservedNames": [
+    "canvas/Sketches.canvas"
+  ],
+  "warnings": [
+    "duplicate id 01KY0000000000000000000006: notes/Dup A.md and notes/Dup B.md — get() resolves notes/Dup A.md",
+    "duplicate filename \"Atlas\": projects/Atlas/Atlas.md and topics/Atlas.md — [[Atlas]] is ambiguous",
+    "duplicate filename \"Design\": notes/design.md and topics/Design.md — [[Design]] is ambiguous",
+    "duplicate title \"Same Title\": notes/Title One.md and notes/Title Two.md"
+  ],
+  "problems": [
+    {
+      "type": "duplicate-id",
+      "id": "01KY0000000000000000000006",
+      "paths": [
+        "notes/Dup A.md",
+        "notes/Dup B.md"
+      ],
+      "resolves": "notes/Dup A.md",
+      "text": "duplicate id 01KY0000000000000000000006: notes/Dup A.md and notes/Dup B.md — get() resolves notes/Dup A.md"
+    },
+    {
+      "type": "duplicate-filename",
+      "name": "Atlas",
+      "paths": [
+        "projects/Atlas/Atlas.md",
+        "topics/Atlas.md"
+      ],
+      "text": "duplicate filename \"Atlas\": projects/Atlas/Atlas.md and topics/Atlas.md — [[Atlas]] is ambiguous"
+    },
+    {
+      "type": "duplicate-filename",
+      "name": "Design",
+      "paths": [
+        "notes/design.md",
+        "topics/Design.md"
+      ],
+      "text": "duplicate filename \"Design\": notes/design.md and topics/Design.md — [[Design]] is ambiguous"
+    },
+    {
+      "type": "duplicate-title",
+      "title": "Same Title",
+      "paths": [
+        "notes/Title One.md",
+        "notes/Title Two.md"
+      ],
+      "text": "duplicate title \"Same Title\": notes/Title One.md and notes/Title Two.md"
+    }
+  ],
+  "resolutions": [
+    [
+      "",
+      null
+    ],
+    [
+      "  Atlas  ",
+      "projects/Atlas/Atlas.md"
+    ],
+    [
+      "ATLAS OVERVIEW",
+      "notes/Atlas Notes.md"
+    ],
+    [
+      "Atlas",
+      "projects/Atlas/Atlas.md"
+    ],
+    [
+      "Atlas Notes",
+      "notes/Atlas Notes.md"
+    ],
+    [
+      "Bare",
+      "notes/Bare.md"
+    ],
+    [
+      "DESIGN",
+      "notes/design.md"
+    ],
+    [
+      "Design",
+      "notes/design.md"
+    ],
+    [
+      "Nowhere",
+      null
+    ],
+    [
+      "Same Title",
+      null
+    ],
+    [
+      "Sketches",
+      null
+    ],
+    [
+      "Sketches.canvas",
+      null
+    ],
+    [
+      "Title One",
+      "notes/Title One.md"
+    ],
+    [
+      "Unstamped",
+      "notes/Unstamped.md"
+    ],
+    [
+      "atlas",
+      "projects/Atlas/Atlas.md"
+    ],
+    [
+      "atlas notes.md",
+      "notes/Atlas Notes.md"
+    ],
+    [
+      "atlas overview",
+      "notes/Atlas Notes.md"
+    ],
+    [
+      "design.md",
+      "notes/design.md"
+    ],
+    [
+      "notes/design",
+      "notes/design.md"
+    ],
+    [
+      "projects/Atlas/Atlas",
+      "projects/Atlas/Atlas.md"
+    ],
+    [
+      "projects/atlas/atlas.md",
+      "projects/Atlas/Atlas.md"
+    ],
+    [
+      "topics/Atlas",
+      "topics/Atlas.md"
+    ]
+  ]
+}

@@ -645,3 +645,17 @@ test("the back of the note is still writable, above the drawing", async () => {
   assert.match(after, /# Excalidraw Data/);
   assert.equal((await d.page(board.id)).body, "Why this board exists.");
 });
+
+/* The page's Export .md button reads `markdown` and `filename` off this, and
+   for a while read `content` instead, which does not exist — every export was
+   a file holding the word "undefined". The shape is the contract. */
+test("exportPage returns the file exactly as on disk, under `markdown`", async () => {
+  const d = await fixture();
+  const out = await d.exportPage("01AAAAAAAAAAAAAAAAAAAAAAAA");
+  assert.deepEqual(Object.keys(out).sort(), ["filename", "markdown"]);
+  assert.equal(out.filename, "Alpha.md");
+  assert.equal(out.markdown, md(P("01AAAAAAAAAAAAAAAAAAAAAAAA",
+    { title: "Alpha", tags: ["cartography", "lanterns"], updated: TS(28) }),
+    "Alpha body mentions [[Beta]] and #inline"));
+  assert.equal(await d.exportPage("01ZZZZZZZZZZZZZZZZZZZZZZZZ"), null);
+});

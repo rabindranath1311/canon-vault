@@ -906,10 +906,20 @@ export class Vault {
       // mtime moves on any write, whoever made it, so it is the check that
       // actually holds. `updated` stays as a second signal, for a backend whose
       // mtime is coarse or for a file re-saved within the same clock tick.
-      let changed = entry.mtime != null && onDisk.mtime !== entry.mtime;
-      if (!changed && entry.updated) {
+      //
+      // Compared against `page.base` — the version the caller actually READ —
+      // when it says which one that was. The index is the wrong yardstick on
+      // its own: a re-scan (the app does one on every window focus) refreshes
+      // `entry.mtime` to whatever is on disk now, Obsidian's edit included, so
+      // an editor still holding the text from before it compared "disk" with
+      // "disk", found no change, and wrote over the edit.
+      const base = page.base || {};
+      const readMtime = base.mtime ?? entry.mtime;
+      const readUpdated = base.updated ?? entry.updated;
+      let changed = readMtime != null && onDisk.mtime !== readMtime;
+      if (!changed && readUpdated) {
         const [curFm] = parse(await this.be.readText(path));
-        changed = !!(curFm.updated && curFm.updated !== entry.updated);
+        changed = !!(curFm.updated && curFm.updated !== readUpdated);
       }
       if (changed && !page.force) {
         return { ok: false, reason: "conflict", path,

@@ -1,0 +1,2267 @@
+{
+  "cases": [
+    {
+      "name": "files/block-lists.md",
+      "text": "---\nid: 01KX0000000000000000000001\nkind: note\ntitle: Block Lists From Obsidian\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags:\n  - \"reading\"\n  - field-notes\naliases:\n- Block Lists\n---\n\nObsidian's Properties panel writes lists one item per line.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000001"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Block Lists From Obsidian"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "reading",
+                "field-notes"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Block Lists"
+              ]
+            ]
+          ],
+          "blockLists": {
+            "tags": {
+              "text": "tags:\n  - \"reading\"\n  - field-notes",
+              "values": [
+                "reading",
+                "field-notes"
+              ]
+            },
+            "aliases": {
+              "text": "aliases:\n- Block Lists",
+              "values": [
+                "Block Lists"
+              ]
+            }
+          }
+        },
+        "body": "Obsidian's Properties panel writes lists one item per line."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000001\nkind: note\ntitle: Block Lists From Obsidian\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags:\n  - \"reading\"\n  - field-notes\naliases:\n- Block Lists\n---\n\nObsidian's Properties panel writes lists one item per line.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Obsidian's Properties panel writes lists one item per line.",
+      "escapeStrict": "Obsidian's Properties panel writes lists one item per line.",
+      "unescape": "Obsidian's Properties panel writes lists one item per line.",
+      "split": {
+        "prose": "Obsidian's Properties panel writes lists one item per line.",
+        "sections": ""
+      },
+      "join": "Obsidian's Properties panel writes lists one item per line.",
+      "sections": [],
+      "maskCode": "Obsidian's Properties panel writes lists one item per line.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "block-lists",
+      "basename": "block-lists",
+      "excalidraw": null
+    },
+    {
+      "name": "files/code-and-links.md",
+      "text": "---\nid: 01KX0000000000000000000005\nkind: note\ntitle: Code And Links\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n\nSee [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000005"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Code And Links"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000005\nkind: note\ntitle: Code And Links\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n\nSee [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+      "escapeStrict": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+      "unescape": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+      "split": {
+        "prose": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+        "sections": ""
+      },
+      "join": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n```\n[[Not A Link]] #not-a-tag\n```\n\n~~~~md\n[[Also Not]]\n~~~~\n\nInline `[[code link]]` and ``a `[[nested]]` span`` stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+      "sections": [],
+      "maskCode": "See [[Quire Structures]], [[Folio Gathering Notes|the folio piece]] and\n[[Marginalia as Interface#Thread]] and ![[attachments/endpaper-01.svg]].\n\n   \n                         \n   \n\n      \n            \n    \n\nInline                 and                         stay code.\n\nTags: #current #reading/later #2026 not#tag and example.com/#frag.\nA heading-like # alone, and ## Heading.",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 4,
+          "end": 24
+        },
+        {
+          "raw": "[[Folio Gathering Notes|the folio piece]]",
+          "embed": false,
+          "target": "Folio Gathering Notes",
+          "display": "the folio piece",
+          "heading": null,
+          "start": 26,
+          "end": 67
+        },
+        {
+          "raw": "[[Marginalia as Interface#Thread]]",
+          "embed": false,
+          "target": "Marginalia as Interface",
+          "display": null,
+          "heading": "Thread",
+          "start": 72,
+          "end": 106
+        },
+        {
+          "raw": "![[attachments/endpaper-01.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-01.svg",
+          "display": null,
+          "heading": null,
+          "start": 111,
+          "end": 143
+        }
+      ],
+      "inlineTags": [
+        "current",
+        "reading/later",
+        "2026"
+      ],
+      "kind": "note",
+      "titleFromPath": "code-and-links",
+      "basename": "code-and-links",
+      "excalidraw": null
+    },
+    {
+      "name": "files/crlf.md",
+      "text": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR\r\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [],
+          "blockLists": {}
+        },
+        "body": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR\r\n"
+      },
+      "serialize": {
+        "error": "missing required frontmatter: id,kind,title,created,updated"
+      },
+      "roundtrip": [
+        false,
+        "no frontmatter"
+      ],
+      "escape": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n\\## Thread\r\nnot a section, the line ends in CR\r\n",
+      "escapeStrict": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n\\## Thread\r\nnot a section, the line ends in CR\r\n",
+      "unescape": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR\r\n",
+      "split": {
+        "prose": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR",
+        "sections": ""
+      },
+      "join": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR",
+      "sections": [],
+      "maskCode": "---\r\nid: 01KX0000000000000000000006\r\nkind: note\r\ntitle: Windows Line Endings\r\ncreated: 2026-08-01T10:00:00+00:00\r\nupdated: 2026-08-02T10:00:00+00:00\r\n---\r\n\r\nWritten on Windows. [[Quire Structures]]\r\n\r\n## Thread\r\nnot a section, the line ends in CR\r\n",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 177,
+          "end": 197
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "crlf",
+      "basename": "crlf",
+      "excalidraw": null
+    },
+    {
+      "name": "files/empty-body.md",
+      "text": "---\nid: 01KX000000000000000000000A\nkind: note\ntitle: Empty Body\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX000000000000000000000A"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Empty Body"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": ""
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX000000000000000000000A\nkind: note\ntitle: Empty Body\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "",
+      "escapeStrict": "",
+      "unescape": "",
+      "split": {
+        "prose": "",
+        "sections": ""
+      },
+      "join": "",
+      "sections": [],
+      "maskCode": "",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "empty-body",
+      "basename": "empty-body",
+      "excalidraw": null
+    },
+    {
+      "name": "files/flow-edges.md",
+      "text": "---\nid: 01KX0000000000000000000003\nkind: note\ntitle: Flow List Edges\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags: []\naliases: [ one ,  , \"two, too\",]\n# a comment line inside frontmatter\na line with no colon\nparent: \"[[Quire Structures]]\"\nchildren: [\"[[Leaf One]]\", \"[[Leaf Two]]\"]\n---\n\n\nTwo blank lines above the body, three below.\n\n\n\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000003"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Flow List Edges"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ],
+            [
+              "tags",
+              []
+            ],
+            [
+              "aliases",
+              [
+                "one",
+                "two, too"
+              ]
+            ],
+            [
+              "parent",
+              "[[Quire Structures]]"
+            ],
+            [
+              "children",
+              [
+                "[[Leaf One]]",
+                "[[Leaf Two]]"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "\nTwo blank lines above the body, three below."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000003\nkind: note\ntitle: Flow List Edges\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\naliases: [one, \"two, too\"]\nparent: \"[[Quire Structures]]\"\nchildren: [\"[[Leaf One]]\", \"[[Leaf Two]]\"]\n---\n\n\nTwo blank lines above the body, three below.\n"
+      },
+      "roundtrip": [
+        false,
+        "bytes differ"
+      ],
+      "escape": "\nTwo blank lines above the body, three below.",
+      "escapeStrict": "\nTwo blank lines above the body, three below.",
+      "unescape": "\nTwo blank lines above the body, three below.",
+      "split": {
+        "prose": "Two blank lines above the body, three below.",
+        "sections": ""
+      },
+      "join": "Two blank lines above the body, three below.",
+      "sections": [],
+      "maskCode": "\nTwo blank lines above the body, three below.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "flow-edges",
+      "basename": "flow-edges",
+      "excalidraw": null
+    },
+    {
+      "name": "files/no-frontmatter.md",
+      "text": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [],
+          "blockLists": {}
+        },
+        "body": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n"
+      },
+      "serialize": {
+        "error": "missing required frontmatter: id,kind,title,created,updated"
+      },
+      "roundtrip": [
+        false,
+        "no frontmatter"
+      ],
+      "escape": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n",
+      "escapeStrict": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n",
+      "unescape": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n",
+      "split": {
+        "prose": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]",
+        "sections": ""
+      },
+      "join": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]",
+      "sections": [],
+      "maskCode": "# Just markdown\n\nA file with no frontmatter at all, the way Obsidian makes one. [[Quires]]\n",
+      "wikilinks": [
+        {
+          "raw": "[[Quires]]",
+          "embed": false,
+          "target": "Quires",
+          "display": null,
+          "heading": null,
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "no-frontmatter",
+      "basename": "no-frontmatter",
+      "excalidraw": null
+    },
+    {
+      "name": "files/quoting.md",
+      "text": "---\nid: 01KX0000000000000000000002\nkind: note\ntitle: \"Quoting: the hard cases\"\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags: [yes, \"on\", \"42\", \"-3.5e7\", \"#hash\", \"a, b\", plain-tag]\naliases: [\"  padded  \", \"tab\\there\", \"back\\\\slash\", \"say \\\"hi\\\"\"]\nurl: \"\"\nauthor: \"@someone\"\nsource: \"- dash first\"\nstatus: \"null\"\n---\n\nEvery scalar here has to come back byte for byte.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000002"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Quoting: the hard cases"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "yes",
+                "on",
+                "42",
+                "-3.5e7",
+                "#hash",
+                "a, b",
+                "plain-tag"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "  padded  ",
+                "tab\there",
+                "back\\slash",
+                "say \"hi\""
+              ]
+            ],
+            [
+              "url",
+              ""
+            ],
+            [
+              "author",
+              "@someone"
+            ],
+            [
+              "source",
+              "- dash first"
+            ],
+            [
+              "status",
+              "null"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Every scalar here has to come back byte for byte."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000002\nkind: note\ntitle: \"Quoting: the hard cases\"\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags: [\"yes\", \"on\", \"42\", \"-3.5e7\", \"#hash\", \"a, b\", plain-tag]\naliases: [\"  padded  \", \"tab\\there\", \"back\\\\slash\", \"say \\\"hi\\\"\"]\nurl: \"\"\nauthor: \"@someone\"\nsource: \"- dash first\"\nstatus: \"null\"\n---\n\nEvery scalar here has to come back byte for byte.\n"
+      },
+      "roundtrip": [
+        false,
+        "bytes differ"
+      ],
+      "escape": "Every scalar here has to come back byte for byte.",
+      "escapeStrict": "Every scalar here has to come back byte for byte.",
+      "unescape": "Every scalar here has to come back byte for byte.",
+      "split": {
+        "prose": "Every scalar here has to come back byte for byte.",
+        "sections": ""
+      },
+      "join": "Every scalar here has to come back byte for byte.",
+      "sections": [],
+      "maskCode": "Every scalar here has to come back byte for byte.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "quoting",
+      "basename": "quoting",
+      "excalidraw": null
+    },
+    {
+      "name": "files/sections.md",
+      "text": "---\nid: 01KX0000000000000000000004\nkind: topic\ntitle: Sections And Escapes\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n\nThe prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000004"
+            ],
+            [
+              "kind",
+              "topic"
+            ],
+            [
+              "title",
+              "Sections And Escapes"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000004\nkind: topic\ntitle: Sections And Escapes\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\n---\n\nThe prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n\\## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n\\## Thread\n\n\\**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n\\**assistant** 2026-07-28T11:02:40+00:00\nDone.",
+      "escapeStrict": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n\\## Attachments\n\n\\### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n\\## Thread\n\n\\**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n\\**assistant** 2026-07-28T11:02:40+00:00\nDone.",
+      "unescape": "The prose talks about headings.\n\n## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone.",
+      "split": {
+        "prose": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.",
+        "sections": "## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone."
+      },
+      "join": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone.",
+      "sections": [
+        {
+          "name": "Attachments",
+          "body": "### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment"
+        },
+        {
+          "name": "Thread",
+          "body": "**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone."
+        }
+      ],
+      "maskCode": "The prose talks about headings.\n\n\\## Attachments\nThat line above was typed by the user, so it is escaped.\n\n## Design notes\nAn ordinary heading of my own.\n\n## Attachments\n\n### A saved article (link)\nSource: https://example.org/article\n\nwhy it matters\n\\### not a new attachment\n\n## Thread\n\n**user** 2026-07-28T11:02:00+00:00\nPull the references together.\n\n**assistant** 2026-07-28T11:02:40+00:00\nDone.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "sections",
+      "basename": "sections",
+      "excalidraw": null
+    },
+    {
+      "name": "files/unicode.md",
+      "text": "---\nid: 01KX0000000000000000000007\nkind: note\ntitle: Café Façade — naïve résumé 📚\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags: [café, 日本語]\naliases: [Cafe Facade]\n---\n\nUnicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000007"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Café Façade — naïve résumé 📚"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "café",
+                "日本語"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Cafe Facade"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]]."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KX0000000000000000000007\nkind: note\ntitle: \"Café Façade — naïve résumé 📚\"\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\ntags: [\"café\", \"日本語\"]\naliases: [Cafe Facade]\n---\n\nUnicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].\n"
+      },
+      "roundtrip": [
+        false,
+        "bytes differ"
+      ],
+      "escape": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+      "escapeStrict": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+      "unescape": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+      "split": {
+        "prose": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+        "sections": ""
+      },
+      "join": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+      "sections": [],
+      "maskCode": "Unicode in titles, tags and links: [[Café Façade — naïve résumé 📚]] #café #日本語 #ok\nNon-breaking space before this tag: #nbsp and an emoji 📚 before [[Quires]].",
+      "wikilinks": [
+        {
+          "raw": "[[Café Façade — naïve résumé 📚]]",
+          "embed": false,
+          "target": "Café Façade — naïve résumé 📚",
+          "display": null,
+          "heading": null,
+          "start": 35,
+          "end": 68
+        },
+        {
+          "raw": "[[Quires]]",
+          "embed": false,
+          "target": "Quires",
+          "display": null,
+          "heading": null,
+          "start": 149,
+          "end": 159
+        }
+      ],
+      "inlineTags": [
+        "caf",
+        "ok",
+        "nbsp"
+      ],
+      "kind": "note",
+      "titleFromPath": "unicode",
+      "basename": "unicode",
+      "excalidraw": null
+    },
+    {
+      "name": "files/unknown-field.md",
+      "text": "---\nid: 01KX0000000000000000000009\nkind: note\ntitle: Unknown Field\ncreated: 2026-08-01T10:00:00+00:00\nupdated: 2026-08-02T10:00:00+00:00\nrating: 5\n---\n\nserialize() must refuse the unknown key.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KX0000000000000000000009"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Unknown Field"
+            ],
+            [
+              "created",
+              "2026-08-01T10:00:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-02T10:00:00+00:00"
+            ],
+            [
+              "rating",
+              "5"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "serialize() must refuse the unknown key."
+      },
+      "serialize": {
+        "error": "unknown frontmatter fields: rating"
+      },
+      "roundtrip": [
+        false,
+        "unknown frontmatter fields: rating"
+      ],
+      "escape": "serialize() must refuse the unknown key.",
+      "escapeStrict": "serialize() must refuse the unknown key.",
+      "unescape": "serialize() must refuse the unknown key.",
+      "split": {
+        "prose": "serialize() must refuse the unknown key.",
+        "sections": ""
+      },
+      "join": "serialize() must refuse the unknown key.",
+      "sections": [],
+      "maskCode": "serialize() must refuse the unknown key.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "unknown-field",
+      "basename": "unknown-field",
+      "excalidraw": null
+    },
+    {
+      "name": "files/unterminated.md",
+      "text": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [],
+          "blockLists": {}
+        },
+        "body": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n"
+      },
+      "serialize": {
+        "error": "missing required frontmatter: id,kind,title,created,updated"
+      },
+      "roundtrip": [
+        false,
+        "no frontmatter"
+      ],
+      "escape": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n",
+      "escapeStrict": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n",
+      "unescape": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n",
+      "split": {
+        "prose": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.",
+        "sections": ""
+      },
+      "join": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.",
+      "sections": [],
+      "maskCode": "---\nid: 01KX0000000000000000000008\nkind: note\ntitle: Unterminated\n\nThe closing fence never comes.\n",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "unterminated",
+      "basename": "unterminated",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/canvas/Binding Methods.md",
+      "text": "---\nid: 01KW71KKG0QMB8EDXJ6QP47G8K\nkind: note\ntitle: Binding Methods\ncreated: 2026-07-06T09:20:00+00:00\nupdated: 2026-08-27T09:20:00+00:00\naliases: [Binding Methods]\n---\n\nPhysical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KW71KKG0QMB8EDXJ6QP47G8K"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Binding Methods"
+            ],
+            [
+              "created",
+              "2026-07-06T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-27T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "Binding Methods"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KW71KKG0QMB8EDXJ6QP47G8K\nkind: note\ntitle: Binding Methods\ncreated: 2026-07-06T09:20:00+00:00\nupdated: 2026-08-27T09:20:00+00:00\naliases: [Binding Methods]\n---\n\nPhysical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+      "escapeStrict": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+      "unescape": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+      "split": {
+        "prose": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+        "sections": ""
+      },
+      "join": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+      "sections": [],
+      "maskCode": "Physical binding approaches, ranked by how much they fight the fold.\n\n**Coptic** — lies flat, exposed spine, the fold does the work.\n**Case** — hides everything, will not lie flat.\n**Japanese stab** — ignores the fold entirely, and is honest about it.\n\nThe ranking is really *how much does it fight the fold* — see\n[[Quire Structures]] for why that is the axis that matters.\n\nSubjects: [[bookbinding]]",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 315,
+          "end": 335
+        },
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 386,
+          "end": 401
+        }
+      ],
+      "inlineTags": [],
+      "kind": "canvas",
+      "titleFromPath": "Binding Methods",
+      "basename": "Binding Methods",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/canvas/Sewing Order.excalidraw.md",
+      "text": "---\nid: 01KWD3Q2G0N4TXBM7C5R8EJH1V\nkind: canvas\ntitle: Sewing Order\ncreated: 2026-07-19T11:05:00+00:00\nupdated: 2026-08-24T16:40:00+00:00\ntags: [bookbinding, current]\naliases: [Sewing Order]\nexcalidraw-plugin: parsed\n---\n\nA sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KWD3Q2G0N4TXBM7C5R8EJH1V"
+            ],
+            [
+              "kind",
+              "canvas"
+            ],
+            [
+              "title",
+              "Sewing Order"
+            ],
+            [
+              "created",
+              "2026-07-19T11:05:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-24T16:40:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "bookbinding",
+                "current"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Sewing Order"
+              ]
+            ],
+            [
+              "excalidraw-plugin",
+              "parsed"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KWD3Q2G0N4TXBM7C5R8EJH1V\nkind: canvas\ntitle: Sewing Order\ncreated: 2026-07-19T11:05:00+00:00\nupdated: 2026-08-24T16:40:00+00:00\ntags: [bookbinding, current]\naliases: [Sewing Order]\nexcalidraw-plugin: parsed\n---\n\nA sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%",
+      "escapeStrict": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%",
+      "unescape": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%",
+      "split": {
+        "prose": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%",
+        "sections": ""
+      },
+      "join": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n```compressed-json\n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\n```\n%%",
+      "sections": [],
+      "maskCode": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]\n\n%%\n# Excalidraw Data\n\n## Text Elements\nHow a book gets made ^t-title\n\nfour moves, in order — the rest is patience ^t-sub\n\nFold ^l0\n\nGather ^l1\n\nSew ^l2\n\nCase in ^l3\n\nSewing is the only step you cannot\nundo without unmaking the ones\nbefore it. ^noteT\n\n## Drawing\n                  \n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                                                                \n\n                                                                                                                                                                                                                    \n   \n%%",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 73,
+          "end": 93
+        },
+        {
+          "raw": "[[Folio Gathering Notes]]",
+          "embed": false,
+          "target": "Folio Gathering Notes",
+          "display": null,
+          "heading": null,
+          "start": 95,
+          "end": 120
+        }
+      ],
+      "inlineTags": [],
+      "kind": "canvas",
+      "titleFromPath": "Sewing Order",
+      "basename": "Sewing Order.excalidraw",
+      "excalidraw": {
+        "stripped": "A sketch I keep redrawing because I keep forgetting the order.\n\nRelated: [[Quire Structures]], [[Folio Gathering Notes]]",
+        "text": "How a book gets made four moves, in order — the rest is patience Fold Gather Sew Case in Sewing is the only step you cannot\nundo without unmaking the ones\nbefore it."
+      }
+    },
+    {
+      "name": "demo/context/about-me.md",
+      "text": "---\nid: 01KWERSRG0QHXT9PQ4S0BRNTZH\nkind: note\ntitle: About me\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-20T09:20:00+00:00\naliases: [About me]\n---\n\n_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KWERSRG0QHXT9PQ4S0BRNTZH"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "About me"
+            ],
+            [
+              "created",
+              "2026-07-01T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-20T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "About me"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KWERSRG0QHXT9PQ4S0BRNTZH\nkind: note\ntitle: About me\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-20T09:20:00+00:00\naliases: [About me]\n---\n\n_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+      "escapeStrict": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+      "unescape": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+      "split": {
+        "prose": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+        "sections": ""
+      },
+      "join": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+      "sections": [],
+      "maskCode": "_This is a demo vault. Everything in it is invented._\n\nI bind books and draw harbour charts. Trained as a graphic designer, drifted\ninto the physical side, and now spend most of my time on the argument that\nthose were never separate disciplines.\n\nAny agent reads this file before writing anything in my voice.\n\n**How I write:** short sentences, concrete nouns, no throat-clearing. If a\nparagraph could open with \"In today's fast-paced world\", delete the paragraph.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "about-me",
+      "basename": "about-me",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/index.md",
+      "text": "---\nid: 01KWHB6FG0XZMR5XEQ6PT88Y26\nkind: note\ntitle: index\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [index, Index]\n---\n\nThe catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KWHB6FG0XZMR5XEQ6PT88Y26"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "index"
+            ],
+            [
+              "created",
+              "2026-07-01T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-29T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "index",
+                "Index"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KWHB6FG0XZMR5XEQ6PT88Y26\nkind: note\ntitle: index\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [index, Index]\n---\n\nThe catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+      "escapeStrict": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+      "unescape": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+      "split": {
+        "prose": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+        "sections": ""
+      },
+      "join": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+      "sections": [],
+      "maskCode": "The catalog — every page, one line each. A page missing from here is invisible\nto a fresh agent session.\n\n## context\n\n- [[About me]] — who I am; read before anything is written in my voice\n\n## notes\n\n- [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches\n- [[Marginalia as Interface]] — clipped: annotation as a spatial index\n- [[The Case for Slower Tools]] — pull-quote worth keeping\n- [[Folio Gathering Notes]] — where a binding mistake gets expensive\n\n## topics\n\n- [[Quire Structures]] — the fold is the unit, not the page\n\n## canvas\n\n- [[Binding Methods]] — physical approaches, ranked by how much they fight the fold\n\n## inspo\n\n- [[Endpapers]] — marbled and printed endpapers, collected for palette\n\n## projects\n\n- [[Bindery]] — a run of hand-bound field notebooks\n\n## tags\n\n- [[bookbinding]] · [[cartography]] · [[typography]]",
+      "wikilinks": [
+        {
+          "raw": "[[About me]]",
+          "embed": false,
+          "target": "About me",
+          "display": null,
+          "heading": null,
+          "start": 120,
+          "end": 132
+        },
+        {
+          "raw": "[[Lantern Cartography Notes]]",
+          "embed": false,
+          "target": "Lantern Cartography Notes",
+          "display": null,
+          "heading": null,
+          "start": 202,
+          "end": 231
+        },
+        {
+          "raw": "[[Marginalia as Interface]]",
+          "embed": false,
+          "target": "Marginalia as Interface",
+          "display": null,
+          "heading": null,
+          "start": 287,
+          "end": 314
+        },
+        {
+          "raw": "[[The Case for Slower Tools]]",
+          "embed": false,
+          "target": "The Case for Slower Tools",
+          "display": null,
+          "heading": null,
+          "start": 358,
+          "end": 387
+        },
+        {
+          "raw": "[[Folio Gathering Notes]]",
+          "embed": false,
+          "target": "Folio Gathering Notes",
+          "display": null,
+          "heading": null,
+          "start": 417,
+          "end": 442
+        },
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 498,
+          "end": 518
+        },
+        {
+          "raw": "[[Binding Methods]]",
+          "embed": false,
+          "target": "Binding Methods",
+          "display": null,
+          "heading": null,
+          "start": 570,
+          "end": 589
+        },
+        {
+          "raw": "[[Endpapers]]",
+          "embed": false,
+          "target": "Endpapers",
+          "display": null,
+          "heading": null,
+          "start": 665,
+          "end": 678
+        },
+        {
+          "raw": "[[Bindery]]",
+          "embed": false,
+          "target": "Bindery",
+          "display": null,
+          "heading": null,
+          "start": 750,
+          "end": 761
+        },
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 812,
+          "end": 827
+        },
+        {
+          "raw": "[[cartography]]",
+          "embed": false,
+          "target": "cartography",
+          "display": null,
+          "heading": null,
+          "start": 830,
+          "end": 845
+        },
+        {
+          "raw": "[[typography]]",
+          "embed": false,
+          "target": "typography",
+          "display": null,
+          "heading": null,
+          "start": 848,
+          "end": 862
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "index",
+      "basename": "index",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/inspo/Endpapers.md",
+      "text": "---\nid: 01KW9M0AG0G7ZVXRFQ6T6204W2\nkind: inspo\ntitle: Endpapers\ncreated: 2026-07-09T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [Endpapers]\n---\n\n## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KW9M0AG0G7ZVXRFQ6T6204W2"
+            ],
+            [
+              "kind",
+              "inspo"
+            ],
+            [
+              "title",
+              "Endpapers"
+            ],
+            [
+              "created",
+              "2026-07-09T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-29T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "Endpapers"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KW9M0AG0G7ZVXRFQ6T6204W2\nkind: inspo\ntitle: Endpapers\ncreated: 2026-07-09T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [Endpapers]\n---\n\n## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+      "escapeStrict": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+      "unescape": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+      "split": {
+        "prose": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+        "sections": ""
+      },
+      "join": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+      "sections": [],
+      "maskCode": "## Shortlist for the Bindery run\n\n![[attachments/endpaper-01.svg]]\nIndigo and gilt — the harbour-chart palette, reused\n> Works because the gilt is a hairline, not a field. Any wider and it\n> competes with the marbling instead of edging it.\n> Reach for it when a dark cover needs a warm interior. See [[Quire Structures]].\n#marbled #indigo\n\n![[attachments/endpaper-02.svg]]\nWalnut ink over cream. Warmest of the set\n> The rule here is one pigment, two dilutions — the variation is water,\n> not a second colour.\n#marbled #warm\n\n![[attachments/endpaper-03.svg]]\nSage and bone. Too quiet for a cover, right for endpapers\n> Quiet is the point: an endpaper is read for two seconds while the book\n> opens. Use where the cover is already loud.\n#printed #green\n\n## Rejected, kept for the colour\n\n![[attachments/endpaper-04.svg]]\nAubergine. The one the client will not pick\n> Kept for the colour relationship, not the sheet. The purple-to-rust\n> jump is the useful part — see the Rust below.\n#marbled #purple\n\n![[attachments/endpaper-05.svg]]\nSlate blue, almost grey. Safe choice\n#printed #cool\n\n![[attachments/endpaper-06.svg]]\nRust. Reads as older than it is\n#marbled #warm",
+      "wikilinks": [
+        {
+          "raw": "![[attachments/endpaper-01.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-01.svg",
+          "display": null,
+          "heading": null,
+          "start": 34,
+          "end": 66
+        },
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 300,
+          "end": 320
+        },
+        {
+          "raw": "![[attachments/endpaper-02.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-02.svg",
+          "display": null,
+          "heading": null,
+          "start": 340,
+          "end": 372
+        },
+        {
+          "raw": "![[attachments/endpaper-03.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-03.svg",
+          "display": null,
+          "heading": null,
+          "start": 526,
+          "end": 558
+        },
+        {
+          "raw": "![[attachments/endpaper-04.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-04.svg",
+          "display": null,
+          "heading": null,
+          "start": 787,
+          "end": 819
+        },
+        {
+          "raw": "![[attachments/endpaper-05.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-05.svg",
+          "display": null,
+          "heading": null,
+          "start": 1000,
+          "end": 1032
+        },
+        {
+          "raw": "![[attachments/endpaper-06.svg]]",
+          "embed": true,
+          "target": "attachments/endpaper-06.svg",
+          "display": null,
+          "heading": null,
+          "start": 1086,
+          "end": 1118
+        }
+      ],
+      "inlineTags": [
+        "marbled",
+        "indigo",
+        "warm",
+        "printed",
+        "green",
+        "purple",
+        "cool"
+      ],
+      "kind": "inspo",
+      "titleFromPath": "Endpapers",
+      "basename": "Endpapers",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/log.md",
+      "text": "---\nid: 01KWKXK6G07WVM1A98PNQRV940\nkind: note\ntitle: log\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [log, Log]\n---\n\nAppend-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KWKXK6G07WVM1A98PNQRV940"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "log"
+            ],
+            [
+              "created",
+              "2026-07-01T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-29T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "log",
+                "Log"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KWKXK6G07WVM1A98PNQRV940\nkind: note\ntitle: log\ncreated: 2026-07-01T09:20:00+00:00\nupdated: 2026-08-29T09:20:00+00:00\naliases: [log, Log]\n---\n\nAppend-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+      "escapeStrict": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+      "unescape": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+      "split": {
+        "prose": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+        "sections": ""
+      },
+      "join": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+      "sections": [],
+      "maskCode": "Append-only history. One entry per ingest, filed answer, lint pass or\nstructural change. Never rewrite an old entry.\n\n## [2026-07-29] lint | orphans and stale claims\n\nSwept for orphans. [[The Case for Slower Tools]] had nothing linking to it;\nleft deliberately — a pull-quote is allowed to stand alone.\n\n## [2026-07-24] ingest | Marginalia as Interface\n\nClipped from example.org into [[Marginalia as Interface]]. Linked\n[[bookbinding]] and [[typography]].\n\n## [2026-07-08] setup | vault created\n\nStructure, [[index]] and this log.",
+      "wikilinks": [
+        {
+          "raw": "[[The Case for Slower Tools]]",
+          "embed": false,
+          "target": "The Case for Slower Tools",
+          "display": null,
+          "heading": null,
+          "start": 186,
+          "end": 215
+        },
+        {
+          "raw": "[[Marginalia as Interface]]",
+          "embed": false,
+          "target": "Marginalia as Interface",
+          "display": null,
+          "heading": null,
+          "start": 384,
+          "end": 411
+        },
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 420,
+          "end": 435
+        },
+        {
+          "raw": "[[typography]]",
+          "embed": false,
+          "target": "typography",
+          "display": null,
+          "heading": null,
+          "start": 440,
+          "end": 454
+        },
+        {
+          "raw": "[[index]]",
+          "embed": false,
+          "target": "index",
+          "display": null,
+          "heading": null,
+          "start": 507,
+          "end": 516
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "log",
+      "basename": "log",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/notes/Folio Gathering Notes.md",
+      "text": "---\nid: 01KW1WT5G0DE5BAME5RKC2VX19\nkind: note\ntitle: Folio Gathering Notes\ncreated: 2026-08-13T09:20:00+00:00\nupdated: 2026-08-19T09:20:00+00:00\ntags: [draft]\naliases: [Folio Gathering Notes]\n---\n\nGathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KW1WT5G0DE5BAME5RKC2VX19"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Folio Gathering Notes"
+            ],
+            [
+              "created",
+              "2026-08-13T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-19T09:20:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "draft"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Folio Gathering Notes"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KW1WT5G0DE5BAME5RKC2VX19\nkind: note\ntitle: Folio Gathering Notes\ncreated: 2026-08-13T09:20:00+00:00\nupdated: 2026-08-19T09:20:00+00:00\ntags: [draft]\naliases: [Folio Gathering Notes]\n---\n\nGathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+      "escapeStrict": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+      "unescape": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+      "split": {
+        "prose": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+        "sections": ""
+      },
+      "join": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+      "sections": [],
+      "maskCode": "Gathering is the step where a stack of flat sheets becomes an object with a\nspine, and it is the first point at which a mistake becomes expensive.\n\nFour sheets folded together is a quire. Eight is comfortable. Sixteen is\nshowing off and will not lie flat for a decade.\n\nSee [[Quire Structures]]. Subjects: [[bookbinding]]",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 274,
+          "end": 294
+        },
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 306,
+          "end": 321
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "Folio Gathering Notes",
+      "basename": "Folio Gathering Notes",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/notes/Gloss Placement as Structure.md",
+      "text": "---\nid: 01M0SMX6DZDT2ZF8W3VXH6A44F\nkind: note\ntitle: Gloss Placement as Structure\ncreated: 2026-08-21T16:40:00+00:00\nupdated: 2026-08-21T16:40:00+00:00\ntags: [reference, typography]\naliases: [Gloss Placement as Structure]\nog_description: \"A reading of three manuscripts where the margin is load-bearing, and the page cannot be reflowed without losing the argument.\"\nog_site_name: quire.example\nauthor: A. Quill\ncaptured: 2026-08-21T16:40:00+00:00\nsource: https://quire.example/gloss-placement\n---\n\n> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01M0SMX6DZDT2ZF8W3VXH6A44F"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Gloss Placement as Structure"
+            ],
+            [
+              "created",
+              "2026-08-21T16:40:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-21T16:40:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "reference",
+                "typography"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Gloss Placement as Structure"
+              ]
+            ],
+            [
+              "og_description",
+              "A reading of three manuscripts where the margin is load-bearing, and the page cannot be reflowed without losing the argument."
+            ],
+            [
+              "og_site_name",
+              "quire.example"
+            ],
+            [
+              "author",
+              "A. Quill"
+            ],
+            [
+              "captured",
+              "2026-08-21T16:40:00+00:00"
+            ],
+            [
+              "source",
+              "https://quire.example/gloss-placement"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build."
+      },
+      "serialize": {
+        "ok": "---\nid: 01M0SMX6DZDT2ZF8W3VXH6A44F\nkind: note\ntitle: Gloss Placement as Structure\ncreated: 2026-08-21T16:40:00+00:00\nupdated: 2026-08-21T16:40:00+00:00\ntags: [reference, typography]\naliases: [Gloss Placement as Structure]\nog_description: \"A reading of three manuscripts where the margin is load-bearing, and the page cannot be reflowed without losing the argument.\"\nog_site_name: quire.example\nauthor: A. Quill\ncaptured: 2026-08-21T16:40:00+00:00\nsource: https://quire.example/gloss-placement\n---\n\n> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+      "escapeStrict": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+      "unescape": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+      "split": {
+        "prose": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+        "sections": ""
+      },
+      "join": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+      "sections": [],
+      "maskCode": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the\n> distance between them is the claim.\n\nKept for the second half of the argument rather than the first: everyone agrees\nthe margin carried meaning, and almost nobody has said what that costs a layout\nengine that can reflow.\n\nWorth reading next to [[Marginalia as Interface]] — same subject, opposite\nconclusion about what to build.",
+      "wikilinks": [
+        {
+          "raw": "[[Marginalia as Interface]]",
+          "embed": false,
+          "target": "Marginalia as Interface",
+          "display": null,
+          "heading": null,
+          "start": 324,
+          "end": 351
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "Gloss Placement as Structure",
+      "basename": "Gloss Placement as Structure",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/notes/Lantern Cartography Notes.md",
+      "text": "---\nid: 01KVT5M0G0N07ZQ8ZAJ41Q7Q8X\nkind: note\ntitle: Lantern Cartography Notes\ncreated: 2026-07-04T09:20:00+00:00\nupdated: 2026-08-26T09:20:00+00:00\ntags: [current]\naliases: [Lantern Cartography Notes]\n---\n\nField notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVT5M0G0N07ZQ8ZAJ41Q7Q8X"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Lantern Cartography Notes"
+            ],
+            [
+              "created",
+              "2026-07-04T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-26T09:20:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "current"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Lantern Cartography Notes"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVT5M0G0N07ZQ8ZAJ41Q7Q8X\nkind: note\ntitle: Lantern Cartography Notes\ncreated: 2026-07-04T09:20:00+00:00\nupdated: 2026-08-26T09:20:00+00:00\ntags: [current]\naliases: [Lantern Cartography Notes]\n---\n\nField notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+      "escapeStrict": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+      "unescape": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+      "split": {
+        "prose": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+        "sections": ""
+      },
+      "join": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+      "sections": [],
+      "maskCode": "Field notes from three weeks of drawing harbour charts by lamp, which turns\nout to be a legible constraint rather than an affectation.\n\nA lantern gives you roughly a 300mm working circle. Everything outside it is\ninferred. That is a limit on how much of a chart you can hold in your head at\nonce, and it shows up in the drawing: the older harbour charts have a dense,\nconfident centre and a vague, apologetic edge.\n\nModern tools removed the lamp and kept the habit. A canvas that scrolls forever\nstill produces work that is dense in the middle and vague at the edges — we just\nstopped having a reason for it.\n\nRelated: [[Quire Structures]] on how the same limit shows up in binding.\n\nSubjects: [[cartography]], [[typography]]",
+      "wikilinks": [
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 619,
+          "end": 639
+        },
+        {
+          "raw": "[[cartography]]",
+          "embed": false,
+          "target": "cartography",
+          "display": null,
+          "heading": null,
+          "start": 694,
+          "end": 709
+        },
+        {
+          "raw": "[[typography]]",
+          "embed": false,
+          "target": "typography",
+          "display": null,
+          "heading": null,
+          "start": 711,
+          "end": 725
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "Lantern Cartography Notes",
+      "basename": "Lantern Cartography Notes",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/notes/Marginalia as Interface.md",
+      "text": "---\nid: 01KVWR0QG08R6G0D7ZXE2NRSVZ\nkind: note\ntitle: Marginalia as Interface\ncreated: 2026-07-08T09:20:00+00:00\nupdated: 2026-08-24T09:20:00+00:00\ntags: [reference]\naliases: [Marginalia as Interface]\nurl: https://example.org/marginalia-as-interface\nog_title: Marginalia as Interface\nog_description: Medieval readers annotated in a structured margin. We flattened it into a comment thread and lost the structure.\nog_site_name: example.org\nauthor: A. Quill\ncaptured: 2026-07-08T09:20:00+00:00\n---\n\nClipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVWR0QG08R6G0D7ZXE2NRSVZ"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "Marginalia as Interface"
+            ],
+            [
+              "created",
+              "2026-07-08T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-24T09:20:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "reference"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Marginalia as Interface"
+              ]
+            ],
+            [
+              "url",
+              "https://example.org/marginalia-as-interface"
+            ],
+            [
+              "og_title",
+              "Marginalia as Interface"
+            ],
+            [
+              "og_description",
+              "Medieval readers annotated in a structured margin. We flattened it into a comment thread and lost the structure."
+            ],
+            [
+              "og_site_name",
+              "example.org"
+            ],
+            [
+              "author",
+              "A. Quill"
+            ],
+            [
+              "captured",
+              "2026-07-08T09:20:00+00:00"
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVWR0QG08R6G0D7ZXE2NRSVZ\nkind: note\ntitle: Marginalia as Interface\ncreated: 2026-07-08T09:20:00+00:00\nupdated: 2026-08-24T09:20:00+00:00\ntags: [reference]\naliases: [Marginalia as Interface]\nurl: https://example.org/marginalia-as-interface\nog_title: Marginalia as Interface\nog_description: Medieval readers annotated in a structured margin. We flattened it into a comment thread and lost the structure.\nog_site_name: example.org\nauthor: A. Quill\ncaptured: 2026-07-08T09:20:00+00:00\n---\n\nClipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+      "escapeStrict": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+      "unescape": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+      "split": {
+        "prose": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+        "sections": ""
+      },
+      "join": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+      "sections": [],
+      "maskCode": "Clipped because of the third section, on *gloss placement* — the argument that\nwhere an annotation sits is itself information, and that a comment thread throws\nthat information away.\n\nThe claim I want to test: a margin is a spatial index. A thread is a temporal\none. They are not substitutes, and most tools only ship the second.\n\nSubjects: [[bookbinding]], [[typography]]",
+      "wikilinks": [
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 341,
+          "end": 356
+        },
+        {
+          "raw": "[[typography]]",
+          "embed": false,
+          "target": "typography",
+          "display": null,
+          "heading": null,
+          "start": 358,
+          "end": 372
+        }
+      ],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "Marginalia as Interface",
+      "basename": "Marginalia as Interface",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/notes/The Case for Slower Tools.md",
+      "text": "---\nid: 01KVZADEG0JC2K2BJNA9T6HKVV\nkind: note\ntitle: The Case for Slower Tools\ncreated: 2026-08-11T09:20:00+00:00\nupdated: 2026-08-21T09:20:00+00:00\naliases: [The Case for Slower Tools]\n---\n\n> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVZADEG0JC2K2BJNA9T6HKVV"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "The Case for Slower Tools"
+            ],
+            [
+              "created",
+              "2026-08-11T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-21T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "The Case for Slower Tools"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVZADEG0JC2K2BJNA9T6HKVV\nkind: note\ntitle: The Case for Slower Tools\ncreated: 2026-08-11T09:20:00+00:00\nupdated: 2026-08-21T09:20:00+00:00\naliases: [The Case for Slower Tools]\n---\n\n> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+      "escapeStrict": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+      "unescape": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+      "split": {
+        "prose": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+        "sections": ""
+      },
+      "join": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+      "sections": [],
+      "maskCode": "> A tool that resists you is not necessarily a bad tool. It is a tool with an\n> opinion, and an opinion is the only thing that makes a body of work look like\n> it came from somebody.",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "The Case for Slower Tools",
+      "basename": "The Case for Slower Tools",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/projects/Bindery/Bindery.md",
+      "text": "---\nid: 01KWC6D1G0Y92DV04KR1DFN7DA\nkind: topic\ntitle: Bindery\ncreated: 2026-07-05T09:20:00+00:00\nupdated: 2026-08-25T09:20:00+00:00\ntags: [current]\naliases: [Bindery]\n---\n\nA small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KWC6D1G0Y92DV04KR1DFN7DA"
+            ],
+            [
+              "kind",
+              "topic"
+            ],
+            [
+              "title",
+              "Bindery"
+            ],
+            [
+              "created",
+              "2026-07-05T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-25T09:20:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "current"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Bindery"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run"
+      },
+      "serialize": {
+        "ok": "---\nid: 01KWC6D1G0Y92DV04KR1DFN7DA\nkind: topic\ntitle: Bindery\ncreated: 2026-07-05T09:20:00+00:00\nupdated: 2026-08-25T09:20:00+00:00\ntags: [current]\naliases: [Bindery]\n---\n\nA small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n\\## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run",
+      "escapeStrict": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n\\## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run",
+      "unescape": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run",
+      "split": {
+        "prose": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]",
+        "sections": "## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run"
+      },
+      "join": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run",
+      "sections": [
+        {
+          "name": "Links",
+          "body": "- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run"
+        }
+      ],
+      "maskCode": "A small run of hand-bound field notebooks. A project is a folder, not a kind —\nthis is the folder note.\n\n**Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the\nthing blocking the rest.\n\nSubjects: [[bookbinding]]\n\n## Links\n\n- [[Quire Structures]] — the structural thinking\n- [[Endpapers]] — the palette shortlist\n- [[Folio Gathering Notes]] — gathering notes for this run",
+      "wikilinks": [
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 220,
+          "end": 235
+        },
+        {
+          "raw": "[[Quire Structures]]",
+          "embed": false,
+          "target": "Quire Structures",
+          "display": null,
+          "heading": null,
+          "start": 249,
+          "end": 269
+        },
+        {
+          "raw": "[[Endpapers]]",
+          "embed": false,
+          "target": "Endpapers",
+          "display": null,
+          "heading": null,
+          "start": 298,
+          "end": 311
+        },
+        {
+          "raw": "[[Folio Gathering Notes]]",
+          "embed": false,
+          "target": "Folio Gathering Notes",
+          "display": null,
+          "heading": null,
+          "start": 338,
+          "end": 363
+        }
+      ],
+      "inlineTags": [],
+      "kind": "project",
+      "titleFromPath": "Bindery",
+      "basename": "Bindery",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/tags/bookbinding.md",
+      "text": "---\nid: 01KVJEDVG0S3M9B2EB4FEGAWY9\nkind: note\ntitle: bookbinding\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [bookbinding]\n---\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVJEDVG0S3M9B2EB4FEGAWY9"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "bookbinding"
+            ],
+            [
+              "created",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "bookbinding"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": ""
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVJEDVG0S3M9B2EB4FEGAWY9\nkind: note\ntitle: bookbinding\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [bookbinding]\n---\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "",
+      "escapeStrict": "",
+      "unescape": "",
+      "split": {
+        "prose": "",
+        "sections": ""
+      },
+      "join": "",
+      "sections": [],
+      "maskCode": "",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "bookbinding",
+      "basename": "bookbinding",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/tags/cartography.md",
+      "text": "---\nid: 01KVN0TJG0K41729ADK18BBT8T\nkind: note\ntitle: cartography\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [cartography]\n---\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVN0TJG0K41729ADK18BBT8T"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "cartography"
+            ],
+            [
+              "created",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "cartography"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": ""
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVN0TJG0K41729ADK18BBT8T\nkind: note\ntitle: cartography\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [cartography]\n---\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "",
+      "escapeStrict": "",
+      "unescape": "",
+      "split": {
+        "prose": "",
+        "sections": ""
+      },
+      "join": "",
+      "sections": [],
+      "maskCode": "",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "cartography",
+      "basename": "cartography",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/tags/typography.md",
+      "text": "---\nid: 01KVQK79G0TPR16VEN0GP8TNCY\nkind: note\ntitle: typography\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [typography]\n---\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KVQK79G0TPR16VEN0GP8TNCY"
+            ],
+            [
+              "kind",
+              "note"
+            ],
+            [
+              "title",
+              "typography"
+            ],
+            [
+              "created",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-07-02T09:20:00+00:00"
+            ],
+            [
+              "aliases",
+              [
+                "typography"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": ""
+      },
+      "serialize": {
+        "ok": "---\nid: 01KVQK79G0TPR16VEN0GP8TNCY\nkind: note\ntitle: typography\ncreated: 2026-07-02T09:20:00+00:00\nupdated: 2026-07-02T09:20:00+00:00\naliases: [typography]\n---\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "",
+      "escapeStrict": "",
+      "unescape": "",
+      "split": {
+        "prose": "",
+        "sections": ""
+      },
+      "join": "",
+      "sections": [],
+      "maskCode": "",
+      "wikilinks": [],
+      "inlineTags": [],
+      "kind": "note",
+      "titleFromPath": "typography",
+      "basename": "typography",
+      "excalidraw": null
+    },
+    {
+      "name": "demo/topics/Quire Structures.md",
+      "text": "---\nid: 01KW4F6WG0VTM69V8PB5BK8TTC\nkind: topic\ntitle: Quire Structures\ncreated: 2026-07-03T09:20:00+00:00\nupdated: 2026-08-28T09:20:00+00:00\ntags: [current]\naliases: [Quire Structures, Quires]\n---\n\nThe running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.\n",
+      "parse": {
+        "frontmatter": {
+          "pairs": [
+            [
+              "id",
+              "01KW4F6WG0VTM69V8PB5BK8TTC"
+            ],
+            [
+              "kind",
+              "topic"
+            ],
+            [
+              "title",
+              "Quire Structures"
+            ],
+            [
+              "created",
+              "2026-07-03T09:20:00+00:00"
+            ],
+            [
+              "updated",
+              "2026-08-28T09:20:00+00:00"
+            ],
+            [
+              "tags",
+              [
+                "current"
+              ]
+            ],
+            [
+              "aliases",
+              [
+                "Quire Structures",
+                "Quires"
+              ]
+            ]
+          ],
+          "blockLists": {}
+        },
+        "body": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless."
+      },
+      "serialize": {
+        "ok": "---\nid: 01KW4F6WG0VTM69V8PB5BK8TTC\nkind: topic\ntitle: Quire Structures\ncreated: 2026-07-03T09:20:00+00:00\nupdated: 2026-08-28T09:20:00+00:00\ntags: [current]\naliases: [Quire Structures, Quires]\n---\n\nThe running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.\n"
+      },
+      "roundtrip": [
+        true,
+        ""
+      ],
+      "escape": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n\\## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n\\## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n\\## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.",
+      "escapeStrict": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n\\## Attachments\n\n\\### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n\\### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n\\## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n\\## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.",
+      "unescape": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.",
+      "split": {
+        "prose": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]",
+        "sections": "## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless."
+      },
+      "join": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.",
+      "sections": [
+        {
+          "name": "Attachments",
+          "body": "### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with."
+        },
+        {
+          "name": "Links",
+          "body": "- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds"
+        },
+        {
+          "name": "Thread",
+          "body": "**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless."
+        }
+      ],
+      "maskCode": "The running hub for how gathered sheets behave — structurally, and as a\nmetaphor I keep reaching for when a screen layout will not settle.\n\nThe through-line across everything below: **the fold is the unit, not the\npage.** Anything that treats the page as atomic ends up fighting the object.\n\nSubjects: [[bookbinding]], [[cartography]]\n\n## Attachments\n\n### Sheet counts per signature (markdown)\n\nFour folios to a quire is the comfortable maximum for 90gsm — past that the\nouter fold has to travel too far and the fore-edge steps visibly.\n\n- **three sheets** — no step worth trimming\n- **four sheets** — about a millimetre, the usual compromise\n- **six sheets** — three millimetres, and it wants a plough\n\n### The fold as a layout unit (link)\nSource: https://example.com/fold-as-unit\n\nThe paragraph about scroll having no fold is the one worth arguing with.\n\n## Links\n\n- [[Lantern Cartography Notes]] — the same working-circle limit, different craft\n- [[Folio Gathering Notes]] — where it becomes expensive\n- [[Binding Methods]] — physical approaches, ranked against the fold\n- [[Bindery]] — the project this feeds\n\n## Thread\n\n**me** 2026-07-22T10:04:00+00:00\nIs the quire actually a good metaphor for layout, or am I forcing it?\n\n**me** 2026-07-28T16:41:00+00:00\nForcing it for grids. Not forcing it for scroll: a scroll has no fold, which is\nexactly why long pages feel structureless.",
+      "wikilinks": [
+        {
+          "raw": "[[bookbinding]]",
+          "embed": false,
+          "target": "bookbinding",
+          "display": null,
+          "heading": null,
+          "start": 302,
+          "end": 317
+        },
+        {
+          "raw": "[[cartography]]",
+          "embed": false,
+          "target": "cartography",
+          "display": null,
+          "heading": null,
+          "start": 319,
+          "end": 334
+        },
+        {
+          "raw": "[[Lantern Cartography Notes]]",
+          "embed": false,
+          "target": "Lantern Cartography Notes",
+          "display": null,
+          "heading": null,
+          "start": 869,
+          "end": 898
+        },
+        {
+          "raw": "[[Folio Gathering Notes]]",
+          "embed": false,
+          "target": "Folio Gathering Notes",
+          "display": null,
+          "heading": null,
+          "start": 950,
+          "end": 975
+        },
+        {
+          "raw": "[[Binding Methods]]",
+          "embed": false,
+          "target": "Binding Methods",
+          "display": null,
+          "heading": null,
+          "start": 1007,
+          "end": 1026
+        },
+        {
+          "raw": "[[Bindery]]",
+          "embed": false,
+          "target": "Bindery",
+          "display": null,
+          "heading": null,
+          "start": 1076,
+          "end": 1087
+        }
+      ],
+      "inlineTags": [],
+      "kind": "topic",
+      "titleFromPath": "Quire Structures",
+      "basename": "Quire Structures",
+      "excalidraw": null
+    }
+  ]
+}

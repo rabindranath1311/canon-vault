@@ -35,6 +35,12 @@ jobs:
       - name: The two cache-bust markers are coherent
         run: node scripts/bump-version.mjs --check
 
+      - name: conformance/expected matches what app/vault does
+        run: node scripts/export-conformance.mjs --check
+
+      - name: conformance/expected/boards.json matches what excalidraw.js does
+        run: node scripts/export-board-conformance.mjs --check
+
       - name: The demo vault passes the validator
         run: node scripts/verify-vault.mjs --vault demo
 

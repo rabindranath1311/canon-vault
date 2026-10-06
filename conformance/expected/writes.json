@@ -1,0 +1,1465 @@
+{
+  "scenarios": [
+    {
+      "name": "saves",
+      "steps": [
+        {
+          "op": "get",
+          "result": {
+            "id": "01JKEPT0000000000000000000",
+            "path": "notes/Kept.md",
+            "title": "Kept",
+            "body": "Some prose about [[Plain]].",
+            "sections": "## Attachments\n\n- a kept tray item",
+            "updated": "2026-01-02T10:00:00+00:00",
+            "mtime": 1,
+            "raw": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"
+          },
+          "files": {
+            "notes/Kept.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Kept.md",
+            "id": "01JKEPT0000000000000000000",
+            "bytes": 219
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Kept.md",
+            "id": "01JKEPT0000000000000000000",
+            "bytes": 220
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 6,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Kept.md",
+            "id": "01JKEPT0000000000000000000",
+            "bytes": 226
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose about [[Plain]].\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 8,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Kept.md",
+            "id": "01JKEPT0000000000000000000",
+            "bytes": 225
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 10,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "history",
+          "result": [
+            {
+              "path": ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md",
+              "stamp": "2026-10-06T09-00-00+00-00"
+            },
+            {
+              "path": ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md",
+              "stamp": "2026-10-06T09-00-00+00-00"
+            },
+            {
+              "path": ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md",
+              "stamp": "2026-10-06T09-00-00+00-00"
+            }
+          ],
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 10,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "readHistory",
+          "result": {
+            "ok": true,
+            "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n",
+            "body": "Some prose, edited once.",
+            "sections": "## Attachments\n\n- a kept tray item"
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 10,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "readHistory",
+          "result": {
+            "ok": false,
+            "reason": "not-a-snapshot"
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~002.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited once.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 10,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Kept.md",
+            "id": "01JKEPT0000000000000000000",
+            "bytes": 217
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-01-00+00-00.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 2,
+              "text": "Just text, no frontmatter yet.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Plain.md",
+            "id": "01KZ0000000000000000000001",
+            "bytes": 165
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-01-00+00-00.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/path_notes_Plain.md/2026-10-06T09-05-00+00-00.md": {
+              "mtime": 13,
+              "text": "Just text, no frontmatter yet.\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 14,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: Plain\ncreated: 2026-10-06T09:05:00+00:00\nupdated: 2026-10-06T09:05:00+00:00\n---\n\nJust text, saved from the app.\n"
+            }
+          }
+        },
+        {
+          "op": "rescan",
+          "result": {
+            "created": [],
+            "removed": [],
+            "changed": [],
+            "warnings": []
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-01-00+00-00.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/path_notes_Plain.md/2026-10-06T09-05-00+00-00.md": {
+              "mtime": 13,
+              "text": "Just text, no frontmatter yet.\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 14,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: Plain\ncreated: 2026-10-06T09:05:00+00:00\nupdated: 2026-10-06T09:05:00+00:00\n---\n\nJust text, saved from the app.\n"
+            }
+          }
+        },
+        {
+          "op": "get",
+          "result": {
+            "id": "01KZ0000000000000000000001",
+            "path": "notes/Plain.md",
+            "title": "Plain",
+            "body": "Just text, saved from the app.",
+            "sections": "",
+            "updated": "2026-10-06T09:05:00+00:00",
+            "mtime": 14,
+            "raw": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: Plain\ncreated: 2026-10-06T09:05:00+00:00\nupdated: 2026-10-06T09:05:00+00:00\n---\n\nJust text, saved from the app.\n"
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-01-00+00-00.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/path_notes_Plain.md/2026-10-06T09-05-00+00-00.md": {
+              "mtime": 13,
+              "text": "Just text, no frontmatter yet.\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 14,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: Plain\ncreated: 2026-10-06T09:05:00+00:00\nupdated: 2026-10-06T09:05:00+00:00\n---\n\nJust text, saved from the app.\n"
+            }
+          }
+        },
+        {
+          "op": "get",
+          "result": {
+            "id": "01JKEPT0000000000000000000",
+            "path": "notes/Kept.md",
+            "title": "Kept",
+            "body": "Prose\n## Attachments\nnot a tray, just a line I typed",
+            "sections": "",
+            "updated": "2026-10-06T09:01:00+00:00",
+            "mtime": 12,
+            "raw": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+          },
+          "files": {
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~003.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited twice.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-00-00+00-00~004.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited three times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/01JKEPT0000000000000000000/2026-10-06T09-01-00+00-00.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:00:00+00:00\ntags:\n  - alpha\n  - beta\n---\n\nSome prose, edited four times.\n\n## Attachments\n\n- a kept tray item\n"
+            },
+            ".history/path_notes_Plain.md/2026-10-06T09-05-00+00-00.md": {
+              "mtime": 13,
+              "text": "Just text, no frontmatter yet.\n"
+            },
+            "notes/Kept.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JKEPT0000000000000000000\nkind: note\ntitle: Kept\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T09:01:00+00:00\ntags:\n  - alpha\nstatus: draft\n---\n\nProse\n\\## Attachments\nnot a tray, just a line I typed\n"
+            },
+            "notes/Plain.md": {
+              "mtime": 14,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: Plain\ncreated: 2026-10-06T09:05:00+00:00\nupdated: 2026-10-06T09:05:00+00:00\n---\n\nJust text, saved from the app.\n"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "conflicts",
+      "steps": [
+        {
+          "op": "get",
+          "result": {
+            "id": "01JSHARED00000000000000000",
+            "path": "notes/Shared.md",
+            "title": "Shared",
+            "body": "The text as the app first read it.",
+            "sections": "",
+            "updated": "2026-01-02T10:00:00+00:00",
+            "mtime": 2,
+            "raw": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThe text as the app first read it.\n"
+          },
+          "files": {
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThe text as the app first read it.\n"
+            }
+          }
+        },
+        {
+          "op": "external",
+          "result": null,
+          "files": {
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            }
+          }
+        },
+        {
+          "op": "rescan",
+          "result": {
+            "created": [],
+            "removed": [],
+            "changed": [
+              "notes/Shared.md"
+            ],
+            "warnings": []
+          },
+          "files": {
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": false,
+            "reason": "conflict",
+            "path": "notes/Shared.md",
+            "message": "changed on disk — reload or overwrite"
+          },
+          "files": {
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 3,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Shared.md",
+            "id": "01JSHARED00000000000000000",
+            "bytes": 151
+          },
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 6,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text.\n"
+            }
+          }
+        },
+        {
+          "op": "external",
+          "result": null,
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 7,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Shared.md",
+            "id": "01JSHARED00000000000000000",
+            "bytes": 158
+          },
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06 2).md": {
+              "mtime": 8,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: \"Shared (conflict 2026-10-06 2)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 10,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text, again.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Shared.md",
+            "id": "01JSHARED00000000000000000",
+            "bytes": 202
+          },
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~003.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text, again.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06 2).md": {
+              "mtime": 8,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: \"Shared (conflict 2026-10-06 2)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nNo base: judged against the index, which this session kept honest.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": false,
+            "reason": "unparseable",
+            "message": "refusing to write over a file we could not parse: unterminated frontmatter block"
+          },
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~003.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text, again.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06 2).md": {
+              "mtime": 8,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: \"Shared (conflict 2026-10-06 2)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nNo base: judged against the index, which this session kept honest.\n"
+            }
+          }
+        },
+        {
+          "op": "rescan",
+          "result": {
+            "created": [
+              "notes/Shared (conflict 2026-10-06 2).md",
+              "notes/Shared (conflict 2026-10-06).md"
+            ],
+            "removed": [],
+            "changed": [],
+            "warnings": []
+          },
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~003.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text, again.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06 2).md": {
+              "mtime": 8,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: \"Shared (conflict 2026-10-06 2)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nNo base: judged against the index, which this session kept honest.\n"
+            }
+          }
+        },
+        {
+          "op": "history",
+          "result": [
+            {
+              "path": ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~003.md",
+              "stamp": "2026-10-06T10-00-00+00-00"
+            },
+            {
+              "path": ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md",
+              "stamp": "2026-10-06T10-00-00+00-00"
+            },
+            {
+              "path": ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md",
+              "stamp": "2026-10-06T10-00-00+00-00"
+            }
+          ],
+          "files": {
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00.md": {
+              "mtime": 5,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~002.md": {
+              "mtime": 9,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            ".history/01JSHARED00000000000000000/2026-10-06T10-00-00+00-00~003.md": {
+              "mtime": 11,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nThe app's text, again.\n"
+            },
+            "notes/Broken.md": {
+              "mtime": 1,
+              "text": "---\nid: 01JBRKN0000000000000000000\nkind: note\nno closing fence here\n"
+            },
+            "notes/Shared (conflict 2026-10-06 2).md": {
+              "mtime": 8,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: \"Shared (conflict 2026-10-06 2)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nA second edit from outside.\n"
+            },
+            "notes/Shared (conflict 2026-10-06).md": {
+              "mtime": 4,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: note\ntitle: \"Shared (conflict 2026-10-06)\"\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nEdited in Obsidian, updated left alone.\n"
+            },
+            "notes/Shared.md": {
+              "mtime": 12,
+              "text": "---\nid: 01JSHARED00000000000000000\nkind: note\ntitle: Shared\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-10-06T10:00:00+00:00\n---\n\nNo base: judged against the index, which this session kept honest.\n"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "names and trash",
+      "steps": [
+        {
+          "op": "put",
+          "result": {
+            "ok": false,
+            "reason": "name-taken",
+            "path": "projects/Taken.md",
+            "held": "notes/Taken.md",
+            "message": "notes/Taken.md already answers to [[Taken]]"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": false,
+            "reason": "name-taken",
+            "path": "notes/Sketches.md",
+            "held": "canvas/Sketches.canvas",
+            "message": "canvas/Sketches.canvas already answers to [[Sketches]]"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "canvas/Sketches.md",
+            "id": "01KZ0000000000000000000001",
+            "bytes": 178,
+            "adopted": "canvas/Sketches.canvas"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "notes/Fresh.md",
+            "id": "01KZ0000000000000000000002",
+            "bytes": 146
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rescan",
+          "result": {
+            "created": [
+              "canvas/Sketches.md",
+              "notes/Fresh.md"
+            ],
+            "removed": [],
+            "changed": [],
+            "warnings": []
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": true,
+            "path": "notes/Fresh Renamed.md",
+            "from": "notes/Fresh.md"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": true,
+            "path": "topics/Board Two.md",
+            "from": "topics/Board.md",
+            "canvas": "topics/Board Two.canvas"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": false,
+            "reason": "would-orphan-canvas",
+            "path": "topics/Board Two.canvas"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": false,
+            "reason": "exists",
+            "path": "notes/Fresh Renamed.md"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": true,
+            "path": "notes/Taken.md",
+            "from": "notes/Taken.md"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "rename",
+          "result": {
+            "ok": false,
+            "reason": "unknown-id"
+          },
+          "files": {
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "del",
+          "result": {
+            "ok": true,
+            "trashed": ".trash/topics/Board Two.md",
+            "trashedCanvas": ".trash/topics/Board Two.canvas"
+          },
+          "files": {
+            ".trash/topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            ".trash/topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            }
+          }
+        },
+        {
+          "op": "put",
+          "result": {
+            "ok": true,
+            "path": "topics/Board Two.md",
+            "id": "01KZ0000000000000000000003",
+            "bytes": 162
+          },
+          "files": {
+            ".trash/topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            ".trash/topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            }
+          }
+        },
+        {
+          "op": "rescan",
+          "result": {
+            "created": [
+              "topics/Board Two.md"
+            ],
+            "removed": [],
+            "changed": [],
+            "warnings": []
+          },
+          "files": {
+            ".trash/topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            ".trash/topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            }
+          }
+        },
+        {
+          "op": "del",
+          "result": {
+            "ok": true,
+            "trashed": ".trash/topics/Board Two 2.md"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            ".trash/topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            ".trash/topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            }
+          }
+        },
+        {
+          "op": "untrash",
+          "result": {
+            "ok": true,
+            "path": "topics/Board Two.md",
+            "id": "01JBRD00000000000000000000"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "untrash",
+          "result": {
+            "ok": false,
+            "reason": "path-taken"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "untrash",
+          "result": {
+            "ok": false,
+            "reason": "gone-from-trash"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "del",
+          "result": {
+            "ok": false,
+            "reason": "unknown-id"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        },
+        {
+          "op": "writeBlob",
+          "result": {
+            "ok": true,
+            "path": "attachments/pixel.txt"
+          },
+          "files": {
+            ".trash/topics/Board Two 2.md": {
+              "mtime": 7,
+              "text": "---\nid: 01KZ0000000000000000000003\nkind: topic\ntitle: Board Two\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe name, taken again.\n"
+            },
+            "attachments/pixel.txt": {
+              "mtime": 8,
+              "text": "not really an image"
+            },
+            "canvas/Sketches.canvas": {
+              "mtime": 1,
+              "text": "{\"nodes\":[],\"edges\":[]}\n"
+            },
+            "canvas/Sketches.md": {
+              "mtime": 5,
+              "text": "---\nid: 01KZ0000000000000000000001\nkind: canvas\ntitle: Sketches\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nThe board's own note, beside its JSON.\n"
+            },
+            "notes/Fresh Renamed.md": {
+              "mtime": 6,
+              "text": "---\nid: 01KZ0000000000000000000002\nkind: note\ntitle: Fresh\ncreated: 2026-10-06T11:00:00+00:00\nupdated: 2026-10-06T11:00:00+00:00\n---\n\nA new page.\n"
+            },
+            "notes/Taken.md": {
+              "mtime": 2,
+              "text": "---\nid: 01JTAKEN000000000000000000\nkind: note\ntitle: Taken\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nThis page owns the name.\n"
+            },
+            "topics/Board Two.canvas": {
+              "mtime": 3,
+              "text": "{\"nodes\":[{\"id\":\"n1\"}],\"edges\":[]}\n"
+            },
+            "topics/Board Two.md": {
+              "mtime": 4,
+              "text": "---\nid: 01JBRD00000000000000000000\nkind: topic\ntitle: Board\ncreated: 2026-01-01T10:00:00+00:00\nupdated: 2026-01-02T10:00:00+00:00\n---\n\nA topic with a legacy canvas beside it.\n"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

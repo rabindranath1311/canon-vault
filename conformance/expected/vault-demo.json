@@ -1,0 +1,501 @@
+{
+  "listOrder": [
+    "attachments/endpaper-01.svg",
+    "attachments/endpaper-02.svg",
+    "attachments/endpaper-03.svg",
+    "attachments/endpaper-04.svg",
+    "attachments/endpaper-05.svg",
+    "attachments/endpaper-06.svg",
+    "canvas/Binding Methods.md",
+    "canvas/Sewing Order.excalidraw.md",
+    "context/about-me.md",
+    "index.md",
+    "inspo/Endpapers.md",
+    "log.md",
+    "notes/Folio Gathering Notes.md",
+    "notes/Gloss Placement as Structure.md",
+    "notes/Lantern Cartography Notes.md",
+    "notes/Marginalia as Interface.md",
+    "notes/The Case for Slower Tools.md",
+    "projects/Bindery/Bindery.md",
+    "tags/bookbinding.md",
+    "tags/cartography.md",
+    "tags/typography.md",
+    "topics/Quire Structures.md"
+  ],
+  "entries": [
+    {
+      "id": "01KW71KKG0QMB8EDXJ6QP47G8K",
+      "kind": "note",
+      "path": "canvas/Binding Methods.md",
+      "title": "Binding Methods",
+      "tags": [],
+      "aliases": [
+        "Binding Methods"
+      ],
+      "mentions": [
+        "Quire Structures",
+        "bookbinding"
+      ],
+      "excerpt": "Physical binding approaches, ranked by how much they fight the fold. **Coptic** — lies flat, exposed spine, the fold does the work. **Case** — hides everything, will not lie flat. **Japanese stab** — ignores the fold entirely, and is honest about it. The ranking is really *how much does it fight the",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-27T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KWD3Q2G0N4TXBM7C5R8EJH1V",
+      "kind": "canvas",
+      "path": "canvas/Sewing Order.excalidraw.md",
+      "title": "Sewing Order",
+      "tags": [
+        "bookbinding",
+        "current"
+      ],
+      "aliases": [
+        "Sewing Order"
+      ],
+      "mentions": [
+        "Quire Structures",
+        "Folio Gathering Notes"
+      ],
+      "excerpt": "A sketch I keep redrawing because I keep forgetting the order. Related: [[Quire Structures]], [[Folio Gathering Notes]]",
+      "sceneText": "How a book gets made four moves, in order — the rest is patience Fold Gather Sew Case in Sewing is the only step you cannot\nundo without unmaking the ones\nbefore it.",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-24T16:40:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KWERSRG0QHXT9PQ4S0BRNTZH",
+      "kind": "note",
+      "path": "context/about-me.md",
+      "title": "About me",
+      "tags": [],
+      "aliases": [
+        "About me"
+      ],
+      "mentions": [],
+      "excerpt": "_This is a demo vault. Everything in it is invented._ I bind books and draw harbour charts. Trained as a graphic designer, drifted into the physical side, and now spend most of my time on the argument that those were never separate disciplines. Any agent reads this file before writing anything in my",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-20T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KWHB6FG0XZMR5XEQ6PT88Y26",
+      "kind": "note",
+      "path": "index.md",
+      "title": "index",
+      "tags": [],
+      "aliases": [
+        "index",
+        "Index"
+      ],
+      "mentions": [
+        "About me",
+        "Lantern Cartography Notes",
+        "Marginalia as Interface",
+        "The Case for Slower Tools",
+        "Folio Gathering Notes",
+        "Quire Structures",
+        "Binding Methods",
+        "Endpapers",
+        "Bindery",
+        "bookbinding",
+        "cartography",
+        "typography"
+      ],
+      "excerpt": "The catalog — every page, one line each. A page missing from here is invisible to a fresh agent session. ## context - [[About me]] — who I am; read before anything is written in my voice ## notes - [[Lantern Cartography Notes]] — drawing charts by lamp, and what the limit teaches - [[Marginalia as I",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-29T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KW9M0AG0G7ZVXRFQ6T6204W2",
+      "kind": "inspo",
+      "path": "inspo/Endpapers.md",
+      "title": "Endpapers",
+      "tags": [
+        "marbled",
+        "indigo",
+        "warm",
+        "printed",
+        "green",
+        "purple",
+        "cool"
+      ],
+      "aliases": [
+        "Endpapers"
+      ],
+      "mentions": [
+        "attachments/endpaper-01.svg",
+        "Quire Structures",
+        "attachments/endpaper-02.svg",
+        "attachments/endpaper-03.svg",
+        "attachments/endpaper-04.svg",
+        "attachments/endpaper-05.svg",
+        "attachments/endpaper-06.svg"
+      ],
+      "excerpt": "## Shortlist for the Bindery run ![[attachments/endpaper-01.svg]] Indigo and gilt — the harbour-chart palette, reused > Works because the gilt is a hairline, not a field. Any wider and it > competes with the marbling instead of edging it. > Reach for it when a dark cover needs a warm interior. See [",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-29T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KWKXK6G07WVM1A98PNQRV940",
+      "kind": "note",
+      "path": "log.md",
+      "title": "log",
+      "tags": [],
+      "aliases": [
+        "log",
+        "Log"
+      ],
+      "mentions": [
+        "The Case for Slower Tools",
+        "Marginalia as Interface",
+        "bookbinding",
+        "typography",
+        "index"
+      ],
+      "excerpt": "Append-only history. One entry per ingest, filed answer, lint pass or structural change. Never rewrite an old entry. ## [2026-07-29] lint | orphans and stale claims Swept for orphans. [[The Case for Slower Tools]] had nothing linking to it; left deliberately — a pull-quote is allowed to stand alone.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-29T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KW1WT5G0DE5BAME5RKC2VX19",
+      "kind": "note",
+      "path": "notes/Folio Gathering Notes.md",
+      "title": "Folio Gathering Notes",
+      "tags": [
+        "draft"
+      ],
+      "aliases": [
+        "Folio Gathering Notes"
+      ],
+      "mentions": [
+        "Quire Structures",
+        "bookbinding"
+      ],
+      "excerpt": "Gathering is the step where a stack of flat sheets becomes an object with a spine, and it is the first point at which a mistake becomes expensive. Four sheets folded together is a quire. Eight is comfortable. Sixteen is showing off and will not lie flat for a decade. See [[Quire Structures]]. Subjec",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-19T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01M0SMX6DZDT2ZF8W3VXH6A44F",
+      "kind": "note",
+      "path": "notes/Gloss Placement as Structure.md",
+      "title": "Gloss Placement as Structure",
+      "tags": [
+        "reference",
+        "typography"
+      ],
+      "aliases": [
+        "Gloss Placement as Structure"
+      ],
+      "mentions": [
+        "Marginalia as Interface"
+      ],
+      "excerpt": "> The gloss is not adjacent to the text. It is *addressed* to a line, and the > distance between them is the claim. Kept for the second half of the argument rather than the first: everyone agrees the margin carried meaning, and almost nobody has said what that costs a layout engine that can reflow. ",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-21T16:40:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVT5M0G0N07ZQ8ZAJ41Q7Q8X",
+      "kind": "note",
+      "path": "notes/Lantern Cartography Notes.md",
+      "title": "Lantern Cartography Notes",
+      "tags": [
+        "current"
+      ],
+      "aliases": [
+        "Lantern Cartography Notes"
+      ],
+      "mentions": [
+        "Quire Structures",
+        "cartography",
+        "typography"
+      ],
+      "excerpt": "Field notes from three weeks of drawing harbour charts by lamp, which turns out to be a legible constraint rather than an affectation. A lantern gives you roughly a 300mm working circle. Everything outside it is inferred. That is a limit on how much of a chart you can hold in your head at once, and ",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-26T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVWR0QG08R6G0D7ZXE2NRSVZ",
+      "kind": "note",
+      "path": "notes/Marginalia as Interface.md",
+      "title": "Marginalia as Interface",
+      "tags": [
+        "reference"
+      ],
+      "aliases": [
+        "Marginalia as Interface"
+      ],
+      "mentions": [
+        "bookbinding",
+        "typography"
+      ],
+      "excerpt": "Clipped because of the third section, on *gloss placement* — the argument that where an annotation sits is itself information, and that a comment thread throws that information away. The claim I want to test: a margin is a spatial index. A thread is a temporal one. They are not substitutes, and most",
+      "sceneText": "",
+      "url": "https://example.org/marginalia-as-interface",
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-24T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVZADEG0JC2K2BJNA9T6HKVV",
+      "kind": "note",
+      "path": "notes/The Case for Slower Tools.md",
+      "title": "The Case for Slower Tools",
+      "tags": [],
+      "aliases": [
+        "The Case for Slower Tools"
+      ],
+      "mentions": [],
+      "excerpt": "> A tool that resists you is not necessarily a bad tool. It is a tool with an > opinion, and an opinion is the only thing that makes a body of work look like > it came from somebody.",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-21T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KWC6D1G0Y92DV04KR1DFN7DA",
+      "kind": "topic",
+      "path": "projects/Bindery/Bindery.md",
+      "title": "Bindery",
+      "tags": [
+        "current"
+      ],
+      "aliases": [
+        "Bindery"
+      ],
+      "mentions": [
+        "bookbinding",
+        "Quire Structures",
+        "Endpapers",
+        "Folio Gathering Notes"
+      ],
+      "excerpt": "A small run of hand-bound field notebooks. A project is a folder, not a kind — this is the folder note. **Where it is:** twelve blocks sewn, none cased in. The endpaper choice is the thing blocking the rest. Subjects: [[bookbinding]]",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-25T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVJEDVG0S3M9B2EB4FEGAWY9",
+      "kind": "note",
+      "path": "tags/bookbinding.md",
+      "title": "bookbinding",
+      "tags": [],
+      "aliases": [
+        "bookbinding"
+      ],
+      "mentions": [],
+      "excerpt": "",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-07-02T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVN0TJG0K41729ADK18BBT8T",
+      "kind": "note",
+      "path": "tags/cartography.md",
+      "title": "cartography",
+      "tags": [],
+      "aliases": [
+        "cartography"
+      ],
+      "mentions": [],
+      "excerpt": "",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-07-02T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KVQK79G0TPR16VEN0GP8TNCY",
+      "kind": "note",
+      "path": "tags/typography.md",
+      "title": "typography",
+      "tags": [],
+      "aliases": [
+        "typography"
+      ],
+      "mentions": [],
+      "excerpt": "",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-07-02T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    },
+    {
+      "id": "01KW4F6WG0VTM69V8PB5BK8TTC",
+      "kind": "topic",
+      "path": "topics/Quire Structures.md",
+      "title": "Quire Structures",
+      "tags": [
+        "current"
+      ],
+      "aliases": [
+        "Quire Structures",
+        "Quires"
+      ],
+      "mentions": [
+        "bookbinding",
+        "cartography",
+        "Lantern Cartography Notes",
+        "Folio Gathering Notes",
+        "Binding Methods",
+        "Bindery"
+      ],
+      "excerpt": "The running hub for how gathered sheets behave — structurally, and as a metaphor I keep reaching for when a screen layout will not settle. The through-line across everything below: **the fold is the unit, not the page.** Anything that treats the page as atomic ends up fighting the object. Subjects: ",
+      "sceneText": "",
+      "url": null,
+      "parent": null,
+      "children": [],
+      "updated": "2026-08-28T09:20:00+00:00",
+      "stamped": true,
+      "unparseable": null
+    }
+  ],
+  "reservedNames": [],
+  "warnings": [],
+  "problems": [],
+  "resolutions": [
+    [
+      "About me",
+      "context/about-me.md"
+    ],
+    [
+      "Bindery",
+      "projects/Bindery/Bindery.md"
+    ],
+    [
+      "Binding Methods",
+      "canvas/Binding Methods.md"
+    ],
+    [
+      "Endpapers",
+      "inspo/Endpapers.md"
+    ],
+    [
+      "Folio Gathering Notes",
+      "notes/Folio Gathering Notes.md"
+    ],
+    [
+      "Lantern Cartography Notes",
+      "notes/Lantern Cartography Notes.md"
+    ],
+    [
+      "Marginalia as Interface",
+      "notes/Marginalia as Interface.md"
+    ],
+    [
+      "Quire Structures",
+      "topics/Quire Structures.md"
+    ],
+    [
+      "Quires",
+      "topics/Quire Structures.md"
+    ],
+    [
+      "The Case for Slower Tools",
+      "notes/The Case for Slower Tools.md"
+    ],
+    [
+      "attachments/endpaper-01.svg",
+      null
+    ],
+    [
+      "attachments/endpaper-02.svg",
+      null
+    ],
+    [
+      "attachments/endpaper-03.svg",
+      null
+    ],
+    [
+      "attachments/endpaper-04.svg",
+      null
+    ],
+    [
+      "attachments/endpaper-05.svg",
+      null
+    ],
+    [
+      "attachments/endpaper-06.svg",
+      null
+    ],
+    [
+      "bookbinding",
+      "tags/bookbinding.md"
+    ],
+    [
+      "cartography",
+      "tags/cartography.md"
+    ],
+    [
+      "index",
+      "index.md"
+    ],
+    [
+      "typography",
+      "tags/typography.md"
+    ]
+  ]
+}

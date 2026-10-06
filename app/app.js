@@ -3298,6 +3298,11 @@ function V2PageView(pageId, onChange, onDeleted) {
   // they attached). They're run before every re-layout and on screen unmount.
   let bodyTeardowns = [];
   const onBodyTeardown = (fn) => bodyTeardowns.push(fn);
+  /* Body renderers that save on their own schedule (the board) say here
+     whether they are holding unsaved work, so a refresh from disk knows to
+     leave the screen alone. Cleared with the teardowns, on every re-layout. */
+  let bodyBusy = [];
+  const onBodyBusy = (fn) => bodyBusy.push(fn);
   /* Which mentions are worth showing as chips.
      A mention chip means "a link to another page you can open". Two things
      were getting in that are neither, and both looked like broken links:
@@ -3406,6 +3411,7 @@ function V2PageView(pageId, onChange, onDeleted) {
   const runBodyTeardowns = () => {
     bodyTeardowns.forEach((fn) => { try { fn(); } catch (_) {} });
     bodyTeardowns = [];
+    bodyBusy = [];
   };
 
   /* Save status. Every edit here autosaves 600ms after you stop typing, and
@@ -3533,7 +3539,13 @@ function V2PageView(pageId, onChange, onDeleted) {
      On overwrite the disk version is preserved as `<name> (conflict <date>).md`
      first — neither side's work is ever lost (SPEC §8). */
   async function savePage(patch, force) {
-    const r = await SB.data().updatePage(page.id, force ? { ...patch, force: true } : patch);
+    // `base` is the version this screen read. The vault judges a conflict
+    // against it, and it moves forward with every save that lands, so every
+    // writer on this screen (prose, chips, the board) shares one notion of it.
+    const base = { mtime: page.mtime, updated: page.updated };
+    const r = await SB.data().updatePage(page.id,
+      force ? { ...patch, base, force: true } : { ...patch, base });
+    if (r && r.ok !== false) { page.mtime = r.mtime; page.updated = r.updated; }
     if (!r || r.ok !== false) return r;
     if (r.reason !== 'conflict') {
       // Every refusal that is not a conflict used to end here, as a
@@ -3556,7 +3568,10 @@ function V2PageView(pageId, onChange, onDeleted) {
     if (!overwrite) {
       cacheInvalidatePage(page.id);
       const fresh = await getPageCached(page.id);
-      if (fresh) { page.body = fresh.body; page.title = fresh.title; page.updated = fresh.updated; }
+      if (fresh) {
+        page.body = fresh.body; page.title = fresh.title;
+        page.updated = fresh.updated; page.mtime = fresh.mtime;
+      }
       render();
       return null;
     }
@@ -4224,6 +4239,9 @@ function V2PageView(pageId, onChange, onDeleted) {
         onReady: (hd) => { savedVersion = hd.version(); },
         onChange: queue,
       });
+      // A pan also fires onChange and arms the timer, so the version is the
+      // test, as it is in persist(): strokes not yet on disk.
+      onBodyBusy(() => !!handle && savedVersion != null && handle.version() !== savedVersion);
       // A drawing left with pending edits must not vanish on navigation.
       window.addEventListener('beforeunload', persist);
     }).catch((e) => {
@@ -5639,8 +5657,12 @@ function V2PageView(pageId, onChange, onDeleted) {
         h('button', { className: 'side-action',
           onClick: async () => {
             try {
+              // `exportPage` hands back `{markdown, filename}`. This read
+              // `res.content`, which does not exist, and every export was a
+              // file containing the word "undefined".
               const res = await SB.data().exportPage(page.id);
-              const blob = new Blob([res.content], { type: 'text/markdown' });
+              if (!res) throw new Error('the page is no longer in the vault');
+              const blob = new Blob([res.markdown], { type: 'text/markdown' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
@@ -6056,6 +6078,13 @@ function V2PageView(pageId, onChange, onDeleted) {
       (e && e.message) ? String(e.message) : 'It may have been deleted.'));
   });
 
+  /* Is anything on this screen not yet on disk? Asked by the refresh that
+     follows an edit made outside the app: a busy screen is left exactly as it
+     is, and its next save meets the conflict gate instead. */
+  wrap.__busy = () => dirty || inFlight > 0
+    || bodyBusy.some((fn) => { try { return fn(); } catch (_) { return true; } });
+  wrap.__path = () => page && page.path;
+
   // Save on unmount + clean up any body listeners (canvas/inspo paste, etc.)
   wrap.__teardown = () => {
     flushSave();          // not `if (dirty) commit()` — the debounce is killed too
@@ -6385,7 +6414,8 @@ function AboutMeScreen() {
     if (!dirty || !me) return;
     dirty = false;
     try {
-      const patched = await SB.data().updateAboutMe({ body: me.body });
+      const patched = await SB.data().updateAboutMe({
+        body: me.body, base: { mtime: me.mtime, updated: me.updated } });
       // A refusal used to end in a console.warn nobody has open, with the
       // edit still on screen — the page looked saved and was not.
       if (!patched || patched.ok === false) {
@@ -6398,6 +6428,7 @@ function AboutMeScreen() {
         return;
       }
       me.updated = patched.updated;
+      me.mtime = patched.mtime;
       setSaveState('saved');
       // Patched in place rather than re-laid out: the prose editor owns its
       // own caret and a rebuild would take it away mid-sentence.
@@ -6453,6 +6484,8 @@ function AboutMeScreen() {
     wrap.appendChild(EmptyState('Could not read About me.',
       String((e && e.message) || e)));
   });
+  wrap.__busy = () => dirty;
+  wrap.__path = () => (me && me.path) || 'context/about-me.md';
   wrap.__teardown = () => { if (dirty) flushSave(); };
   return wrap;
 }
@@ -8604,6 +8637,59 @@ function refreshSidebar() {
     () => { app.createOpen = true; render(); },
     app.offline, app.lastSynced));
 }
+
+/* Edits made outside the app — Obsidian, an agent, git.
+   bridge.js re-scans the folder whenever the window regains focus and
+   announces what moved as `sb:vault-changed`. Nothing listened, so the index
+   was fresh and every screen built from it was not: a list missed the page
+   Obsidian had just created, and an open page showed text that was no longer
+   on disk until its next save ran into the conflict gate.
+
+   The rule is that the refresh never costs the user anything they have typed.
+   A screen holding unsaved work, a dialog, or a field with the caret in it is
+   left exactly as it is, and only the sidebar counts catch up; a stale page
+   left that way is still protected by the conflict gate on its next save. An
+   open page is only rebuilt when its own file is among what moved, so an
+   unrelated edit elsewhere does not throw away your scroll position. */
+async function onVaultChanged(detail) {
+  const { created = [], removed = [], changed = [] } = detail || {};
+  _pageCache.clear();
+  invalidatePageIndex();
+  await refreshCounts();
+
+  const screen = currentMain;
+  const holding = !!(screen && screen.__busy && screen.__busy())
+    || app.createOpen
+    || !!document.querySelector('[aria-modal="true"], .pk-pop');
+  if (holding) { refreshSidebar(); return; }
+
+  if (screen && screen.__path) {
+    const moved = new Set([...created, ...removed, ...changed]);
+    if (!moved.has(screen.__path())) { refreshSidebar(); return; }
+  } else {
+    // A list's filter box keeps what you typed only until the next render.
+    const act = document.activeElement;
+    const typing = act && act.closest && act.closest('.main')
+      && (act.matches('input, textarea, select') || act.isContentEditable);
+    if (typing) { refreshSidebar(); return; }
+  }
+
+  const main = document.querySelector('.app > .main');
+  const top = main ? main.scrollTop : 0;
+  render();
+  // Screens fill in after render() returns, so the old offset only fits once
+  // the content has loaded. Keep trying for about a second, then give up.
+  const restore = (tries) => {
+    const m = document.querySelector('.app > .main');
+    if (!m || !top) return;
+    m.scrollTop = top;
+    if (m.scrollTop < top && tries > 0) requestAnimationFrame(() => restore(tries - 1));
+  };
+  restore(60);
+}
+window.addEventListener('sb:vault-changed', (e) => {
+  onVaultChanged(e.detail).catch((err) => console.warn('refresh after external edit failed', err));
+});
 
 /* Arrow-key movement within a list.
    Every row is focusable now, but walking a fifty-row table by Tab is a
